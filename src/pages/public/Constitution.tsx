@@ -298,7 +298,7 @@ export const Constitution: React.FC = () => {
         {/* CHAPTER 4: FINANCIAL MANAGEMENT */}
         <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xs space-y-4">
           <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100 dark:border-slate-800 text-emerald-700 dark:text-emerald-400">
-            <DollarSign className="w-5 h-5 shrink-0" />
+            <DollarSign className="w-5 h-5 shrink-0" /> 
             <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100">
               চতুর্থ অধ্যায়: আর্থিক ব্যবস্থাপনা
             </h2>
@@ -316,7 +316,7 @@ export const Constitution: React.FC = () => {
                     সদস্যরা প্রতি মাসে ১২ তারিখের মধ্যে সঞ্চয় কিস্তি জমা দেবেন।
                   </p>
                   <p className="text-[11px] text-slate-500 mt-1">
-                    বর্তমান নির্ধারিত মাসিক সঞ্চয়: ১,০০০/- (এক হাজার টাকা)।
+                    বর্তমান নির্ধারিত মাসিক সঞ্চয়: ৫০০/- (পাচশত টাকা)।
                   </p>
                 </div>
               </div>
