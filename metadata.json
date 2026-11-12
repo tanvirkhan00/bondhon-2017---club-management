@@ -1,0 +1,6 @@
+{
+  "name": "Bondhon 2017 - Club Management",
+  "description": "Secure, responsive club management web application for Bondhon 2017 community club in Bangladesh. Track members, monthly dues in BDT (৳), financial reports, and administrative controls with Supabase RLS.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
