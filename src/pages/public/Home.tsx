@@ -20,7 +20,7 @@ export const Home: React.FC = () => {
   const { publicMembers } = useClubData();
   const { isAuthenticated, isAdmin } = useAuth();
 
-  const previewMembers = publicMembers.slice(0, 4);
+  const previewMembers = publicMembers.slice(0, 8);
 
   return (
     <div className="space-y-16 sm:space-y-24 py-8 sm:py-12 animate-in fade-in duration-200">
@@ -91,7 +91,7 @@ export const Home: React.FC = () => {
               <div className="w-64 h-64 sm:w-80 sm:h-80 rounded-full overflow-hidden shadow-2xl border-4 border-white dark:border-slate-800 ring-4 ring-emerald-600/20 bg-emerald-950 flex items-center justify-center p-2">
                 <img
                   src={crestImage}
-                  alt="Bondhon 2017 Emblem"
+                  alt="Bondhon 2017 Official Logo"
                   className="w-full h-full object-cover rounded-full"
                   referrerPolicy="no-referrer"
                 />

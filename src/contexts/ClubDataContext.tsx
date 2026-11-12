@@ -70,7 +70,12 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [members, setMembers] = useState<Member[]>(() => {
     const saved = localStorage.getItem('bondhon_local_members');
     if (saved) {
-      try { return JSON.parse(saved); } catch { /* ignore */ }
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length === 20 && parsed.some(m => m.profile_image_url)) {
+          return parsed;
+        }
+      } catch { /* ignore */ }
     }
     return INITIAL_MEMBERS;
   });
