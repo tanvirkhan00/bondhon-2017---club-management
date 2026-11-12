@@ -74,7 +74,7 @@ export const MemberPaymentHistory: React.FC = () => {
             <span>My Contribution Payment Ledger</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            Personal contribution records for {myMemberRecord?.full_name} ({myMemberRecord?.member_code}) · Currency: BDT (৳)
+            Personal contribution records for {myMemberRecord?.full_name} ({myMemberRecord?.member_code}) · প্রতি মাসের ১২ তারিখের মধ্যে কিস্তি পরিশোধ বাধ্যতামূলক (বিলম্ব ফি ৫০৳)
           </p>
         </div>
       </div>

@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   HandHeart,
   Trophy,
+  FileText,
 } from 'lucide-react';
 import crestImage from '../../assets/images/bondhon_club_crest_1793703027252.jpg';
 
@@ -30,18 +31,18 @@ export const Home: React.FC = () => {
           <div className="lg:col-span-7 space-y-6">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-semibold">
               <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Community Friends Club · Established 2017</span>
+              <span>বন্ধুত্ব সমবায় সমিতি (এস.এস.সি ব্যাচ ২০১৭) · স্থাপিত: ০১/০৪/২০২৪ ইং</span>
             </div>
 
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-slate-900 dark:text-slate-100 text-balance leading-tight">
               Bondhon 2017
               <span className="block text-emerald-700 dark:text-emerald-400 text-2xl sm:text-4xl lg:text-5xl font-medium mt-2">
-                বন্ধুত্ব, ঐক্য ও আজীবন বন্ধন
+                বন্ধুত্ব সমবায় সমিতি
               </span>
             </h1>
 
             <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl">
-              Welcome to the official portal of <strong>Bondhon 2017</strong>, a united community of lifelong friends in Bangladesh. Founded on mutual trust, social solidarity, and shared growth, we manage our club contributions with complete transparency and integrity.
+              Welcome to the official platform of <strong>বন্ধুত্ব সমবায় সমিতি</strong> (Bondhon 2017), চরচান্দা খাসমহল বাজার। Established by SSC Batch 2017 friends with mutual trust, monthly savings (১২ তারিখের মধ্যে কিস্তি), and transparent financial management in BDT (৳).
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -50,14 +51,22 @@ export const Home: React.FC = () => {
                 className="px-5 py-3 text-sm font-semibold rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm transition-all hover:shadow-md flex items-center gap-2"
               >
                 <Users className="w-4 h-4" />
-                <span>View Member Directory</span>
+                <span>সদস্য তালিকা ({publicMembers.length})</span>
+              </Link>
+
+              <Link
+                to="/constitution"
+                className="px-5 py-3 text-sm font-semibold rounded-xl bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 transition-colors flex items-center gap-2"
+              >
+                <FileText className="w-4 h-4 text-emerald-600" />
+                <span>গঠনতন্ত্র ও নীতিমালা</span>
               </Link>
 
               <Link
                 to={isAuthenticated ? (isAdmin ? '/admin/dashboard' : '/member/profile') : '/login'}
                 className="px-5 py-3 text-sm font-semibold rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors flex items-center gap-2"
               >
-                <span>{isAuthenticated ? 'Go to Account Portal' : 'Member Login'}</span>
+                <span>{isAuthenticated ? 'অ্যাকাউন্ট পোর্টাল' : 'সদস্য লগইন'}</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>

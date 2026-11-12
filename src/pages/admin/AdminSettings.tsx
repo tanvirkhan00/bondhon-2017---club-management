@@ -435,15 +435,13 @@ create policy "Dues admin write" on public.monthly_dues for all to authenticated
             <span>Download Full Backup ({members.length} members · {monthlyDues.length} dues)</span>
           </button>
 
-          {!isConfigured && (
-            <button
-              onClick={resetDemoData}
-              className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50 rounded-lg border border-rose-200"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>Reset Clean Development Seed</span>
-            </button>
-          )}
+          <button
+            onClick={resetDemoData}
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Restore Official Roster & Rules</span>
+          </button>
         </div>
       </div>
     </div>

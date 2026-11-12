@@ -13,6 +13,7 @@ export const PublicLayout: React.FC = () => {
     { to: '/', label: 'Home' },
     { to: '/about', label: 'About Club' },
     { to: '/members', label: 'Member Directory' },
+    { to: '/constitution', label: 'গঠনতন্ত্র (Constitution)' },
   ];
 
   return (
@@ -26,7 +27,7 @@ export const PublicLayout: React.FC = () => {
               <div className="w-10 h-10 rounded-full overflow-hidden border border-emerald-600/30 shrink-0 bg-emerald-900 shadow-xs">
                 <img
                   src={crestImage}
-                  alt="Bondhon 2017 Crest"
+                  alt="Bondhon 2017 Official Logo"
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
                 />
@@ -36,7 +37,7 @@ export const PublicLayout: React.FC = () => {
                   Bondhon 2017
                 </span>
                 <span className="text-[10px] text-slate-500 font-medium tracking-wider uppercase -mt-1 hidden sm:block">
-                  Community Club · Bangladesh
+                  বন্ধুত্ব সমবায় সমিতি · চরচান্দা
                 </span>
               </div>
             </Link>
@@ -166,10 +167,10 @@ export const PublicLayout: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md leading-relaxed">
-                A community and friends club in Bangladesh established in 2017. Built on the enduring bonds of friendship, mutual support, social welfare initiatives, and transparent governance.
+                <strong>বন্ধুত্ব সমবায় সমিতি</strong> (Bondhon 2017) · এস.এস.সি ব্যাচ ২০১৭। চরচান্দা খাসমহল বাজার। স্থাপিত: ০১/০৪/২০২৪ ইং। পারস্পরিক সঞ্চয়, আর্থিক স্বচ্ছতা ও সামাজিক কল্যাণ।
               </p>
               <div className="text-xs text-slate-400">
-                Currency: <span className="font-semibold text-slate-600 dark:text-slate-300">BDT (৳)</span> · 20–50 Active Contributing Members
+                মাসিক সঞ্চয় কিস্তি: <span className="font-semibold text-emerald-700 dark:text-emerald-400">১,০০০ ৳</span> (প্রতি মাসের ১২ তারিখের মধ্যে জমাদান বাধ্যতামুলক, বিলম্ব ফি ৫০ ৳)
               </div>
             </div>
 
@@ -181,6 +182,7 @@ export const PublicLayout: React.FC = () => {
                 <li><Link to="/" className="hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors">Home Page</Link></li>
                 <li><Link to="/about" className="hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors">About History & Mission</Link></li>
                 <li><Link to="/members" className="hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors">Public Member Directory</Link></li>
+                <li><Link to="/constitution" className="hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors font-medium text-emerald-600">গঠনতন্ত্র ও নীতিমালা (Constitution)</Link></li>
               </ul>
             </div>
 

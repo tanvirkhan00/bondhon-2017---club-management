@@ -72,7 +72,12 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length === 20 && parsed.some(m => m.profile_image_url)) {
+        if (
+          Array.isArray(parsed) &&
+          parsed.length === 20 &&
+          parsed[0]?.full_name === 'Soykot Dhali' &&
+          parsed[3]?.full_name === 'Tanvir Khan'
+        ) {
           return parsed;
         }
       } catch { /* ignore */ }

@@ -9,6 +9,7 @@ import { ProtectedRoute } from './ProtectedRoute';
 import { Home } from '../pages/public/Home';
 import { About } from '../pages/public/About';
 import { PublicMembers } from '../pages/public/PublicMembers';
+import { Constitution } from '../pages/public/Constitution';
 import { Login } from '../pages/public/Login';
 
 // Member Portal Pages
@@ -31,6 +32,8 @@ export const AppRoutes: React.FC = () => {
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/members" element={<PublicMembers />} />
+        <Route path="/constitution" element={<Constitution />} />
+        <Route path="/policy" element={<Navigate to="/constitution" replace />} />
         <Route path="/login" element={<Login />} />
       </Route>
 

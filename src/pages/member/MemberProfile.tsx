@@ -92,6 +92,23 @@ export const MemberProfile: React.FC = () => {
         </div>
       </div>
 
+      {/* Constitution Financial Policy Alert */}
+      <div className="p-4 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div className="flex items-start gap-2.5">
+          <AlertCircle className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5" />
+          <div className="text-slate-800 dark:text-slate-200">
+            <span className="font-bold text-amber-900 dark:text-amber-300">গঠনতন্ত্রের ধারা ৪.১ (সঞ্চয় জমাদান নিয়মাবলী): </span>
+            সদস্যরা প্রতি মাসের <strong>১২ তারিখের মধ্যে</strong> নিয়মিত সঞ্চয় কিস্তি জমা দেবেন। ১২ তারিখের মধ্যে জমা না দিলে ৫০ টাকা জরিমানা প্রযোজ্য।
+          </div>
+        </div>
+        <Link
+          to="/constitution"
+          className="px-3 py-1 bg-amber-100 dark:bg-amber-900/60 hover:bg-amber-200 text-amber-900 dark:text-amber-200 rounded-lg font-semibold shrink-0 text-center"
+        >
+          গঠনতন্ত্র দেখুন
+        </Link>
+      </div>
+
       {/* Personal Financial Summary */}
       <div className="space-y-3">
         <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">

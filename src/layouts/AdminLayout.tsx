@@ -175,18 +175,13 @@ export const AdminLayout: React.FC = () => {
               <span className="font-semibold">Admin Access Verified</span>
             </div>
 
-            {!isConfigured && (
-              <button
-                onClick={() => {
-                  switchDemoRole('member');
-                  navigate('/member/profile');
-                }}
-                className="hidden sm:flex text-xs py-1 px-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg transition-colors"
-                title="Switch role to test Member Portal view"
-              >
-                Test Member Mode
-              </button>
-            )}
+            <Link
+              to="/member/profile"
+              className="hidden sm:flex items-center gap-1.5 text-xs py-1 px-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg transition-colors"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Member Portal</span>
+            </Link>
           </div>
         </header>
 
