@@ -341,9 +341,12 @@ export const AdminMembers: React.FC = () => {
                         {member.designation || 'Member'}
                       </td>
 
-                      {/* Phone */}
+                      {/* Phone & Portal Email */}
                       <td className="py-3 px-4 font-mono text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                        {member.phone || '—'}
+                        <span className="block">{member.phone || '—'}</span>
+                        <span className={`block text-[10px] font-sans ${member.email ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-600'}`}>
+                          {member.email || 'Email not added'}
+                        </span>
                       </td>
 
                       {/* Join Date */}

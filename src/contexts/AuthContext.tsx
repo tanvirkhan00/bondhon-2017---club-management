@@ -4,9 +4,19 @@ import { Profile, UserRole } from '../types';
 import { getSupabaseClient, isSupabaseConfigured } from '../services/supabase/client';
 import { INITIAL_PROFILES } from '../lib/mockData';
 
-interface SignUpResult {
+interface MemberLoginParams {
+  memberId: string;
+  memberCode: string;
+  memberName: string;
+  localMemberEmail?: string | null;
+  email: string;
+  password: string;
+}
+
+interface AuthResult {
   success: boolean;
-  needsEmailConfirmation?: boolean;
+  user?: User | null;
+  isFirstActivation?: boolean;
   error?: string;
 }
 
@@ -20,8 +30,9 @@ interface AuthContextType {
   isLoading: boolean;
   isConfigured: boolean;
   error: string | null;
-  signInWithPassword: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (email: string, pass: string, fullName: string, memberCode?: string) => Promise<SignUpResult>;
+  signInWithPassword: (email: string, pass: string) => Promise<AuthResult>;
+  memberSignIn: (params: MemberLoginParams) => Promise<AuthResult>;
+  updatePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ success: boolean; message?: string; error?: string }>;
   switchDemoRole: (role: UserRole) => void;
@@ -50,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const client = getSupabaseClient();
     if (!client) return;
 
-    const userEmail = (authUser.email || '').toLowerCase();
+    const userEmail = (authUser.email || '').toLowerCase().trim();
     const knownAdmin = isAdminEmail(userEmail);
     const metaFullName =
       authUser.user_metadata?.full_name ||
@@ -64,10 +75,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (profileErr || !data) {
+        const fallbackRole: UserRole = knownAdmin ? 'admin' : 'member';
+        // Best-effort profile sync so foreign keys like monthly_dues.recorded_by remain valid
+        try {
+          await client.from('profiles').upsert(
+            {
+              id: authUser.id,
+              full_name: metaFullName,
+              role: fallbackRole,
+            },
+            { onConflict: 'id', ignoreDuplicates: true }
+          );
+        } catch {
+          // ignore RLS insert failures if already managed by trigger
+        }
         setProfile({
           id: authUser.id,
           full_name: metaFullName,
-          role: knownAdmin ? 'admin' : 'member',
+          role: fallbackRole,
         });
       } else {
         const dbProfile = data as Profile;
@@ -122,7 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [configured]);
 
-  const signInWithPassword = async (email: string, pass: string) => {
+  const signInWithPassword = async (email: string, pass: string): Promise<AuthResult> => {
     setError(null);
     const client = getSupabaseClient();
 
@@ -142,11 +167,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         let friendlyMsg = authErr.message;
         const lower = authErr.message.toLowerCase();
         if (lower.includes('invalid login credentials')) {
-          friendlyMsg =
-            'ইমেইল বা পাসওয়ার্ড সঠিক নয়। আপনি যদি নতুন সদস্য হন, তবে "নতুন অ্যাকাউন্ট (Sign Up)" ট্যাব থেকে আগে নিবন্ধন করুন।';
+          friendlyMsg = 'ইমেইল বা পাসওয়ার্ড সঠিক নয়। অনুগ্রহ করে সঠিক তথ্য দিন।';
         } else if (lower.includes('email not confirmed')) {
-          friendlyMsg =
-            'আপনার ইমেইল এখনো ভেরিফাই করা হয়নি। ইমেইলের ইনবক্স বা স্প্যাম ফোল্ডারে পাঠানো কনফার্মেশন লিঙ্কে ক্লিক করুন।';
+          friendlyMsg = 'আপনার ইমেইল এখনো ভেরিফাই করা হয়নি। ইমেইলের ইনবক্স চেক করুন।';
         }
         setError(friendlyMsg);
         return { success: false, error: friendlyMsg };
@@ -155,9 +178,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(data.session);
       setUser(data.user);
       if (data.user) {
+        try {
+          await client.rpc('link_my_member_by_auth');
+        } catch {
+          // ignore if RPC not created yet
+        }
         await fetchSupabaseProfile(data.user);
       }
-      return { success: true };
+      return { success: true, user: data.user };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
@@ -165,46 +193,174 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signUp = async (email: string, pass: string, fullName: string, memberCode?: string): Promise<SignUpResult> => {
+  const memberSignIn = async (params: MemberLoginParams): Promise<AuthResult> => {
     setError(null);
+    const client = getSupabaseClient();
+    if (!client) {
+      const msg = 'সার্ভারের সাথে সংযোগ স্থাপন করা যাচ্ছে না।';
+      setError(msg);
+      return { success: false, error: msg };
+    }
+
+    const cleanEmail = params.email.trim().toLowerCase();
+    const localEmail = (params.localMemberEmail || '').trim().toLowerCase();
+
+    // 1. Verify Name (memberId) + Email match against Supabase RPC
+    let rpcVerified: boolean | null = null;
+    try {
+      const { data: matchData, error: rpcErr } = await client.rpc('verify_member_login_match', {
+        p_member_id: params.memberId,
+        p_email: cleanEmail,
+      });
+
+      if (!rpcErr && typeof matchData === 'boolean') {
+        rpcVerified = matchData;
+        if (!matchData) {
+          const msg =
+            'নির্বাচিত সদস্যের নামের সাথে প্রদত্ত ইমেইল মিলছে না! ডাটাবেজে আপনার ইমেইল আপডেট করা আছে কিনা নিশ্চিত করতে কোষাধ্যক্ষ / অ্যাডমিনের সাথে যোগাযোগ করুন।';
+          setError(msg);
+          return { success: false, error: msg };
+        }
+      }
+    } catch {
+      rpcVerified = null;
+    }
+
+    // Fallback check when RPC is not yet installed in Supabase
+    if (rpcVerified === null && localEmail && localEmail !== cleanEmail) {
+      const msg = 'নির্বাচিত সদস্যের নামের সাথে প্রদত্ত ইমেইল মিলছে না।';
+      setError(msg);
+      return { success: false, error: msg };
+    }
+
+    // 2. Try regular password sign in
+    try {
+      const { data, error: signInErr } = await client.auth.signInWithPassword({
+        email: cleanEmail,
+        password: params.password,
+      });
+
+      if (!signInErr && data.user && data.session) {
+        // Post-auth verification in case RPC wasn't present yet
+        if (rpcVerified === null) {
+          const { data: ownRow } = await client
+            .from('members')
+            .select('id, email')
+            .eq('id', params.memberId)
+            .maybeSingle();
+
+          const isKnownAdminSelf = isAdminEmail(cleanEmail) && params.memberCode.toUpperCase() === 'BND-007';
+          if (!isKnownAdminSelf && (!ownRow || (ownRow.email && ownRow.email.toLowerCase().trim() !== cleanEmail))) {
+            await client.auth.signOut();
+            const msg = 'নির্বাচিত সদস্যের নামের সাথে প্রদত্ত ইমেইল মিলছে না!';
+            setError(msg);
+            return { success: false, error: msg };
+          }
+        }
+
+        try {
+          await client.rpc('link_my_member_by_auth');
+        } catch {
+          // ignore if RPC not installed
+        }
+
+        // Persist selected member code in auth metadata for seamless matching
+        try {
+          if (data.user.user_metadata?.member_code !== params.memberCode) {
+            await client.auth.updateUser({
+              data: {
+                full_name: params.memberName,
+                member_code: params.memberCode,
+              },
+            });
+          }
+        } catch {
+          // ignore metadata sync error
+        }
+
+        setSession(data.session);
+        setUser(data.user);
+        await fetchSupabaseProfile(data.user);
+        return { success: true, user: data.user };
+      }
+
+      const errLower = (signInErr?.message || '').toLowerCase();
+
+      if (errLower.includes('email not confirmed')) {
+        const msg = 'আপনার ইমেইল এখনো কনফার্ম করা হয়নি। ইমেইলের ইনবক্স বা স্প্যাম ফোল্ডার চেক করে ভেরিফিকেশন লিঙ্কে ক্লিক করুন।';
+        setError(msg);
+        return { success: false, error: msg };
+      }
+
+      // 3. First-time activation using default password "123456" when name & email matched
+      if (params.password === '123456' && (rpcVerified === true || (localEmail && localEmail === cleanEmail))) {
+        const { data: signUpData, error: signUpErr } = await client.auth.signUp({
+          email: cleanEmail,
+          password: '123456',
+          options: {
+            data: {
+              full_name: params.memberName,
+              member_code: params.memberCode,
+            },
+          },
+        });
+
+        if (signUpErr) {
+          const suLower = signUpErr.message.toLowerCase();
+          const msg = suLower.includes('already registered')
+            ? 'পাসওয়ার্ড সঠিক নয়। আপনি ইতিপূর্বে পাসওয়ার্ড পরিবর্তন করে থাকলে নতুন পাসওয়ার্ড দিয়ে লগইন করুন।'
+            : signUpErr.message;
+          setError(msg);
+          return { success: false, error: msg };
+        }
+
+        if (signUpData.session && signUpData.user) {
+          try {
+            await client.rpc('link_my_member_by_auth');
+          } catch {
+            // ignore
+          }
+          setSession(signUpData.session);
+          setUser(signUpData.user);
+          await fetchSupabaseProfile(signUpData.user);
+          return { success: true, user: signUpData.user, isFirstActivation: true };
+        }
+
+        const confirmMsg =
+          'আপনার সদস্য অ্যাকাউন্ট চালু করা হয়েছে! অনুগ্রহ করে আপনার ইমেইলে পাঠানো কনফার্মেশন লিঙ্কে ক্লিক করে তারপর 123456 দিয়ে লগইন করুন।';
+        setError(confirmMsg);
+        return { success: false, error: confirmMsg };
+      }
+
+      const fallbackMsg =
+        rpcVerified === true
+          ? 'পাসওয়ার্ড সঠিক নয়। প্রথমবার লগইনের জন্য "123456" অথবা আপনার পরিবর্তিত পাসওয়ার্ড ব্যবহার করুন।'
+          : 'ইমেইল বা পাসওয়ার্ড সঠিক নয়, অথবা আপনার ইমেইল এখনো সদস্য তালিকায় যুক্ত করা হয়নি।';
+      setError(fallbackMsg);
+      return { success: false, error: fallbackMsg };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg);
+      return { success: false, error: msg };
+    }
+  };
+
+  const updatePassword = async (newPassword: string): Promise<{ success: boolean; error?: string }> => {
     const client = getSupabaseClient();
     if (!client) {
       return { success: false, error: 'অথেনটিকেশন সার্ভিস সংযুক্ত নয়।' };
     }
 
+    if (newPassword.length < 6) {
+      return { success: false, error: 'নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।' };
+    }
+
     try {
-      const { data, error: signUpErr } = await client.auth.signUp({
-        email: email.trim(),
-        password: pass,
-        options: {
-          data: {
-            full_name: fullName.trim(),
-            member_code: memberCode || null,
-          },
-        },
-      });
-
-      if (signUpErr) {
-        let friendlyMsg = signUpErr.message;
-        if (signUpErr.message.toLowerCase().includes('already registered')) {
-          friendlyMsg = 'এই ইমেইল দিয়ে আগেই অ্যাকাউন্ট তৈরি করা হয়েছে। অনুগ্রহ করে লগইন করুন।';
-        }
-        setError(friendlyMsg);
-        return { success: false, error: friendlyMsg };
-      }
-
-      if (data.session && data.user) {
-        setSession(data.session);
-        setUser(data.user);
-        await fetchSupabaseProfile(data.user);
-        return { success: true, needsEmailConfirmation: false };
-      }
-
-      // Account created, waiting for email confirmation
-      return { success: true, needsEmailConfirmation: true };
+      const { error: updErr } = await client.auth.updateUser({ password: newPassword });
+      if (updErr) throw updErr;
+      return { success: true };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      setError(msg);
       return { success: false, error: msg };
     }
   };
@@ -268,7 +424,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isConfigured: configured,
       error,
       signInWithPassword,
-      signUp,
+      memberSignIn,
+      updatePassword,
       signOut,
       resetPassword,
       switchDemoRole,

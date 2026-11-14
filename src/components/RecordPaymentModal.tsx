@@ -26,7 +26,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
   const [amountPaid, setAmountPaid] = useState<number>(500);
   const [amountDue, setAmountDue] = useState<number>(500);
   const [paidDate, setPaidDate] = useState<string>(new Date().toISOString().substring(0, 10));
-  const [paymentMethod, setPaymentMethod] = useState<string>('Cash');
+  const [paymentMethod, setPaymentMethod] = useState<string>('Cash (নগদ)');
   const [notes, setNotes] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -41,10 +41,16 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
   }, [memberId, members]);
 
   useEffect(() => {
-    if (initialMemberId) setMemberId(initialMemberId);
-    if (initialMonth) setMonth(initialMonth);
-    if (initialYear) setYear(initialYear);
-  }, [initialMemberId, initialMonth, initialYear]);
+    if (isOpen) {
+      if (initialMemberId) {
+        setMemberId(initialMemberId);
+      } else if (!memberId && members.length > 0) {
+        setMemberId(members[0].id);
+      }
+      if (initialMonth) setMonth(initialMonth);
+      if (initialYear) setYear(initialYear);
+    }
+  }, [isOpen, initialMemberId, initialMonth, initialYear, members, memberId]);
 
   if (!isOpen) return null;
 

@@ -6,38 +6,92 @@ import {
   Lock,
   Mail,
   LogIn,
-  UserPlus,
   AlertCircle,
-  CheckCircle2,
   FileText,
   UserCheck,
+  ShieldCheck,
   Eye,
   EyeOff,
+  Info,
 } from 'lucide-react';
 import crestImage from '../../assets/images/bondhon_club_crest_1793703027252.jpg';
 
 export const Login: React.FC = () => {
-  const { signInWithPassword, signUp, resetPassword } = useAuth();
-  const { publicMembers } = useClubData();
+  const { signInWithPassword, memberSignIn, resetPassword } = useAuth();
+  const { publicMembers, members, logMemberActivity } = useClubData();
   const navigate = useNavigate();
 
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [loginRole, setLoginRole] = useState<'member' | 'admin'>('member');
+  const [selectedMemberId, setSelectedMemberId] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedMemberCode, setSelectedMemberCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetMessage, setResetMessage] = useState<string | null>(null);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleMemberLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
-    setSuccessMessage(null);
+
+    if (!selectedMemberId) {
+      setErrorMessage('অনুগ্রহ করে তালিকা থেকে আপনার নাম নির্বাচন করুন।');
+      return;
+    }
+
+    const chosenPub = publicMembers.find((m) => m.id === selectedMemberId);
+    const chosenFull = members.find(
+      (m) => m.id === selectedMemberId || m.member_code === chosenPub?.member_code
+    );
+
+    if (!chosenPub && !chosenFull) {
+      setErrorMessage('সঠিক সদস্য নির্বাচন করুন।');
+      return;
+    }
+
+    const memberName = chosenFull?.full_name || chosenPub?.full_name || 'Member';
+    const memberCode = chosenFull?.member_code || chosenPub?.member_code || '';
+
+    setLoading(true);
+    const res = await memberSignIn({
+      memberId: chosenFull?.id || chosenPub?.id || selectedMemberId,
+      memberCode,
+      memberName,
+      localMemberEmail: chosenFull?.email || null,
+      email: email.trim(),
+      password,
+    });
+    setLoading(false);
+
+    if (res.success) {
+      await logMemberActivity({
+        actorUserId: res.user?.id || null,
+        memberId: chosenFull?.id || chosenPub?.id || selectedMemberId,
+        memberCode,
+        memberName,
+        eventType: 'member_login',
+        title: res.isFirstActivation ? 'সদস্য পোর্টাল প্রথমবার চালু' : 'সদস্য পোর্টালে লগইন',
+        message: res.isFirstActivation
+          ? `${memberName} (${memberCode}) ডিফল্ট পাসওয়ার্ড দিয়ে প্রথমবার পোর্টালে লগইন করেছেন।`
+          : `${memberName} (${memberCode}) সদস্য পোর্টালে লগইন করেছেন।`,
+      });
+
+      if (email.toLowerCase().trim() === 'kmtanvir1111@gmail.com') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/member/profile');
+      }
+    } else {
+      setErrorMessage(res.error || 'নাম, ইমেইল বা পাসওয়ার্ড সঠিক নয়।');
+    }
+  };
+
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
     setLoading(true);
 
     const res = await signInWithPassword(email.trim(), password);
@@ -52,46 +106,6 @@ export const Login: React.FC = () => {
       }
     } else {
       setErrorMessage(res.error || 'ভুল ইমেইল বা পাসওয়ার্ড। পুনরায় চেষ্টা করুন।');
-    }
-  };
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMessage(null);
-    setSuccessMessage(null);
-
-    if (!selectedMemberCode) {
-      setErrorMessage('অনুগ্রহ করে তালিকা থেকে আপনার নাম ও সদস্য কোড নির্বাচন করুন।');
-      return;
-    }
-
-    if (password.length < 6) {
-      setErrorMessage('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।');
-      return;
-    }
-
-    const chosenMember = publicMembers.find(m => m.member_code === selectedMemberCode);
-    const memberName = chosenMember?.full_name || 'Club Member';
-
-    setLoading(true);
-    const res = await signUp(email.trim(), password, memberName, selectedMemberCode);
-    setLoading(false);
-
-    if (res.success) {
-      if (res.needsEmailConfirmation) {
-        setSuccessMessage(
-          'অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে! আপনার ইমেইলে পাঠানো ভেরিফিকেশন লিঙ্কে ক্লিক করে তারপর লগইন করুন।'
-        );
-        setMode('signin');
-      } else {
-        if (email.toLowerCase().trim() === 'kmtanvir1111@gmail.com') {
-          navigate('/admin/dashboard');
-        } else {
-          navigate('/member/profile');
-        }
-      }
-    } else {
-      setErrorMessage(res.error || 'অ্যাকাউন্ট তৈরি করতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।');
     }
   };
 
@@ -121,7 +135,7 @@ export const Login: React.FC = () => {
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-              সদস্য ও অ্যাডমিন পোর্টাল
+              সদস্য ও অ্যাডমিন লগইন
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               বন্ধুত্ব সমবায় সমিতি (Bondhon 2017) · চরচান্দা খাসমহল বাজার
@@ -129,40 +143,39 @@ export const Login: React.FC = () => {
           </div>
         </div>
 
-        {/* Auth Card */}
+        {/* Login Card */}
         <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-5">
-          {/* Mode Tabs */}
+          {/* Role Switcher (Member vs Admin) */}
           <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
             <button
               type="button"
               onClick={() => {
-                setMode('signin');
+                setLoginRole('member');
                 setErrorMessage(null);
               }}
-              className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                mode === 'signin'
+              className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                loginRole === 'member'
                   ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-2xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
               }`}
             >
-              <LogIn className="w-3.5 h-3.5" />
-              <span>লগইন করুন (Sign In)</span>
+              <UserCheck className="w-3.5 h-3.5" />
+              <span>সদস্য লগইন (Member)</span>
             </button>
             <button
               type="button"
               onClick={() => {
-                setMode('signup');
+                setLoginRole('admin');
                 setErrorMessage(null);
-                setSuccessMessage(null);
               }}
-              className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                mode === 'signup'
+              className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                loginRole === 'admin'
                   ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-2xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
               }`}
             >
-              <UserPlus className="w-3.5 h-3.5" />
-              <span>নতুন অ্যাকাউন্ট (Sign Up)</span>
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>অ্যাডমিন লগইন (Admin)</span>
             </button>
           </div>
 
@@ -173,18 +186,33 @@ export const Login: React.FC = () => {
             </div>
           )}
 
-          {successMessage && (
-            <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 rounded-xl text-xs flex items-start gap-2.5 leading-relaxed">
-              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
-              <span>{successMessage}</span>
-            </div>
-          )}
-
-          {mode === 'signin' ? (
-            <form onSubmit={handleLogin} className="space-y-4">
+          {loginRole === 'member' ? (
+            <form onSubmit={handleMemberLogin} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  ইমেইল ঠিকানা (Email Address)
+                  আপনার নাম নির্বাচন করুন (Select Member Name)
+                </label>
+                <div className="relative">
+                  <UserCheck className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <select
+                    required
+                    value={selectedMemberId}
+                    onChange={(e) => setSelectedMemberId(e.target.value)}
+                    className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-600 text-slate-900 dark:text-slate-100 cursor-pointer"
+                  >
+                    <option value="">-- সদস্য তালিকা থেকে আপনার নাম বেছে নিন --</option>
+                    {publicMembers.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.full_name} ({m.member_code})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  আপনার নিবন্ধিত ইমেইল (Email Address)
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
@@ -192,6 +220,74 @@ export const Login: React.FC = () => {
                     type="email"
                     required
                     placeholder="yourname@gmail.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-600 text-slate-900 dark:text-slate-100"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    পাসওয়ার্ড (Password)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setResetModalOpen(true)}
+                    className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium hover:underline"
+                  >
+                    পাসওয়ার্ড ভুলে গেছেন?
+                  </button>
+                </div>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    placeholder="ডিফল্ট পাসওয়ার্ড: 123456"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-10 pr-10 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-600 text-slate-900 dark:text-slate-100"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-3 bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/70 dark:border-emerald-800/50 rounded-xl text-[11px] text-emerald-900 dark:text-emerald-300 flex items-start gap-2 leading-relaxed">
+                <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-700 dark:text-emerald-400" />
+                <span>
+                  ডাটাবেজে সংরক্ষিত আপনার নাম ও ইমেইল মিললে প্রথমবার <strong>123456</strong> পাসওয়ার্ড দিয়ে লগইন করতে পারবেন এবং প্রোফাইল থেকে পাসওয়ার্ড পরিবর্তন করে নিতে পারবেন।
+                </span>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-2.5 px-4 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-xs transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>{loading ? 'যাচাই করা হচ্ছে...' : 'সদস্য পোর্টালে লগইন করুন'}</span>
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleAdminLogin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  অ্যাডমিন ইমেইল ঠিকানা (Admin Email)
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <input
+                    type="email"
+                    required
+                    placeholder="admin@gmail.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-600 text-slate-900 dark:text-slate-100"
@@ -235,99 +331,10 @@ export const Login: React.FC = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 px-4 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-xs transition-colors disabled:opacity-50 flex items-center justify-center gap-2 mt-2 cursor-pointer"
+                className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 dark:bg-emerald-700 dark:hover:bg-emerald-800 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-xs transition-colors disabled:opacity-50 flex items-center justify-center gap-2 mt-2 cursor-pointer"
               >
-                <LogIn className="w-4 h-4" />
-                <span>{loading ? 'যাচাই করা হচ্ছে...' : 'লগইন করুন (Sign In)'}</span>
-              </button>
-
-              <p className="text-[11px] text-center text-slate-500 pt-1">
-                প্রথমবার পোর্টাল ব্যবহার করছেন?{' '}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode('signup');
-                    setErrorMessage(null);
-                  }}
-                  className="text-emerald-700 dark:text-emerald-400 font-semibold hover:underline"
-                >
-                  নতুন সদস্য অ্যাকাউন্ট তৈরি করুন
-                </button>
-              </p>
-            </form>
-          ) : (
-            <form onSubmit={handleSignUp} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  আপনার নাম ও সদস্য কোড নির্বাচন করুন
-                </label>
-                <div className="relative">
-                  <UserCheck className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                  <select
-                    required
-                    value={selectedMemberCode}
-                    onChange={(e) => setSelectedMemberCode(e.target.value)}
-                    className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-600 text-slate-900 dark:text-slate-100 cursor-pointer"
-                  >
-                    <option value="">-- সদস্য তালিকা থেকে নির্বাচন করুন --</option>
-                    {publicMembers.map((m) => (
-                      <option key={m.id} value={m.member_code}>
-                        {m.member_code} — {m.full_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  আপনার ব্যক্তিগত ইমেইল (Email Address)
-                </label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                  <input
-                    type="email"
-                    required
-                    placeholder="yourname@gmail.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-600 text-slate-900 dark:text-slate-100"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  নতুন পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)
-                </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    minLength={6}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-10 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-600 text-slate-900 dark:text-slate-100"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-2.5 px-4 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-xs transition-colors disabled:opacity-50 flex items-center justify-center gap-2 mt-2 cursor-pointer"
-              >
-                <UserPlus className="w-4 h-4" />
-                <span>{loading ? 'নিবন্ধন হচ্ছে...' : 'অ্যাকাউন্ট তৈরি করুন (Register)'}</span>
+                <ShieldCheck className="w-4 h-4" />
+                <span>{loading ? 'যাচাই করা হচ্ছে...' : 'অ্যাডমিন প্যানেলে লগইন করুন'}</span>
               </button>
             </form>
           )}

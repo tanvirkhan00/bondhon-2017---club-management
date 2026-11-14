@@ -7,6 +7,8 @@ import {
   MonthSummary,
   MemberFinancialSummary,
   DueStatus,
+  ClubNotification,
+  NotificationEventType,
 } from '../types';
 import { getSupabaseClient, isSupabaseConfigured } from '../services/supabase/client';
 import {
@@ -17,6 +19,16 @@ import {
 import { useAuth } from './AuthContext';
 import { MONTH_NAMES, SHORT_MONTH_NAMES } from '../utils/formatters';
 
+interface LogActivityParams {
+  actorUserId?: string | null;
+  memberId?: string | null;
+  memberCode?: string | null;
+  memberName: string;
+  eventType: NotificationEventType;
+  title: string;
+  message: string;
+}
+
 interface ClubDataContextType {
   publicMembers: PublicMember[];
   members: Member[];
@@ -24,6 +36,9 @@ interface ClubDataContextType {
   myDues: MonthlyDue[];
   myFinancialSummary: MemberFinancialSummary;
   monthlyDues: MonthlyDue[];
+  notifications: ClubNotification[];
+  unreadNotificationCount: number;
+  isLiveSupabaseSynced: boolean;
   isLoading: boolean;
   error: string | null;
   selectedYear: number;
@@ -35,9 +50,17 @@ interface ClubDataContextType {
   setSelectedMonth: (month: number) => void;
   setDefaultDueAmount: (amount: number) => void;
   refreshData: () => Promise<void>;
+  refreshNotifications: () => Promise<void>;
 
-  // Member self-link helper
+  // Member self-service helpers
   linkMyMemberAccount: (memberCode: string) => Promise<{ success: boolean; error?: string }>;
+  updateMyContactPhone: (phone: string) => Promise<{ success: boolean; error?: string }>;
+  logMemberActivity: (params: LogActivityParams) => Promise<void>;
+
+  // Admin notification actions
+  markNotificationAsRead: (id: string) => Promise<void>;
+  markAllNotificationsAsRead: () => Promise<void>;
+  clearNotifications: () => Promise<void>;
 
   // Admin member operations
   addMember: (memberData: Omit<Member, 'id' | 'created_at' | 'updated_at'>) => Promise<{ success: boolean; error?: string }>;
@@ -59,6 +82,7 @@ const ClubDataContext = createContext<ClubDataContextType | undefined>(undefined
 
 const MEMBERS_STORAGE_KEY = 'bondhon_local_members_v5';
 const DUES_STORAGE_KEY = 'bondhon_local_dues_v5';
+const NOTIFICATIONS_STORAGE_KEY = 'bondhon_local_notifications_v1';
 
 export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAdmin, user, profile } = useAuth();
@@ -100,8 +124,20 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return INITIAL_PUBLIC_MEMBERS;
   });
 
+  const [notifications, setNotifications] = useState<ClubNotification[]>(() => {
+    const saved = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch { /* ignore */ }
+    }
+    return [];
+  });
+
   // Tracks whether Supabase actually has seeded rows in `members`
   const [supabaseSyncedMembers, setSupabaseSyncedMembers] = useState<boolean>(false);
+  const [supabaseNotificationsAvailable, setSupabaseNotificationsAvailable] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -119,6 +155,12 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       localStorage.setItem(DUES_STORAGE_KEY, JSON.stringify(monthlyDues));
     }
   }, [monthlyDues, supabaseSyncedMembers]);
+
+  useEffect(() => {
+    if (!supabaseNotificationsAvailable) {
+      localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(notifications));
+    }
+  }, [notifications, supabaseNotificationsAvailable]);
 
   useEffect(() => {
     localStorage.setItem('bondhon_default_due_amount', String(defaultDueAmount));
@@ -143,7 +185,27 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [members, supabaseSyncedMembers]);
 
-  // Load from Supabase (only replaces local roster if Supabase has populated rows)
+  const refreshNotifications = useCallback(async () => {
+    const client = getSupabaseClient();
+    if (!client || !isAdmin) return;
+
+    try {
+      const { data, error: notifErr } = await client
+        .from('notifications')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (!notifErr && Array.isArray(data)) {
+        setSupabaseNotificationsAvailable(true);
+        setNotifications(data as ClubNotification[]);
+      }
+    } catch {
+      // keep local fallback
+    }
+  }, [isAdmin]);
+
+  // Load from Supabase (handles both Admin full access & Member single-row RLS access)
   const loadSupabaseData = useCallback(async () => {
     const client = getSupabaseClient();
     if (!client) {
@@ -155,27 +217,57 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setError(null);
 
     try {
-      // 1. Fetch public directory view
+      // 1. Fetch public directory view (all 21 active members)
       const { data: pubData, error: pubErr } = await client
         .from('public_members')
         .select('*')
         .order('member_code', { ascending: true });
 
+      const resolvedPubs = (!pubErr && Array.isArray(pubData) && pubData.length > 0)
+        ? (pubData as PublicMember[])
+        : INITIAL_PUBLIC_MEMBERS;
+
       if (!pubErr && Array.isArray(pubData) && pubData.length > 0) {
-        setPublicMembers(pubData as PublicMember[]);
+        setPublicMembers(resolvedPubs);
       }
 
-      // 2. Fetch full members table (if authenticated & populated)
+      // 2. Fetch full members table (Admin gets all rows; Member gets their own row via RLS)
       const { data: membersData, error: membersErr } = await client
         .from('members')
         .select('*')
         .order('member_code', { ascending: true });
 
       if (!membersErr && Array.isArray(membersData) && membersData.length > 0) {
-        setMembers(membersData as Member[]);
+        if (membersData.length > 1 || isAdmin) {
+          setMembers(membersData as Member[]);
+        } else {
+          // Non-admin member: preserve all 21 directory members and overlay their own private DB row
+          const ownRow = membersData[0] as Member;
+          setMembers(() =>
+            resolvedPubs.map(pm => {
+              if (pm.id === ownRow.id || pm.member_code === ownRow.member_code) {
+                return ownRow;
+              }
+              const fallback = INITIAL_MEMBERS.find(im => im.id === pm.id || im.member_code === pm.member_code);
+              return {
+                id: pm.id,
+                member_code: pm.member_code,
+                full_name: pm.full_name,
+                father_name: pm.father_name || fallback?.father_name || null,
+                phone: fallback?.phone || null,
+                profile_image_url: pm.profile_image_url || fallback?.profile_image_url || null,
+                designation: pm.designation || fallback?.designation || 'Member',
+                shares_count: pm.shares_count || fallback?.shares_count || 1,
+                join_date: fallback?.join_date || '2024-04-01',
+                status: 'active',
+                monthly_contribution: ((pm.shares_count || fallback?.shares_count || 1) * 500),
+              };
+            })
+          );
+        }
         setSupabaseSyncedMembers(true);
 
-        // 3. Fetch monthly dues from Supabase when members table is live
+        // 3. Fetch monthly dues from Supabase
         const { data: duesData, error: duesErr } = await client
           .from('monthly_dues')
           .select('*')
@@ -188,6 +280,11 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       } else {
         setSupabaseSyncedMembers(false);
       }
+
+      // 4. Fetch notifications if admin
+      if (isAdmin) {
+        await refreshNotifications();
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setSupabaseSyncedMembers(false);
@@ -195,7 +292,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isAdmin, refreshNotifications]);
 
   useEffect(() => {
     if (isConfigured) {
@@ -204,6 +301,15 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setIsLoading(false);
     }
   }, [isConfigured, user?.id, loadSupabaseData]);
+
+  // Poll notifications every 30s when Admin is active
+  useEffect(() => {
+    if (!isAdmin || !isConfigured) return;
+    const timer = setInterval(() => {
+      refreshNotifications();
+    }, 30000);
+    return () => clearInterval(timer);
+  }, [isAdmin, isConfigured, refreshNotifications]);
 
   // Combine dues with member details for convenience
   const enrichedDues = useMemo(() => {
@@ -290,6 +396,125 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     return { success: true };
   };
+
+  // Update member's own phone number & notify admin
+  const updateMyContactPhone = async (phone: string) => {
+    if (!user || !myMemberRecord) {
+      return { success: false, error: 'সদস্য প্রোফাইল পাওয়া যায়নি।' };
+    }
+
+    const cleanPhone = phone.trim();
+    const client = getSupabaseClient();
+    if (client) {
+      try {
+        await client.rpc('update_my_member_phone', { p_phone: cleanPhone });
+      } catch {
+        // ignore if RPC not deployed yet
+      }
+    }
+
+    setMembers(prev =>
+      prev.map(m => (m.id === myMemberRecord.id ? { ...m, phone: cleanPhone } : m))
+    );
+
+    await logMemberActivity({
+      actorUserId: user.id,
+      memberId: myMemberRecord.id,
+      memberCode: myMemberRecord.member_code,
+      memberName: myMemberRecord.full_name,
+      eventType: 'profile_updated',
+      title: 'মোবাইল নম্বর আপডেট',
+      message: `${myMemberRecord.full_name} (${myMemberRecord.member_code}) তার মোবাইল নম্বর আপডেট করেছেন (${cleanPhone})।`,
+    });
+
+    return { success: true };
+  };
+
+  // Log member activity notification for Admin Dashboard
+  const logMemberActivity = useCallback(async (params: LogActivityParams) => {
+    const newNotif: ClubNotification = {
+      id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      actor_user_id: params.actorUserId ?? user?.id ?? null,
+      member_id: params.memberId ?? null,
+      member_code: params.memberCode ?? null,
+      member_name: params.memberName,
+      event_type: params.eventType,
+      title: params.title,
+      message: params.message,
+      is_read: false,
+      created_at: new Date().toISOString(),
+    };
+
+    const client = getSupabaseClient();
+    if (client && (params.actorUserId || user?.id)) {
+      try {
+        const { data, error: insErr } = await client
+          .from('notifications')
+          .insert([{
+            actor_user_id: params.actorUserId ?? user?.id ?? null,
+            member_id: params.memberId ?? null,
+            member_code: params.memberCode ?? null,
+            member_name: params.memberName,
+            event_type: params.eventType,
+            title: params.title,
+            message: params.message,
+            is_read: false,
+          }])
+          .select()
+          .single();
+
+        if (!insErr && data) {
+          setSupabaseNotificationsAvailable(true);
+          setNotifications(prev => [data as ClubNotification, ...prev]);
+          return;
+        }
+      } catch {
+        // fallback to local notifications
+      }
+    }
+
+    setNotifications(prev => {
+      const next = [newNotif, ...prev].slice(0, 50);
+      localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, [user?.id]);
+
+  const markNotificationAsRead = async (id: string) => {
+    setNotifications(prev => prev.map(n => (n.id === id ? { ...n, is_read: true } : n)));
+    const client = getSupabaseClient();
+    if (client && supabaseNotificationsAvailable) {
+      try {
+        await client.from('notifications').update({ is_read: true }).eq('id', id);
+      } catch { /* ignore */ }
+    }
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    const client = getSupabaseClient();
+    if (client && supabaseNotificationsAvailable) {
+      try {
+        await client.from('notifications').update({ is_read: true }).eq('is_read', false);
+      } catch { /* ignore */ }
+    }
+  };
+
+  const clearNotifications = async () => {
+    setNotifications([]);
+    localStorage.removeItem(NOTIFICATIONS_STORAGE_KEY);
+    const client = getSupabaseClient();
+    if (client && supabaseNotificationsAvailable && isAdmin) {
+      try {
+        await client.from('notifications').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      } catch { /* ignore */ }
+    }
+  };
+
+  const unreadNotificationCount = useMemo(
+    () => notifications.filter(n => !n.is_read).length,
+    [notifications]
+  );
 
   // My personal monthly dues
   const myDues = useMemo<MonthlyDue[]>(() => {
@@ -667,7 +892,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const client = getSupabaseClient();
     if (supabaseSyncedMembers && client) {
       try {
-        const payload = {
+        const basePayload = {
           member_id: params.memberId,
           month: params.month,
           year: params.year,
@@ -678,11 +903,22 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           recorded_by: user?.id || null,
         };
 
-        const { data, error: upsertErr } = await client
+        let { data, error: upsertErr } = await client
           .from('monthly_dues')
-          .upsert(payload, { onConflict: 'member_id,month,year' })
+          .upsert(basePayload, { onConflict: 'member_id,month,year' })
           .select()
           .single();
+
+        // Retry with recorded_by = null if profiles FK has not been created yet
+        if (upsertErr && upsertErr.message.toLowerCase().includes('recorded_by')) {
+          const retry = await client
+            .from('monthly_dues')
+            .upsert({ ...basePayload, recorded_by: null }, { onConflict: 'member_id,month,year' })
+            .select()
+            .single();
+          data = retry.data;
+          upsertErr = retry.error;
+        }
 
         if (upsertErr) throw upsertErr;
 
@@ -831,6 +1067,9 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       myDues,
       myFinancialSummary,
       monthlyDues: enrichedDues,
+      notifications,
+      unreadNotificationCount,
+      isLiveSupabaseSynced: supabaseSyncedMembers,
       isLoading,
       error,
       selectedYear,
@@ -842,7 +1081,13 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setSelectedMonth,
       setDefaultDueAmount,
       refreshData: loadSupabaseData,
+      refreshNotifications,
       linkMyMemberAccount,
+      updateMyContactPhone,
+      logMemberActivity,
+      markNotificationAsRead,
+      markAllNotificationsAsRead,
+      clearNotifications,
       addMember,
       updateMember,
       toggleMemberStatus,
@@ -861,6 +1106,9 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       myDues,
       myFinancialSummary,
       enrichedDues,
+      notifications,
+      unreadNotificationCount,
+      supabaseSyncedMembers,
       isLoading,
       error,
       selectedYear,
@@ -869,6 +1117,8 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       stats,
       monthSummaries,
       loadSupabaseData,
+      refreshNotifications,
+      logMemberActivity,
       isAdmin,
       user,
     ]

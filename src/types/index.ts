@@ -96,3 +96,23 @@ export interface MonthSummary {
   totalActive: number;
   collectionRate: number;
 }
+
+export type NotificationEventType =
+  | 'member_login'
+  | 'password_changed'
+  | 'profile_updated'
+  | 'payment_notice';
+
+export interface ClubNotification {
+  id: string;
+  actor_user_id?: string | null;
+  member_id?: string | null;
+  member_code?: string | null;
+  member_name: string;
+  event_type: NotificationEventType;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+}
+
