@@ -20,6 +20,7 @@ import { MemberPaymentHistory } from '../pages/member/MemberPaymentHistory';
 import { AdminDashboard } from '../pages/admin/AdminDashboard';
 import { AdminMembers } from '../pages/admin/AdminMembers';
 import { AdminPayments } from '../pages/admin/AdminPayments';
+import { AdminFines } from '../pages/admin/AdminFines';
 import { AdminPaymentHistory } from '../pages/admin/AdminPaymentHistory';
 import { AdminReports } from '../pages/admin/AdminReports';
 import { AdminSettings } from '../pages/admin/AdminSettings';
@@ -64,6 +65,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="members" element={<AdminMembers />} />
         <Route path="payments" element={<AdminPayments />} />
+        <Route path="fines" element={<AdminFines />} />
         <Route path="payment-history" element={<AdminPaymentHistory />} />
         <Route path="reports" element={<AdminReports />} />
         <Route path="settings" element={<AdminSettings />} />

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useClubData } from '../../hooks/useClubData';
 import { formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/formatters';
+import { calculateDueBreakdown } from '../../utils/fineCalculator';
 import { StatusBadge } from '../../components/StatusBadge';
 import { downloadCsv } from '../../utils/csvExport';
 import {
@@ -82,9 +83,18 @@ export const AdminPaymentHistory: React.FC = () => {
     return filteredRecords.slice(start, start + pageSize);
   }, [filteredRecords, currentPage]);
 
-  const totalFilteredDue = filteredRecords.reduce((sum, d) => sum + Number(d.amount_due), 0);
-  const totalFilteredPaid = filteredRecords.reduce((sum, d) => sum + Number(d.amount_paid), 0);
-  const totalFilteredOutstanding = Math.max(0, totalFilteredDue - totalFilteredPaid);
+  const ledgerSummary = filteredRecords.reduce(
+    (acc, d) => {
+      const bd = calculateDueBreakdown(d, d.member?.shares_count);
+      return {
+        due: acc.due + bd.totalDue,
+        paid: acc.paid + bd.totalPaid,
+        finePaid: acc.finePaid + bd.finePaid,
+        outstanding: acc.outstanding + bd.totalOutstanding,
+      };
+    },
+    { due: 0, paid: 0, finePaid: 0, outstanding: 0 }
+  );
 
   const handleExportCsv = () => {
     const headers = [
@@ -94,28 +104,35 @@ export const AdminPaymentHistory: React.FC = () => {
       'Phone Number',
       'Month',
       'Year',
-      'Amount Due (BDT)',
-      'Amount Paid (BDT)',
-      'Outstanding (BDT)',
+      'Principal Due (BDT)',
+      'Principal Paid (BDT)',
+      'Fine Due (BDT)',
+      'Fine Paid (BDT)',
+      'Total Outstanding (BDT)',
       'Payment Status',
       'Payment Date',
       'Recorded By',
     ];
 
-    const rows = filteredRecords.map(d => [
-      d.id,
-      d.member?.member_code || '',
-      d.member?.full_name || '',
-      d.member?.phone || '',
-      getMonthName(d.month),
-      d.year,
-      Number(d.amount_due),
-      Number(d.amount_paid),
-      Math.max(0, Number(d.amount_due) - Number(d.amount_paid)),
-      d.status.toUpperCase(),
-      d.paid_at ? formatDate(d.paid_at) : 'Unpaid',
-      d.recorded_by || 'Admin',
-    ]);
+    const rows = filteredRecords.map(d => {
+      const bd = calculateDueBreakdown(d, d.member?.shares_count);
+      return [
+        d.id,
+        d.member?.member_code || '',
+        d.member?.full_name || '',
+        d.member?.phone || '',
+        getMonthName(d.month),
+        d.year,
+        bd.principalDue,
+        bd.principalPaid,
+        bd.fineDue,
+        bd.finePaid,
+        bd.totalOutstanding,
+        d.status.toUpperCase(),
+        d.paid_at ? formatDate(d.paid_at) : 'Unpaid',
+        d.recorded_by || 'Admin',
+      ];
+    });
 
     downloadCsv(`Bondhon_2017_Ledger_${new Date().toISOString().substring(0, 10)}.csv`, headers, rows);
   };
@@ -154,11 +171,11 @@ export const AdminPaymentHistory: React.FC = () => {
       </div>
 
       {/* Summary KPI Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
-          <span className="text-[11px] font-medium text-slate-500 uppercase">Filtered Target</span>
+          <span className="text-[11px] font-medium text-slate-500 uppercase">Filtered Target (incl. Fine)</span>
           <div className="text-xl font-bold font-mono text-slate-900 dark:text-slate-100 tabular-nums mt-1">
-            {formatBDT(totalFilteredDue)}
+            {formatBDT(ledgerSummary.due)}
           </div>
           <span className="text-[11px] text-slate-500 mt-0.5 block">{filteredRecords.length} dues records</span>
         </div>
@@ -166,17 +183,25 @@ export const AdminPaymentHistory: React.FC = () => {
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
           <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400 uppercase">Total Collected</span>
           <div className="text-xl font-bold font-mono text-emerald-700 dark:text-emerald-400 tabular-nums mt-1">
-            {formatBDT(totalFilteredPaid)}
+            {formatBDT(ledgerSummary.paid)}
           </div>
           <span className="text-[11px] text-emerald-600 mt-0.5 block">
-            {totalFilteredDue > 0 ? Math.round((totalFilteredPaid / totalFilteredDue) * 100) : 0}% collected
+            {ledgerSummary.due > 0 ? Math.round((ledgerSummary.paid / ledgerSummary.due) * 100) : 0}% collected
           </span>
+        </div>
+
+        <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
+          <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400 uppercase">Fines Collected (জরিমানা)</span>
+          <div className="text-xl font-bold font-mono text-amber-700 dark:text-amber-400 tabular-nums mt-1">
+            {formatBDT(ledgerSummary.finePaid)}
+          </div>
+          <span className="text-[11px] text-slate-500 mt-0.5 block">Late fees settled</span>
         </div>
 
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
           <span className="text-[11px] font-medium text-rose-700 dark:text-rose-400 uppercase">Outstanding Balance</span>
           <div className="text-xl font-bold font-mono text-rose-700 dark:text-rose-400 tabular-nums mt-1">
-            {formatBDT(totalFilteredOutstanding)}
+            {formatBDT(ledgerSummary.outstanding)}
           </div>
           <span className="text-[11px] text-rose-600 mt-0.5 block">Pending settlement</span>
         </div>
@@ -269,6 +294,7 @@ export const AdminPaymentHistory: React.FC = () => {
                 <th className="py-3 px-4 font-semibold">Code</th>
                 <th className="py-3 px-4 font-semibold">Member Name</th>
                 <th className="py-3 px-4 font-semibold text-right">Due (৳)</th>
+                <th className="py-3 px-4 font-semibold text-right">জরিমানা (৳)</th>
                 <th className="py-3 px-4 font-semibold text-right">Paid (৳)</th>
                 <th className="py-3 px-4 font-semibold text-right">Outstanding (৳)</th>
                 <th className="py-3 px-4 font-semibold text-center">Status</th>
@@ -279,7 +305,7 @@ export const AdminPaymentHistory: React.FC = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {paginatedRecords.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-slate-400">
+                  <td colSpan={10} className="py-12 text-center text-slate-400">
                     {monthlyDues.length === 0 ? (
                       <div className="space-y-2">
                         <p className="font-semibold text-slate-700 dark:text-slate-300">
@@ -299,7 +325,7 @@ export const AdminPaymentHistory: React.FC = () => {
                 </tr>
               ) : (
                 paginatedRecords.map((due, idx) => {
-                  const balance = Math.max(0, Number(due.amount_due) - Number(due.amount_paid));
+                  const bd = calculateDueBreakdown(due, due.member?.shares_count);
 
                   return (
                     <tr key={due.id || `due-${due.member_id || idx}-${due.year}-${due.month}`} className="hover:bg-slate-50/70 transition-colors">
@@ -316,15 +342,30 @@ export const AdminPaymentHistory: React.FC = () => {
                       </td>
 
                       <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-600">
-                        {formatBDT(due.amount_due)}
+                        {formatBDT(bd.principalDue)}
+                      </td>
+
+                      <td className="py-3 px-4 text-right font-mono tabular-nums text-amber-700 dark:text-amber-400">
+                        {bd.fineDue > 0 ? (
+                          <span>
+                            {formatBDT(bd.fineDue)}
+                            {bd.finePaid > 0 && (
+                              <span className="block text-[10px] text-emerald-600">
+                                জমা: {formatBDT(bd.finePaid)}
+                              </span>
+                            )}
+                          </span>
+                        ) : (
+                          '—'
+                        )}
                       </td>
 
                       <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-emerald-700 dark:text-emerald-400">
-                        {formatBDT(due.amount_paid)}
+                        {formatBDT(bd.totalPaid)}
                       </td>
 
                       <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold text-rose-700 dark:text-rose-400">
-                        {balance > 0 ? formatBDT(balance) : '—'}
+                        {bd.totalOutstanding > 0 ? formatBDT(bd.totalOutstanding) : '—'}
                       </td>
 
                       <td className="py-3 px-4 text-center whitespace-nowrap">

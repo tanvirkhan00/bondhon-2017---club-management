@@ -50,6 +50,11 @@ export interface MonthlyDue {
   year: number;  // 2017+
   amount_due: number;
   amount_paid: number;
+  fine_due?: number;
+  fine_paid?: number;
+  fine_paid_at?: string | null;
+  fine_waived?: boolean;
+  notes?: string | null;
   status: DueStatus;
   paid_at?: string | null;
   recorded_by?: string | null;
@@ -76,6 +81,10 @@ export interface MemberFinancialSummary {
   totalPaid: number;
   totalPaidMonths: number;
   totalOutstanding: number;
+  principalOutstanding: number;
+  totalFineCharged: number;
+  totalFinePaid: number;
+  totalFinePending: number;
   unpaidMonthsCount: number;
   currentStatus: DueStatus;
   lastPaymentDate?: string | null;
@@ -99,6 +108,7 @@ export interface MonthSummary {
 
 export type NotificationEventType =
   | 'member_login'
+  | 'member_logout'
   | 'password_changed'
   | 'profile_updated'
   | 'payment_notice';

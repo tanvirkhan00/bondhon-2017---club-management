@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useClubData } from '../../hooks/useClubData';
 import { formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/formatters';
+import { calculateDueBreakdown } from '../../utils/fineCalculator';
 import { StatusBadge } from '../../components/StatusBadge';
 import {
   History,
@@ -60,9 +61,18 @@ export const MemberPaymentHistory: React.FC = () => {
       });
   }, [myDues, searchQuery, selectedYearFilter, selectedMonthFilter, selectedStatusFilter, sortOrder]);
 
-  const totalFilteredDue = filteredRecords.reduce((sum, d) => sum + Number(d.amount_due), 0);
-  const totalFilteredPaid = filteredRecords.reduce((sum, d) => sum + Number(d.amount_paid), 0);
-  const totalFilteredOutstanding = Math.max(0, totalFilteredDue - totalFilteredPaid);
+  const filteredBreakdown = filteredRecords.reduce(
+    (acc, d) => {
+      const bd = calculateDueBreakdown(d, myMemberRecord?.shares_count);
+      return {
+        due: acc.due + bd.totalDue,
+        paid: acc.paid + bd.principalPaid,
+        finePaid: acc.finePaid + bd.finePaid,
+        outstanding: acc.outstanding + bd.totalOutstanding,
+      };
+    },
+    { due: 0, paid: 0, finePaid: 0, outstanding: 0 }
+  );
 
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
@@ -74,38 +84,48 @@ export const MemberPaymentHistory: React.FC = () => {
             <span>My Contribution Payment Ledger</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            Personal contribution records for {myMemberRecord?.full_name} ({myMemberRecord?.member_code}) · প্রতি মাসের ১২ তারিখের মধ্যে কিস্তি পরিশোধ বাধ্যতামূলক (বিলম্ব ফি ৫০৳)
+            {myMemberRecord?.full_name} ({myMemberRecord?.member_code}) · প্রতি মাসের ১২ তারিখের মধ্যে কিস্তি পরিশোধ বাধ্যতামূলক (১২ তারিখের পর প্রতি নামে ৫০৳ জরিমানা)
           </p>
         </div>
       </div>
 
       {/* Summary KPI Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
-          <span className="text-[11px] font-medium text-slate-500 uppercase">Filtered Total Due</span>
+          <span className="text-[11px] font-medium text-slate-500 uppercase">সর্বমোট বিল (জরিমানাসহ)</span>
           <div className="text-xl font-bold font-mono text-slate-900 dark:text-slate-100 tabular-nums mt-1">
-            {formatBDT(totalFilteredDue)}
+            {formatBDT(filteredBreakdown.due)}
           </div>
-          <span className="text-[11px] text-slate-500 mt-0.5 block">{filteredRecords.length} billing cycles</span>
+          <span className="text-[11px] text-slate-500 mt-0.5 block">{filteredRecords.length} মাস</span>
         </div>
 
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
-          <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400 uppercase">Total Paid</span>
+          <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400 uppercase">মোট মূল সঞ্চয় জমা</span>
           <div className="text-xl font-bold font-mono text-emerald-700 dark:text-emerald-400 tabular-nums mt-1">
-            {formatBDT(totalFilteredPaid)}
+            {formatBDT(filteredBreakdown.paid)}
           </div>
           <span className="text-[11px] text-emerald-600 mt-0.5 block">
-            {totalFilteredDue > 0 ? Math.round((totalFilteredPaid / totalFilteredDue) * 100) : 0}% settled
+            {filteredBreakdown.due > 0 ? Math.round(((filteredBreakdown.paid + filteredBreakdown.finePaid) / filteredBreakdown.due) * 100) : 0}% settled
           </span>
         </div>
 
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
-          <span className="text-[11px] font-medium text-rose-700 dark:text-rose-400 uppercase">Outstanding Balance</span>
+          <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400 uppercase">মোট জরিমানা পরিশোধ</span>
+          <div className="text-xl font-bold font-mono text-amber-700 dark:text-amber-400 tabular-nums mt-1">
+            {formatBDT(filteredBreakdown.finePaid)}
+          </div>
+          <span className="text-[11px] text-slate-500 mt-0.5 block">
+            বিলম্ব ফি জমা হিসাব
+          </span>
+        </div>
+
+        <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
+          <span className="text-[11px] font-medium text-rose-700 dark:text-rose-400 uppercase">মোট বকেয়া (মূল+জরিমানা)</span>
           <div className="text-xl font-bold font-mono text-rose-700 dark:text-rose-400 tabular-nums mt-1">
-            {formatBDT(totalFilteredOutstanding)}
+            {formatBDT(filteredBreakdown.outstanding)}
           </div>
           <span className="text-[11px] text-rose-600 mt-0.5 block">
-            {totalFilteredOutstanding === 0 ? 'All settled' : 'Unpaid contributions'}
+            {filteredBreakdown.outstanding === 0 ? 'সকল বকেয়া পরিশোধিত' : 'পরিশোধযোগ্য বকেয়া'}
           </span>
         </div>
       </div>
@@ -182,8 +202,9 @@ export const MemberPaymentHistory: React.FC = () => {
               <tr>
                 <th className="py-3 px-4 font-semibold">Month & Year</th>
                 <th className="py-3 px-4 font-semibold text-right">Amount Due (৳)</th>
-                <th className="py-3 px-4 font-semibold text-right">Amount Paid (৳)</th>
-                <th className="py-3 px-4 font-semibold text-right">Outstanding (৳)</th>
+                <th className="py-3 px-4 font-semibold text-right">জরিমানা (৳)</th>
+                <th className="py-3 px-4 font-semibold text-right">Paid (৳)</th>
+                <th className="py-3 px-4 font-semibold text-right">মোট বকেয়া (৳)</th>
                 <th className="py-3 px-4 font-semibold text-center">Status</th>
                 <th className="py-3 px-4 font-semibold">Payment Date</th>
               </tr>
@@ -191,13 +212,13 @@ export const MemberPaymentHistory: React.FC = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {filteredRecords.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400">
+                  <td colSpan={7} className="py-12 text-center text-slate-400">
                     No payment records found matching your filters.
                   </td>
                 </tr>
               ) : (
                 filteredRecords.map((d, idx) => {
-                  const balance = Math.max(0, Number(d.amount_due) - Number(d.amount_paid));
+                  const bd = calculateDueBreakdown(d, myMemberRecord?.shares_count);
 
                   return (
                     <tr key={d.id || `my-due-${idx}-${d.year}-${d.month}`} className="hover:bg-slate-50/60 transition-colors">
@@ -206,15 +227,30 @@ export const MemberPaymentHistory: React.FC = () => {
                       </td>
 
                       <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-600">
-                        {formatBDT(d.amount_due)}
+                        {formatBDT(bd.principalDue)}
+                      </td>
+
+                      <td className="py-3 px-4 text-right font-mono tabular-nums text-amber-700 dark:text-amber-400">
+                        {bd.fineDue > 0 ? (
+                          <span>
+                            {formatBDT(bd.fineDue)}
+                            {bd.finePaid > 0 && (
+                              <span className="block text-[10px] text-emerald-600">
+                                জমা: {formatBDT(bd.finePaid)}
+                              </span>
+                            )}
+                          </span>
+                        ) : (
+                          '—'
+                        )}
                       </td>
 
                       <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-emerald-700 dark:text-emerald-400">
-                        {formatBDT(d.amount_paid)}
+                        {formatBDT(bd.totalPaid)}
                       </td>
 
                       <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold text-rose-700 dark:text-rose-400">
-                        {balance > 0 ? formatBDT(balance) : '—'}
+                        {bd.totalOutstanding > 0 ? formatBDT(bd.totalOutstanding) : '—'}
                       </td>
 
                       <td className="py-3 px-4 text-center whitespace-nowrap">

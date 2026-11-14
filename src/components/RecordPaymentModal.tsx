@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useClubData } from '../hooks/useClubData';
 import { MONTH_NAMES, formatBDT } from '../utils/formatters';
-import { X, CheckCircle2, AlertCircle, CreditCard, Calendar, User, DollarSign } from 'lucide-react';
+import { FINE_PER_SHARE, isAfterMonthDeadline } from '../utils/fineCalculator';
+import { X, CheckCircle2, AlertCircle, CreditCard, Calendar, User, AlertTriangle } from 'lucide-react';
 
 interface RecordPaymentModalProps {
   isOpen: boolean;
@@ -25,20 +26,26 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
   const [year, setYear] = useState<number>(initialYear || selectedYear || 2026);
   const [amountPaid, setAmountPaid] = useState<number>(500);
   const [amountDue, setAmountDue] = useState<number>(500);
+  const [fineDue, setFineDue] = useState<number>(0);
+  const [finePaid, setFinePaid] = useState<number>(0);
   const [paidDate, setPaidDate] = useState<string>(new Date().toISOString().substring(0, 10));
   const [paymentMethod, setPaymentMethod] = useState<string>('Cash (নগদ)');
   const [notes, setNotes] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // When selected member changes, automatically update amountDue and amountPaid to match member's contribution
+  // When selected member, month, or year changes, automatically calculate principal + late fee after 12th
   useEffect(() => {
     const sel = members.find((m) => m.id === memberId);
     if (sel) {
       setAmountDue(sel.monthly_contribution);
       setAmountPaid(sel.monthly_contribution);
+      const isLate = isAfterMonthDeadline(month, year);
+      const suggestedFine = isLate ? (sel.shares_count || 1) * FINE_PER_SHARE : 0;
+      setFineDue(suggestedFine);
+      setFinePaid(suggestedFine);
     }
-  }, [memberId, members]);
+  }, [memberId, month, year, members]);
 
   useEffect(() => {
     if (isOpen) {
@@ -67,6 +74,8 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
       year,
       amountPaid: Number(amountPaid),
       amountDue: Number(amountDue),
+      fineDue: Number(fineDue),
+      finePaid: Number(finePaid),
       paidAt: paidDate ? new Date(paidDate).toISOString() : new Date().toISOString(),
       notes: `${paymentMethod}${notes ? ` - ${notes}` : ''}`,
     });
@@ -74,9 +83,10 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
     setLoading(false);
 
     if (res.success) {
+      const totalSaved = Number(amountPaid) + Number(finePaid);
       setMessage({
         type: 'success',
-        text: `পেমেন্ট সফলভাবে এন্ট্রি হয়েছে! (${selectedMember?.full_name}: ৳${amountPaid})`,
+        text: `পেমেন্ট সফলভাবে এন্ট্রি হয়েছে! (${selectedMember?.full_name}: ৳${totalSaved})`,
       });
       setTimeout(() => {
         onClose();
@@ -251,6 +261,43 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
             >
               ৳০ (Unpaid)
             </button>
+          </div>
+
+          {/* Late Fine Section (12th deadline rule: 50 BDT per share) */}
+          <div className="p-3 rounded-xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-800/50 space-y-2">
+            <div className="flex items-center justify-between text-[11px] font-semibold text-amber-900 dark:text-amber-300">
+              <span className="flex items-center gap-1">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                <span>বিলম্ব জরিমানা (১২ তারিখের পর ৫০৳/নাম)</span>
+              </span>
+              <span className="font-mono">মোট জমা: {formatBDT(Number(amountPaid) + Number(finePaid))}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                  আরোপিত জরিমানা (Fine Due ৳)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={fineDue}
+                  onChange={(e) => setFineDue(Number(e.target.value))}
+                  className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg font-mono text-xs"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                  পরিশোধিত জরিমানা (Fine Paid ৳)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={finePaid}
+                  onChange={(e) => setFinePaid(Number(e.target.value))}
+                  className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg font-mono text-xs font-bold text-emerald-700 dark:text-emerald-400"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Payment Date & Method */}

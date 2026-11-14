@@ -23,6 +23,7 @@ import {
   Send,
   Phone,
   Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import crestImage from '../assets/images/bondhon_club_crest_1793703027252.jpg';
 
@@ -70,6 +71,8 @@ export const AdminLayout: React.FC = () => {
     switch (eventType) {
       case 'member_login':
         return <LogIn className="w-3.5 h-3.5 text-emerald-600" />;
+      case 'member_logout':
+        return <LogOut className="w-3.5 h-3.5 text-rose-600" />;
       case 'password_changed':
         return <KeyRound className="w-3.5 h-3.5 text-amber-600" />;
       case 'payment_notice':
@@ -93,6 +96,7 @@ export const AdminLayout: React.FC = () => {
     { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/admin/members', label: 'Member Directory', icon: Users },
     { to: '/admin/payments', label: 'Monthly Dues', icon: CreditCard },
+    { to: '/admin/fines', label: 'Fines Sheet (জরিমানা)', icon: AlertTriangle },
     { to: '/admin/payment-history', label: 'Payment Ledger', icon: History },
     { to: '/admin/reports', label: 'Financial Reports', icon: BarChart3 },
     { to: '/admin/settings', label: 'Settings', icon: Settings },
@@ -258,7 +262,7 @@ export const AdminLayout: React.FC = () => {
                         সদস্য নোটিফিকেশন ({unreadNotificationCount} অপঠিত)
                       </h3>
                       <p className="text-[10px] text-slate-500">
-                        সদস্যদের লগইন, পাসওয়ার্ড পরিবর্তন ও বার্তা
+                        সদস্যদের লগইন, লগআউট, পাসওয়ার্ড ও বার্তা
                       </p>
                     </div>
                     <div className="flex items-center gap-1">

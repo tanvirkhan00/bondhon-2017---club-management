@@ -18,6 +18,7 @@ import {
 } from '../lib/mockData';
 import { useAuth } from './AuthContext';
 import { MONTH_NAMES, SHORT_MONTH_NAMES } from '../utils/formatters';
+import { calculateDueBreakdown } from '../utils/fineCalculator';
 
 interface LogActivityParams {
   actorUserId?: string | null;
@@ -70,9 +71,50 @@ interface ClubDataContextType {
 
   // Admin payment operations
   generateMonthlyDues: (month: number, year: number) => Promise<{ success: boolean; createdCount?: number; existingCount?: number; error?: string }>;
-  markAsPaid: (dueId: string, amountPaid?: number, paidAt?: string) => Promise<{ success: boolean; error?: string }>;
-  recordNewPayment: (params: { memberId: string; month: number; year: number; amountPaid: number; amountDue?: number; paidAt?: string; notes?: string }) => Promise<{ success: boolean; error?: string }>;
-  updateDueRecord: (dueId: string, updates: { amount_paid: number; amount_due?: number; paid_at?: string | null }) => Promise<{ success: boolean; error?: string }>;
+  markAsPaid: (
+    dueId: string,
+    amountPaid?: number,
+    paidAt?: string,
+    fineOptions?: { fineDue?: number; finePaid?: number; fineWaived?: boolean }
+  ) => Promise<{ success: boolean; error?: string }>;
+  recordNewPayment: (params: {
+    memberId: string;
+    month: number;
+    year: number;
+    amountPaid: number;
+    amountDue?: number;
+    fineDue?: number;
+    finePaid?: number;
+    fineWaived?: boolean;
+    paidAt?: string;
+    notes?: string;
+  }) => Promise<{ success: boolean; error?: string }>;
+  updateDueRecord: (
+    dueId: string,
+    updates: {
+      amount_paid: number;
+      amount_due?: number;
+      paid_at?: string | null;
+      fine_due?: number;
+      fine_paid?: number;
+      fine_paid_at?: string | null;
+      fine_waived?: boolean;
+      notes?: string | null;
+    }
+  ) => Promise<{ success: boolean; error?: string }>;
+  recordFinePayment: (params: {
+    memberId: string;
+    month: number;
+    year: number;
+    fineDue: number;
+    finePaid: number;
+    clearPrincipal?: boolean;
+    principalPaid?: number;
+    waiveFine?: boolean;
+    paidAt?: string;
+    notes?: string;
+  }) => Promise<{ success: boolean; error?: string }>;
+  waiveMemberFine: (dueId: string) => Promise<{ success: boolean; error?: string }>;
   deleteDueRecord: (dueId: string) => Promise<{ success: boolean; error?: string }>;
 
   resetDemoData: () => void;
@@ -302,13 +344,41 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [isConfigured, user?.id, loadSupabaseData]);
 
-  // Poll notifications every 30s when Admin is active
+  // Subscribe to Realtime notifications + 10s poll + focus refresh when Admin is active
   useEffect(() => {
-    if (!isAdmin || !isConfigured) return;
+    const client = getSupabaseClient();
+    if (!isAdmin || !isConfigured || !client) return;
+
+    const channel = client
+      .channel('admin-notifications-live')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications' },
+        (payload) => {
+          const incoming = payload.new as ClubNotification;
+          setSupabaseNotificationsAvailable(true);
+          setNotifications(prev => {
+            if (prev.some(n => n.id === incoming.id)) return prev;
+            return [incoming, ...prev].slice(0, 50);
+          });
+        }
+      )
+      .subscribe();
+
     const timer = setInterval(() => {
       refreshNotifications();
-    }, 30000);
-    return () => clearInterval(timer);
+    }, 10000);
+
+    const handleFocus = () => {
+      refreshNotifications();
+    };
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('focus', handleFocus);
+      client.removeChannel(channel);
+    };
   }, [isAdmin, isConfigured, refreshNotifications]);
 
   // Combine dues with member details for convenience
@@ -432,9 +502,21 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Log member activity notification for Admin Dashboard
   const logMemberActivity = useCallback(async (params: LogActivityParams) => {
+    const client = getSupabaseClient();
+    let resolvedActorId = params.actorUserId ?? user?.id ?? null;
+
+    if (client && !resolvedActorId) {
+      try {
+        const { data: sessionData } = await client.auth.getSession();
+        resolvedActorId = sessionData.session?.user?.id ?? null;
+      } catch {
+        // ignore
+      }
+    }
+
     const newNotif: ClubNotification = {
       id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      actor_user_id: params.actorUserId ?? user?.id ?? null,
+      actor_user_id: resolvedActorId,
       member_id: params.memberId ?? null,
       member_code: params.memberCode ?? null,
       member_name: params.memberName,
@@ -445,13 +527,14 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       created_at: new Date().toISOString(),
     };
 
-    const client = getSupabaseClient();
-    if (client && (params.actorUserId || user?.id)) {
+    if (client && resolvedActorId) {
       try {
-        const { data, error: insErr } = await client
+        // Note: Do NOT chain .select() here because non-admin members insert notifications
+        // and PostgREST .select() requires SELECT policy to return inserted rows.
+        const { error: insErr } = await client
           .from('notifications')
           .insert([{
-            actor_user_id: params.actorUserId ?? user?.id ?? null,
+            actor_user_id: resolvedActorId,
             member_id: params.memberId ?? null,
             member_code: params.memberCode ?? null,
             member_name: params.memberName,
@@ -459,13 +542,11 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             title: params.title,
             message: params.message,
             is_read: false,
-          }])
-          .select()
-          .single();
+          }]);
 
-        if (!insErr && data) {
+        if (!insErr) {
           setSupabaseNotificationsAvailable(true);
-          setNotifications(prev => [data as ClubNotification, ...prev]);
+          setNotifications(prev => [newNotif, ...prev].slice(0, 50));
           return;
         }
       } catch {
@@ -522,16 +603,47 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return enrichedDues.filter(d => d.member_id === myMemberRecord.id);
   }, [enrichedDues, myMemberRecord]);
 
-  // My Personal Financial Summary
+  // My Personal Financial Summary (includes automatic late fee after 12th per share)
   const myFinancialSummary = useMemo<MemberFinancialSummary>(() => {
-    const totalBilled = myDues.reduce((sum, d) => sum + Number(d.amount_due), 0);
-    const totalPaid = myDues.reduce((sum, d) => sum + Number(d.amount_paid), 0);
-    const totalPaidMonths = myDues.filter(d => d.status === 'paid').length;
-    const unpaidMonthsCount = myDues.filter(d => d.status === 'unpaid' || d.status === 'partial').length;
-    const totalOutstanding = Math.max(0, totalBilled - totalPaid);
+    const shares = myMemberRecord?.shares_count || 1;
+    let totalPrincipalBilled = 0;
+    let totalPaid = 0;
+    let principalOutstanding = 0;
+    let totalFineCharged = 0;
+    let totalFinePaid = 0;
+    let totalFinePending = 0;
+    let totalPaidMonths = 0;
+    let unpaidMonthsCount = 0;
+
+    myDues.forEach((d) => {
+      const bd = calculateDueBreakdown(d, shares);
+      totalPrincipalBilled += bd.principalDue;
+      totalPaid += bd.principalPaid;
+      principalOutstanding += bd.principalOutstanding;
+      totalFineCharged += bd.fineDue;
+      totalFinePaid += bd.finePaid;
+      totalFinePending += bd.fineOutstanding;
+
+      if (d.status === 'paid' && bd.fineOutstanding === 0) {
+        totalPaidMonths += 1;
+      } else {
+        unpaidMonthsCount += 1;
+      }
+    });
+
+    const totalBilled = totalPrincipalBilled + totalFineCharged;
+    const totalOutstanding = principalOutstanding + totalFinePending;
 
     const sorted = [...myDues].sort((a, b) => b.year - a.year || b.month - a.month);
-    const currentStatus: DueStatus = sorted.length > 0 ? sorted[0].status : 'paid';
+    let currentStatus: DueStatus = 'paid';
+    if (sorted.length > 0) {
+      const latestBd = calculateDueBreakdown(sorted[0], shares);
+      if (sorted[0].status === 'paid' && latestBd.fineOutstanding > 0) {
+        currentStatus = 'partial';
+      } else {
+        currentStatus = sorted[0].status;
+      }
+    }
     const lastPaymentDate = sorted.find(d => d.paid_at)?.paid_at || null;
 
     return {
@@ -539,6 +651,10 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       totalPaid,
       totalPaidMonths,
       totalOutstanding,
+      principalOutstanding,
+      totalFineCharged,
+      totalFinePaid,
+      totalFinePending,
       unpaidMonthsCount,
       currentStatus,
       lastPaymentDate,
@@ -808,7 +924,26 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   };
 
-  const markAsPaid = async (dueId: string, amountPaid?: number, paidAt?: string) => {
+  const isMissingColumnError = (err: { message?: string; code?: string } | null | undefined) => {
+    if (!err) return false;
+    const msg = (err.message || '').toLowerCase();
+    return (
+      err.code === '42703' ||
+      err.code === 'PGRST204' ||
+      msg.includes('fine_due') ||
+      msg.includes('fine_paid') ||
+      msg.includes('fine_waived') ||
+      msg.includes('notes') ||
+      msg.includes('schema cache')
+    );
+  };
+
+  const markAsPaid = async (
+    dueId: string,
+    amountPaid?: number,
+    paidAt?: string,
+    fineOptions?: { fineDue?: number; finePaid?: number; fineWaived?: boolean }
+  ) => {
     if (!isAdmin) {
       return { success: false, error: 'Unauthorized: Only Admins can record payments.' };
     }
@@ -828,7 +963,11 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       finalStatus = 'unpaid';
     }
 
-    const updates = {
+    const fineDueVal = fineOptions?.fineDue !== undefined ? fineOptions.fineDue : Number(targetDue.fine_due || 0);
+    const finePaidVal = fineOptions?.finePaid !== undefined ? fineOptions.finePaid : Number(targetDue.fine_paid || 0);
+    const fineWaivedVal = fineOptions?.fineWaived !== undefined ? fineOptions.fineWaived : Boolean(targetDue.fine_waived);
+
+    const baseUpdates = {
       amount_paid: finalPaid,
       status: finalStatus,
       paid_at: finalPaid > 0 ? finalPaidAt : null,
@@ -836,16 +975,32 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       updated_at: new Date().toISOString(),
     };
 
+    const extendedUpdates = {
+      ...baseUpdates,
+      fine_due: fineDueVal,
+      fine_paid: finePaidVal,
+      fine_paid_at: finePaidVal > 0 ? (targetDue.fine_paid_at || finalPaidAt) : null,
+      fine_waived: fineWaivedVal,
+    };
+
     const client = getSupabaseClient();
     if (supabaseSyncedMembers && client) {
       try {
-        const { error: updErr } = await client
+        let { error: updErr } = await client
           .from('monthly_dues')
-          .update(updates)
+          .update(extendedUpdates)
           .eq('id', dueId);
 
+        if (updErr && isMissingColumnError(updErr)) {
+          const retry = await client
+            .from('monthly_dues')
+            .update(baseUpdates)
+            .eq('id', dueId);
+          updErr = retry.error;
+        }
+
         if (updErr) throw updErr;
-        setMonthlyDues(prev => prev.map(d => (d.id === dueId ? { ...d, ...updates } : d)));
+        setMonthlyDues(prev => prev.map(d => (d.id === dueId ? { ...d, ...extendedUpdates } : d)));
         return { success: true };
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -853,7 +1008,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
     }
 
-    setMonthlyDues(prev => prev.map(d => (d.id === dueId ? { ...d, ...updates } : d)));
+    setMonthlyDues(prev => prev.map(d => (d.id === dueId ? { ...d, ...extendedUpdates } : d)));
     return { success: true };
   };
 
@@ -863,6 +1018,9 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     year: number;
     amountPaid: number;
     amountDue?: number;
+    fineDue?: number;
+    finePaid?: number;
+    fineWaived?: boolean;
     paidAt?: string;
     notes?: string;
   }) => {
@@ -888,6 +1046,10 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     const finalPaidAt = finalPaid > 0 ? (params.paidAt || new Date().toISOString()) : null;
+    const fineDueVal = Number(params.fineDue || 0);
+    const finePaidVal = Number(params.finePaid || 0);
+    const fineWaivedVal = Boolean(params.fineWaived);
+    const finePaidAtVal = finePaidVal > 0 ? (params.paidAt || new Date().toISOString()) : null;
 
     const client = getSupabaseClient();
     if (supabaseSyncedMembers && client) {
@@ -903,26 +1065,52 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           recorded_by: user?.id || null,
         };
 
+        const fullPayload = {
+          ...basePayload,
+          fine_due: fineDueVal,
+          fine_paid: finePaidVal,
+          fine_paid_at: finePaidAtVal,
+          fine_waived: fineWaivedVal,
+          notes: params.notes || null,
+        };
+
         let { data, error: upsertErr } = await client
           .from('monthly_dues')
-          .upsert(basePayload, { onConflict: 'member_id,month,year' })
+          .upsert(fullPayload, { onConflict: 'member_id,month,year' })
           .select()
           .single();
 
+        if (upsertErr && isMissingColumnError(upsertErr)) {
+          const retryCols = await client
+            .from('monthly_dues')
+            .upsert(basePayload, { onConflict: 'member_id,month,year' })
+            .select()
+            .single();
+          data = retryCols.data;
+          upsertErr = retryCols.error;
+        }
+
         // Retry with recorded_by = null if profiles FK has not been created yet
         if (upsertErr && upsertErr.message.toLowerCase().includes('recorded_by')) {
-          const retry = await client
+          const retryFk = await client
             .from('monthly_dues')
             .upsert({ ...basePayload, recorded_by: null }, { onConflict: 'member_id,month,year' })
             .select()
             .single();
-          data = retry.data;
-          upsertErr = retry.error;
+          data = retryFk.data;
+          upsertErr = retryFk.error;
         }
 
         if (upsertErr) throw upsertErr;
 
-        const updated = data as MonthlyDue;
+        const updated: MonthlyDue = {
+          ...(data as MonthlyDue),
+          fine_due: (data as MonthlyDue).fine_due ?? fineDueVal,
+          fine_paid: (data as MonthlyDue).fine_paid ?? finePaidVal,
+          fine_paid_at: (data as MonthlyDue).fine_paid_at ?? finePaidAtVal,
+          fine_waived: (data as MonthlyDue).fine_waived ?? fineWaivedVal,
+          notes: (data as MonthlyDue).notes ?? params.notes ?? null,
+        };
         setMonthlyDues(prev => {
           const idx = prev.findIndex(d => d.member_id === params.memberId && d.month === params.month && d.year === params.year);
           if (idx >= 0) {
@@ -951,6 +1139,11 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           ...next[existingIdx],
           amount_due: calculatedDue,
           amount_paid: finalPaid,
+          fine_due: fineDueVal,
+          fine_paid: finePaidVal,
+          fine_paid_at: finePaidAtVal,
+          fine_waived: fineWaivedVal,
+          notes: params.notes || next[existingIdx].notes || null,
           status,
           paid_at: finalPaidAt,
           updated_at: new Date().toISOString(),
@@ -965,6 +1158,11 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         year: params.year,
         amount_due: calculatedDue,
         amount_paid: finalPaid,
+        fine_due: fineDueVal,
+        fine_paid: finePaidVal,
+        fine_paid_at: finePaidAtVal,
+        fine_waived: fineWaivedVal,
+        notes: params.notes || null,
         status,
         paid_at: finalPaidAt,
         recorded_by: user?.id || 'admin',
@@ -978,7 +1176,16 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const updateDueRecord = async (
     dueId: string,
-    updates: { amount_paid: number; amount_due?: number; paid_at?: string | null }
+    updates: {
+      amount_paid: number;
+      amount_due?: number;
+      paid_at?: string | null;
+      fine_due?: number;
+      fine_paid?: number;
+      fine_paid_at?: string | null;
+      fine_waived?: boolean;
+      notes?: string | null;
+    }
   ) => {
     if (!isAdmin) {
       return { success: false, error: 'Unauthorized: Only Admins can modify financial records.' };
@@ -999,7 +1206,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       status = 'unpaid';
     }
 
-    const finalPayload = {
+    const basePayload = {
       amount_due: dueAmount,
       amount_paid: paidAmount,
       status,
@@ -1008,16 +1215,33 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       updated_at: new Date().toISOString(),
     };
 
+    const fullPayload = {
+      ...basePayload,
+      fine_due: updates.fine_due !== undefined ? updates.fine_due : Number(target.fine_due || 0),
+      fine_paid: updates.fine_paid !== undefined ? updates.fine_paid : Number(target.fine_paid || 0),
+      fine_paid_at: updates.fine_paid_at !== undefined ? updates.fine_paid_at : (target.fine_paid_at || null),
+      fine_waived: updates.fine_waived !== undefined ? updates.fine_waived : Boolean(target.fine_waived),
+      notes: updates.notes !== undefined ? updates.notes : (target.notes || null),
+    };
+
     const client = getSupabaseClient();
     if (supabaseSyncedMembers && client) {
       try {
-        const { error: updErr } = await client
+        let { error: updErr } = await client
           .from('monthly_dues')
-          .update(finalPayload)
+          .update(fullPayload)
           .eq('id', dueId);
 
+        if (updErr && isMissingColumnError(updErr)) {
+          const retry = await client
+            .from('monthly_dues')
+            .update(basePayload)
+            .eq('id', dueId);
+          updErr = retry.error;
+        }
+
         if (updErr) throw updErr;
-        setMonthlyDues(prev => prev.map(d => (d.id === dueId ? { ...d, ...finalPayload } : d)));
+        setMonthlyDues(prev => prev.map(d => (d.id === dueId ? { ...d, ...fullPayload } : d)));
         return { success: true };
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -1025,8 +1249,71 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
     }
 
-    setMonthlyDues(prev => prev.map(d => (d.id === dueId ? { ...d, ...finalPayload } : d)));
+    setMonthlyDues(prev => prev.map(d => (d.id === dueId ? { ...d, ...fullPayload } : d)));
     return { success: true };
+  };
+
+  const recordFinePayment = async (params: {
+    memberId: string;
+    month: number;
+    year: number;
+    fineDue: number;
+    finePaid: number;
+    clearPrincipal?: boolean;
+    principalPaid?: number;
+    waiveFine?: boolean;
+    paidAt?: string;
+    notes?: string;
+  }) => {
+    if (!isAdmin) {
+      return { success: false, error: 'Unauthorized: Only Admins can record fine payments.' };
+    }
+
+    const targetMember = members.find(m => m.id === params.memberId);
+    if (!targetMember) {
+      return { success: false, error: 'Member not found.' };
+    }
+
+    const existing = monthlyDues.find(
+      d => d.member_id === params.memberId && d.month === params.month && d.year === params.year
+    );
+
+    const amountDue = existing?.amount_due ?? targetMember.monthly_contribution;
+    const timestamp = params.paidAt || new Date().toISOString();
+
+    let nextAmountPaid = existing?.amount_paid ?? 0;
+    if (params.clearPrincipal) {
+      nextAmountPaid = amountDue;
+    } else if (params.principalPaid !== undefined) {
+      nextAmountPaid = params.principalPaid;
+    }
+
+    const nextFineDue = params.waiveFine ? 0 : Math.max(Number(params.fineDue || 0), Number(params.finePaid || 0));
+    const nextFinePaid = params.waiveFine ? 0 : Number(params.finePaid || 0);
+
+    return recordNewPayment({
+      memberId: params.memberId,
+      month: params.month,
+      year: params.year,
+      amountDue,
+      amountPaid: nextAmountPaid,
+      fineDue: nextFineDue,
+      finePaid: nextFinePaid,
+      fineWaived: Boolean(params.waiveFine),
+      paidAt: timestamp,
+      notes: params.notes,
+    });
+  };
+
+  const waiveMemberFine = async (dueId: string) => {
+    const target = monthlyDues.find(d => d.id === dueId);
+    if (!target) return { success: false, error: 'Record not found.' };
+    return updateDueRecord(dueId, {
+      amount_paid: target.amount_paid,
+      amount_due: target.amount_due,
+      fine_due: Number(target.fine_paid || 0),
+      fine_waived: true,
+    });
   };
 
   const deleteDueRecord = async (dueId: string) => {
@@ -1096,6 +1383,8 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       markAsPaid,
       recordNewPayment,
       updateDueRecord,
+      recordFinePayment,
+      waiveMemberFine,
       deleteDueRecord,
       resetDemoData,
     }),

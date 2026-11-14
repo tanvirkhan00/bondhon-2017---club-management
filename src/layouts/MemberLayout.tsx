@@ -6,11 +6,22 @@ import { User, History, LogOut, ArrowLeft, ShieldCheck, CreditCard } from 'lucid
 import crestImage from '../assets/images/bondhon_club_crest_1793703027252.jpg';
 
 export const MemberLayout: React.FC = () => {
-  const { profile, isAdmin, signOut } = useAuth();
-  const { myMemberRecord, myFinancialSummary } = useClubData();
+  const { user, profile, isAdmin, signOut } = useAuth();
+  const { myMemberRecord, logMemberActivity } = useClubData();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
+    const actorName = myMemberRecord?.full_name || profile?.full_name || user?.email || 'Member';
+    const actorCode = myMemberRecord?.member_code || null;
+    await logMemberActivity({
+      actorUserId: user?.id || null,
+      memberId: myMemberRecord?.id || null,
+      memberCode: actorCode,
+      memberName: actorName,
+      eventType: 'member_logout',
+      title: 'সদস্য পোর্টাল লগআউট',
+      message: `${actorName}${actorCode ? ` (${actorCode})` : ''} সদস্য পোর্টাল থেকে লগআউট করেছেন।`,
+    });
     await signOut();
     navigate('/login');
   };

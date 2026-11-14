@@ -9,6 +9,7 @@ create extension if not exists "uuid-ossp";
 
 -- 2. Drop existing objects for clean deployment if needed
 drop view if exists public.public_members cascade;
+drop table if exists public.notifications cascade;
 drop table if exists public.monthly_dues cascade;
 drop table if exists public.members cascade;
 drop table if exists public.profiles cascade;
@@ -84,8 +85,13 @@ create table public.monthly_dues (
   member_id uuid not null references public.members(id) on delete cascade,
   month smallint not null check (month between 1 and 12),
   year smallint not null check (year >= 2017),
-  amount_due numeric(12, 2) not null default 1000.00 check (amount_due >= 0),
+  amount_due numeric(12, 2) not null default 500.00 check (amount_due >= 0),
   amount_paid numeric(12, 2) not null default 0.00 check (amount_paid >= 0),
+  fine_due numeric(12, 2) not null default 0.00 check (fine_due >= 0),
+  fine_paid numeric(12, 2) not null default 0.00 check (fine_paid >= 0),
+  fine_paid_at timestamp with time zone,
+  fine_waived boolean not null default false,
+  notes text,
   status text not null default 'unpaid' check (status in ('paid', 'unpaid', 'partial')),
   paid_at timestamp with time zone,
   recorded_by uuid references public.profiles(id) on delete set null,
@@ -244,12 +250,112 @@ end;
 $$;
 
 -- ==============================================================================
+-- TABLE 4: NOTIFICATIONS (Member Activity Feed for Admin Dashboard)
+-- ==============================================================================
+create table public.notifications (
+  id uuid default gen_random_uuid() primary key,
+  actor_user_id uuid references auth.users(id) on delete set null,
+  member_id uuid references public.members(id) on delete cascade,
+  member_code text,
+  member_name text not null,
+  event_type text not null default 'profile_updated' check (event_type in ('member_login', 'member_logout', 'password_changed', 'profile_updated', 'payment_notice')),
+  title text not null,
+  message text not null,
+  is_read boolean not null default false,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+create index idx_notifications_created on public.notifications(created_at desc);
+create index idx_notifications_read on public.notifications(is_read);
+
+-- Safe RPC: Verify Member Name/ID + Email match before Member Login (never exposes email list)
+create or replace function public.verify_member_login_match(
+  p_member_id uuid,
+  p_email text
+)
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.members
+    where id = p_member_id
+      and status = 'active'
+      and lower(trim(coalesce(email, ''))) = lower(trim(coalesce(p_email, '')))
+      and trim(coalesce(email, '')) <> ''
+  );
+$$;
+
+grant execute on function public.verify_member_login_match(uuid, text) to anon, authenticated;
+
+-- Safe RPC: Auto-link authenticated user to their matching members row
+create or replace function public.link_my_member_by_auth()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_email text;
+  v_code text;
+begin
+  if auth.uid() is null then
+    return;
+  end if;
+
+  v_email := lower(trim(coalesce(auth.jwt()->>'email', '')));
+  select nullif(trim(coalesce(raw_user_meta_data->>'member_code', '')), '')
+    into v_code
+    from auth.users where id = auth.uid();
+
+  update public.members
+  set auth_user_id = auth.uid(),
+      email = coalesce(nullif(trim(email), ''), v_email)
+  where auth_user_id is null
+    and (
+      (v_email <> '' and lower(trim(coalesce(email, ''))) = v_email)
+      or (v_code is not null and upper(member_code) = upper(v_code))
+    );
+end;
+$$;
+
+grant execute on function public.link_my_member_by_auth() to authenticated;
+
+-- Safe RPC: Member can update their own phone number
+create or replace function public.update_my_member_phone(p_phone text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_email text;
+begin
+  if auth.uid() is null then
+    raise exception 'Unauthorized';
+  end if;
+
+  v_email := lower(trim(coalesce(auth.jwt()->>'email', '')));
+  update public.members
+  set phone = trim(p_phone),
+      updated_at = timezone('utc'::text, now())
+  where auth_user_id = auth.uid()
+     or (v_email <> '' and lower(trim(coalesce(email, ''))) = v_email);
+end;
+$$;
+
+grant execute on function public.update_my_member_phone(text) to authenticated;
+
+-- ==============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- ==============================================================================
 
 alter table public.profiles enable row level security;
 alter table public.members enable row level security;
 alter table public.monthly_dues enable row level security;
+alter table public.notifications enable row level security;
 
 -- ------------------------------------------------------------------------------
 -- PROFILES RLS
@@ -338,6 +444,29 @@ create policy "Admins update monthly dues"
 
 create policy "Admins delete monthly dues"
   on public.monthly_dues for delete
+  to authenticated
+  using (public.is_admin());
+
+-- ------------------------------------------------------------------------------
+-- NOTIFICATIONS RLS
+-- ------------------------------------------------------------------------------
+create policy "Authenticated users can log activity notifications"
+  on public.notifications for insert
+  to authenticated
+  with check (auth.uid() = actor_user_id or actor_user_id is null);
+
+create policy "Admins view notifications"
+  on public.notifications for select
+  to authenticated
+  using (public.is_admin() or auth.uid() = actor_user_id);
+
+create policy "Admins update notifications"
+  on public.notifications for update
+  to authenticated
+  using (public.is_admin());
+
+create policy "Admins delete notifications"
+  on public.notifications for delete
   to authenticated
   using (public.is_admin());
 

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useClubData } from '../../hooks/useClubData';
 import { useAuth } from '../../hooks/useAuth';
 import { formatBDT, formatDate, getMonthName } from '../../utils/formatters';
+import { calculateDueBreakdown } from '../../utils/fineCalculator';
 import { StatusBadge } from '../../components/StatusBadge';
 import {
   User,
@@ -266,8 +267,8 @@ export const MemberProfile: React.FC = () => {
         <div className="flex items-start gap-2.5">
           <AlertCircle className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5" />
           <div className="text-slate-800 dark:text-slate-200">
-            <span className="font-bold text-amber-900 dark:text-amber-300">গঠনতন্ত্রের ধারা ৪.১ (সঞ্চয় জমাদান নিয়মাবলী): </span>
-            সদস্যরা প্রতি মাসের <strong>১২ তারিখের মধ্যে</strong> নিয়মিত সঞ্চয় কিস্তি জমা দেবেন। ১২ তারিখের মধ্যে জমা না দিলে ৫০ টাকা জরিমানা প্রযোজ্য।
+            <span className="font-bold text-amber-900 dark:text-amber-300">গঠনতন্ত্রের ধারা ৪.১ (সঞ্চয় ও জরিমানা নিয়মাবলী): </span>
+            সদস্যরা প্রতি মাসের <strong>১২ তারিখের মধ্যে</strong> নিয়মিত সঞ্চয় কিস্তি জমা দেবেন। ১২ তারিখের পর প্রতি নামের জন্য ৫০ টাকা হারে বিলম্ব জরিমানা প্রযোজ্য (১ নাম = ৫৫০৳, ২ নাম = ১,১০০৳, ৩ নাম = ১,৬৫০৳)।
           </div>
         </div>
         <Link
@@ -286,42 +287,42 @@ export const MemberProfile: React.FC = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
-            <span className="text-[11px] font-medium text-slate-500 uppercase">Total Amount Paid</span>
+            <span className="text-[11px] font-medium text-slate-500 uppercase">মোট সঞ্চয় জমা (Total Paid)</span>
             <div className="text-2xl font-bold font-mono text-emerald-700 dark:text-emerald-400 tabular-nums mt-1">
               {formatBDT(myFinancialSummary.totalPaid)}
             </div>
             <span className="text-[11px] text-slate-500 mt-0.5 block">
-              {myFinancialSummary.totalPaidMonths} months settled
+              {myFinancialSummary.totalPaidMonths} মাস পূর্ণ ক্লিয়ার
             </span>
           </div>
 
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
-            <span className="text-[11px] font-medium text-slate-500 uppercase">Total Outstanding</span>
+            <span className="text-[11px] font-medium text-slate-500 uppercase">মোট বকেয়া (জরিমানাসহ)</span>
             <div className="text-2xl font-bold font-mono text-rose-700 dark:text-rose-400 tabular-nums mt-1">
               {formatBDT(myFinancialSummary.totalOutstanding)}
             </div>
             <span className="text-[11px] text-slate-500 mt-0.5 block">
-              {myFinancialSummary.unpaidMonthsCount} months pending
+              মূল: {formatBDT(myFinancialSummary.principalOutstanding)} + জরিমানা: {formatBDT(myFinancialSummary.totalFinePending)} ({myFinancialSummary.unpaidMonthsCount} মাস)
             </span>
           </div>
 
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
-            <span className="text-[11px] font-medium text-slate-500 uppercase">Current Dues Status</span>
-            <div className="mt-2">
-              <StatusBadge status={myFinancialSummary.currentStatus} />
-            </div>
-            <span className="text-[11px] text-slate-500 mt-1 block">
-              Latest billing cycle
-            </span>
-          </div>
-
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
-            <span className="text-[11px] font-medium text-slate-500 uppercase">Last Payment Recorded</span>
-            <div className="text-sm font-bold font-mono text-slate-900 dark:text-slate-100 tabular-nums mt-2">
-              {myFinancialSummary.lastPaymentDate ? formatDate(myFinancialSummary.lastPaymentDate) : 'No recent payment'}
+            <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400 uppercase">এ পর্যন্ত মোট জরিমানা পরিশোধ</span>
+            <div className="text-2xl font-bold font-mono text-amber-700 dark:text-amber-400 tabular-nums mt-1">
+              {formatBDT(myFinancialSummary.totalFinePaid)}
             </div>
             <span className="text-[11px] text-slate-500 mt-0.5 block">
-              Verified by club administration
+              মোট আরোপিত জরিমানা: {formatBDT(myFinancialSummary.totalFineCharged)}
+            </span>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
+            <span className="text-[11px] font-medium text-slate-500 uppercase">Current Status & Last Payment</span>
+            <div className="mt-1.5 flex items-center gap-2">
+              <StatusBadge status={myFinancialSummary.currentStatus} />
+            </div>
+            <span className="text-[11px] text-slate-500 mt-1.5 block font-mono">
+              শেষ জমা: {myFinancialSummary.lastPaymentDate ? formatDate(myFinancialSummary.lastPaymentDate) : 'কোনো জমা নেই'}
             </span>
           </div>
         </div>
@@ -516,7 +517,9 @@ export const MemberProfile: React.FC = () => {
               <tr>
                 <th className="py-2.5 px-3 font-semibold">Month & Year</th>
                 <th className="py-2.5 px-3 font-semibold text-right">Due (৳)</th>
+                <th className="py-2.5 px-3 font-semibold text-right">জরিমানা (৳)</th>
                 <th className="py-2.5 px-3 font-semibold text-right">Paid (৳)</th>
+                <th className="py-2.5 px-3 font-semibold text-right">বকেয়া (৳)</th>
                 <th className="py-2.5 px-3 font-semibold text-center">Status</th>
                 <th className="py-2.5 px-3 font-semibold">Date Paid</th>
               </tr>
@@ -524,30 +527,50 @@ export const MemberProfile: React.FC = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {recentDues.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-slate-400">
+                  <td colSpan={7} className="py-8 text-center text-slate-400">
                     এখনো কোনো পেমেন্ট এন্ট্রি করা হয়নি।
                   </td>
                 </tr>
               ) : (
-                recentDues.map((d) => (
-                  <tr key={d.id} className="hover:bg-slate-50/50">
-                    <td className="py-2.5 px-3 font-medium text-slate-900 dark:text-slate-100">
-                      {getMonthName(d.month)} {d.year}
-                    </td>
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-600">
-                      {formatBDT(d.amount_due)}
-                    </td>
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums font-bold text-emerald-700 dark:text-emerald-400">
-                      {formatBDT(d.amount_paid)}
-                    </td>
-                    <td className="py-2.5 px-3 text-center">
-                      <StatusBadge status={d.status} size="sm" />
-                    </td>
-                    <td className="py-2.5 px-3 font-mono text-slate-500">
-                      {d.paid_at ? formatDate(d.paid_at) : '—'}
-                    </td>
-                  </tr>
-                ))
+                recentDues.map((d) => {
+                  const bd = calculateDueBreakdown(d, myMemberRecord.shares_count);
+                  return (
+                    <tr key={d.id} className="hover:bg-slate-50/50">
+                      <td className="py-2.5 px-3 font-medium text-slate-900 dark:text-slate-100">
+                        {getMonthName(d.month)} {d.year}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-600">
+                        {formatBDT(bd.principalDue)}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-mono tabular-nums text-amber-700 dark:text-amber-400">
+                        {bd.fineDue > 0 ? (
+                          <span>
+                            {formatBDT(bd.fineDue)}
+                            {bd.finePaid > 0 && (
+                              <span className="block text-[10px] text-emerald-600">
+                                জমা: {formatBDT(bd.finePaid)}
+                              </span>
+                            )}
+                          </span>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-mono tabular-nums font-bold text-emerald-700 dark:text-emerald-400">
+                        {formatBDT(bd.totalPaid)}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-mono tabular-nums font-bold text-rose-700 dark:text-rose-400">
+                        {bd.totalOutstanding > 0 ? formatBDT(bd.totalOutstanding) : '—'}
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        <StatusBadge status={d.status} size="sm" />
+                      </td>
+                      <td className="py-2.5 px-3 font-mono text-slate-500">
+                        {d.paid_at ? formatDate(d.paid_at) : '—'}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

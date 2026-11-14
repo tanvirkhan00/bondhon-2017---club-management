@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useClubData } from '../../hooks/useClubData';
 import { formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/formatters';
+import { calculateDueBreakdown } from '../../utils/fineCalculator';
 import { MetricCard } from '../../components/MetricCard';
 import { StatusBadge } from '../../components/StatusBadge';
 import {
@@ -55,7 +56,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenGenerateDu
     d => d.month === selectedMonth && d.year === selectedYear
   );
 
-  const unpaidDues = currentMonthDues.filter(d => d.status === 'unpaid' || d.status === 'partial');
+  const unpaidDues = currentMonthDues.filter(d => {
+    const bd = calculateDueBreakdown(d, d.member?.shares_count);
+    return !bd.isFullySettled;
+  });
 
   const recentPayments = [...monthlyDues]
     .filter(d => d.amount_paid > 0 && d.paid_at)
@@ -127,6 +131,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenGenerateDu
             <CreditCard className="w-3.5 h-3.5" />
             <span>+ Record Payment</span>
           </button>
+
+          <Link
+            to="/admin/fines"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 rounded-lg shadow-2xs transition-colors shrink-0"
+          >
+            <AlertCircle className="w-3.5 h-3.5" />
+            <span>জরিমানা শিট</span>
+          </Link>
 
           <Link
             to="/admin/payments"
@@ -308,40 +320,48 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenGenerateDu
                 </p>
               </div>
             ) : (
-              unpaidDues.map((due) => (
-                <div key={due.id} className="py-2.5 flex items-center justify-between text-xs">
-                  <div>
-                    <span className="font-mono text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded mr-1.5">
-                      {due.member?.member_code}
-                    </span>
-                    <span className="font-medium text-slate-900 dark:text-slate-100">
-                      {due.member?.full_name}
-                    </span>
-                    <span className="block text-[11px] font-mono text-slate-400">
-                      {due.member?.phone}
-                    </span>
-                  </div>
-
-                  <div className="text-right flex items-center gap-2">
+              unpaidDues.map((due) => {
+                const bd = calculateDueBreakdown(due, due.member?.shares_count);
+                return (
+                  <div key={due.id} className="py-2.5 flex items-center justify-between text-xs">
                     <div>
-                      <span className="font-mono font-bold text-rose-700 dark:text-rose-400 block">
-                        {formatBDT(Number(due.amount_due) - Number(due.amount_paid))} Due
+                      <span className="font-mono text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded mr-1.5">
+                        {due.member?.member_code}
                       </span>
-                      <StatusBadge status={due.status} size="sm" />
+                      <span className="font-medium text-slate-900 dark:text-slate-100">
+                        {due.member?.full_name}
+                      </span>
+                      <span className="block text-[11px] font-mono text-slate-400">
+                        {due.member?.phone || '—'}
+                      </span>
                     </div>
-                    <button
-                      onClick={() => {
-                        setSelectedMemberForPayment(due.member_id);
-                        setRecordPaymentModalOpen(true);
-                      }}
-                      className="px-2 py-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 rounded-lg border border-emerald-200 transition-colors"
-                      title="Quick Record Payment"
-                    >
-                      + Pay
-                    </button>
+
+                    <div className="text-right flex items-center gap-2">
+                      <div>
+                        <span className="font-mono font-bold text-rose-700 dark:text-rose-400 block">
+                          {formatBDT(bd.totalOutstanding)} Due
+                        </span>
+                        {bd.fineOutstanding > 0 && (
+                          <span className="block text-[10px] text-amber-700 dark:text-amber-400 font-semibold">
+                            (+{formatBDT(bd.fineOutstanding)} জরিমানা)
+                          </span>
+                        )}
+                        <StatusBadge status={due.status} size="sm" />
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedMemberForPayment(due.member_id);
+                          setRecordPaymentModalOpen(true);
+                        }}
+                        className="px-2 py-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 rounded-lg border border-emerald-200 transition-colors"
+                        title="Quick Record Payment"
+                      >
+                        + Pay
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

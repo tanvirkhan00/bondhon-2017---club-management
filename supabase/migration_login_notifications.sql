@@ -4,22 +4,34 @@
 --       and Admin Dashboard Notifications Table (Safe to run on existing database!)
 -- ==============================================================================
 
--- 1. Ensure email column exists on public.members
+-- 1. Ensure email & fine columns exist on public.members and public.monthly_dues
 alter table public.members add column if not exists email text;
 
--- 2. Create notifications table if not exists
+alter table public.monthly_dues
+  add column if not exists fine_due numeric(12, 2) not null default 0.00,
+  add column if not exists fine_paid numeric(12, 2) not null default 0.00,
+  add column if not exists fine_paid_at timestamp with time zone,
+  add column if not exists fine_waived boolean not null default false,
+  add column if not exists notes text;
+
+-- 2. Create notifications table if not exists & update event_type constraint
 create table if not exists public.notifications (
   id uuid default gen_random_uuid() primary key,
   actor_user_id uuid references auth.users(id) on delete set null,
   member_id uuid references public.members(id) on delete cascade,
   member_code text,
   member_name text not null,
-  event_type text not null default 'profile_updated' check (event_type in ('member_login', 'password_changed', 'profile_updated', 'payment_notice')),
+  event_type text not null default 'profile_updated',
   title text not null,
   message text not null,
   is_read boolean not null default false,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+alter table public.notifications drop constraint if exists notifications_event_type_check;
+alter table public.notifications
+  add constraint notifications_event_type_check
+  check (event_type in ('member_login', 'member_logout', 'password_changed', 'profile_updated', 'payment_notice'));
 
 create index if not exists idx_notifications_created on public.notifications(created_at desc);
 create index if not exists idx_notifications_read on public.notifications(is_read);
@@ -36,7 +48,7 @@ drop policy if exists "Admins view notifications" on public.notifications;
 create policy "Admins view notifications"
   on public.notifications for select
   to authenticated
-  using (public.is_admin());
+  using (public.is_admin() or auth.uid() = actor_user_id);
 
 drop policy if exists "Admins update notifications" on public.notifications;
 create policy "Admins update notifications"
