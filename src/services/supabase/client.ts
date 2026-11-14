@@ -1,14 +1,23 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 export function getSupabaseCredentials(): { url: string; anonKey: string } {
-  const envUrl = import.meta.env.VITE_SUPABASE_URL || '';
-  const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+  // Support Vite and Next.js / Netlify environment variable naming
+  const envUrl =
+    (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) ||
+    (typeof import.meta !== 'undefined' && (import.meta.env as any)?.NEXT_PUBLIC_SUPABASE_URL) ||
+    '';
+
+  const envKey =
+    (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) ||
+    (typeof import.meta !== 'undefined' && (import.meta.env as any)?.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) ||
+    '';
 
   const localUrl = typeof window !== 'undefined' ? localStorage.getItem('bondhon_supabase_url') || '' : '';
   const localKey = typeof window !== 'undefined' ? localStorage.getItem('bondhon_supabase_anon_key') || '' : '';
 
-  const url = (localUrl || envUrl).trim();
-  const anonKey = (localKey || envKey).trim();
+  // Default to user's configured Supabase project
+  const url = (localUrl || envUrl || 'https://xzltkdbfeunoqnkowcap.supabase.co').trim();
+  const anonKey = (localKey || envKey || 'sb_publishable_0G7QiIlBZNYcvOApQS8iyA_jQq6GrnV').trim();
 
   return { url, anonKey };
 }

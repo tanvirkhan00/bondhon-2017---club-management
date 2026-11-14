@@ -225,19 +225,19 @@ export const Constitution: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl">
                   <span className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300 uppercase">সভাপতি</span>
-                  <div className="text-sm font-bold text-slate-900 dark:text-slate-100">সৈকত ঢালী (Soykot Dhali)</div>
+                  <div className="text-sm font-bold text-slate-900 dark:text-slate-100">সৈকত ঢালী (Shaikot Dhali)</div>
                   <span className="text-[11px] text-slate-500">প্রধান নির্বাহী কর্মকর্তা</span>
                 </div>
 
                 <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl">
                   <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 uppercase">সহ-সভাপতি</span>
-                  <div className="text-sm font-bold text-slate-900 dark:text-slate-100">তানজিম (Tanjim)</div>
+                  <div className="text-sm font-bold text-slate-900 dark:text-slate-100">মুশফিকুর সালেহীন (Musfiqur Salehin)</div>
                   <span className="text-[11px] text-slate-500">নির্বাহী সমন্বয়ক</span>
                 </div>
 
                 <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl">
                   <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 uppercase">সাধারণ সম্পাদক</span>
-                  <div className="text-sm font-bold text-slate-900 dark:text-slate-100">জাফর (Jafor)</div>
+                  <div className="text-sm font-bold text-slate-900 dark:text-slate-100">জাফর মোল্লা (Jafor Molla)</div>
                   <span className="text-[11px] text-slate-500">রেকর্ড ও নথি রক্ষণাবেক্ষণ</span>
                 </div>
 
@@ -255,7 +255,7 @@ export const Constitution: React.FC = () => {
 
                 <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl">
                   <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 uppercase">সাংগঠনিক সম্পাদক</span>
-                  <div className="text-sm font-bold text-slate-900 dark:text-slate-100">তানবীর আহমেদ (Tanbeer Ahmed)</div>
+                  <div className="text-sm font-bold text-slate-900 dark:text-slate-100">তানভীর আহমেদ (Tanvir Ahmed)</div>
                   <span className="text-[11px] text-slate-500">সাংগঠনিক সমন্বয় ও মিটিং</span>
                 </div>
               </div>
@@ -298,7 +298,7 @@ export const Constitution: React.FC = () => {
         {/* CHAPTER 4: FINANCIAL MANAGEMENT */}
         <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xs space-y-4">
           <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100 dark:border-slate-800 text-emerald-700 dark:text-emerald-400">
-            <DollarSign className="w-5 h-5 shrink-0" /> 
+            <DollarSign className="w-5 h-5 shrink-0" />
             <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100">
               চতুর্থ অধ্যায়: আর্থিক ব্যবস্থাপনা
             </h2>
@@ -316,7 +316,7 @@ export const Constitution: React.FC = () => {
                     সদস্যরা প্রতি মাসে ১২ তারিখের মধ্যে সঞ্চয় কিস্তি জমা দেবেন।
                   </p>
                   <p className="text-[11px] text-slate-500 mt-1">
-                    বর্তমান নির্ধারিত মাসিক সঞ্চয়: ৫০০/- (পাচশত টাকা)।
+                    বর্তমান নির্ধারিত মাসিক সঞ্চয়: ৫০০/- (পাঁচশত টাকা)।
                   </p>
                 </div>
               </div>
@@ -343,7 +343,7 @@ export const Constitution: React.FC = () => {
         <div>
           <h3 className="font-bold text-base">সদস্য ডিরেক্টরি ও আর্থিক হিসাব বিবরণী</h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            সমিতির সকল ২০ জন সদস্যের প্রোফাইল ও আর্থিক বিবরণী দেখার জন্য ডিরেক্টরিতে যান।
+            সমিতির সকল ২১ জন সদস্যের প্রোফাইল ও আর্থিক বিবরণী দেখার জন্য ডিরেক্টরিতে যান।
           </p>
         </div>
         <div className="flex items-center gap-3 shrink-0">

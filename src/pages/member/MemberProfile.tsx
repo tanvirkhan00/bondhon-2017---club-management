@@ -19,23 +19,71 @@ import {
 } from 'lucide-react';
 
 export const MemberProfile: React.FC = () => {
-  const { profile } = useAuth();
-  const { myMemberRecord, myFinancialSummary, myDues } = useClubData();
+  const { user } = useAuth();
+  const { myMemberRecord, myFinancialSummary, myDues, publicMembers, linkMyMemberAccount } = useClubData();
+  const [selectedCode, setSelectedCode] = React.useState('');
+  const [linking, setLinking] = React.useState(false);
+  const [linkError, setLinkError] = React.useState<string | null>(null);
 
   const recentDues = [...myDues]
     .sort((a, b) => b.year - a.year || b.month - a.month)
     .slice(0, 5);
 
+  const handleLinkProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCode) return;
+    setLinking(true);
+    setLinkError(null);
+    const res = await linkMyMemberAccount(selectedCode);
+    setLinking(false);
+    if (!res.success && res.error) {
+      setLinkError(res.error);
+    }
+  };
+
   if (!myMemberRecord) {
     return (
-      <div className="py-16 text-center text-slate-500">
-        <User className="w-12 h-12 mx-auto text-slate-400 mb-2" />
-        <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">
-          Member Profile Not Linked
-        </h2>
-        <p className="text-xs text-slate-500 mt-1">
-          Your account is authenticated, but not yet linked to a club member directory record.
-        </p>
+      <div className="max-w-md mx-auto py-12 px-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-xs text-center space-y-4">
+        <div className="w-14 h-14 mx-auto rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 flex items-center justify-center">
+          <User className="w-7 h-7" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+            আপনার সদস্য প্রোফাইল যুক্ত করুন
+          </h2>
+          <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+            আপনার অ্যাকাউন্ট ({user?.email}) সফলভাবে যাচাই হয়েছে। আপনার ব্যক্তিগত সঞ্চয় ও জমার হিসাব দেখতে ক্লাবের তালিকা থেকে আপনার নাম ও কোড নির্বাচন করুন।
+          </p>
+        </div>
+
+        {linkError && (
+          <div className="p-2.5 bg-rose-50 text-rose-700 text-xs rounded-xl">
+            {linkError}
+          </div>
+        )}
+
+        <form onSubmit={handleLinkProfile} className="space-y-3 text-left">
+          <select
+            required
+            value={selectedCode}
+            onChange={(e) => setSelectedCode(e.target.value)}
+            className="w-full px-3 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl"
+          >
+            <option value="">-- আপনার নাম ও কোড নির্বাচন করুন --</option>
+            {publicMembers.map((m) => (
+              <option key={m.id} value={m.member_code}>
+                {m.member_code} — {m.full_name}
+              </option>
+            ))}
+          </select>
+          <button
+            type="submit"
+            disabled={linking || !selectedCode}
+            className="w-full py-2.5 px-4 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-xl disabled:opacity-50 cursor-pointer"
+          >
+            {linking ? 'যুক্ত করা হচ্ছে...' : 'প্রোফাইল যুক্ত করুন'}
+          </button>
+        </form>
       </div>
     );
   }
@@ -75,17 +123,23 @@ export const MemberProfile: React.FC = () => {
             </h1>
 
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs text-slate-500 pt-1">
+              {myMemberRecord.father_name && (
+                <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+                  <User className="w-3.5 h-3.5 text-slate-400" />
+                  পিতার নাম: {myMemberRecord.father_name}
+                </span>
+              )}
               <span className="flex items-center gap-1.5 font-mono text-slate-700 dark:text-slate-300">
                 <Phone className="w-3.5 h-3.5 text-slate-400" />
                 {myMemberRecord.phone || 'Phone not registered'}
               </span>
               <span className="flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                Member Since: {formatDate(myMemberRecord.join_date)}
+                সদস্য সাল: {formatDate(myMemberRecord.join_date)}
               </span>
               <span className="flex items-center gap-1.5 font-semibold text-emerald-700 dark:text-emerald-400">
                 <CreditCard className="w-3.5 h-3.5" />
-                Monthly Dues: {formatBDT(myFinancialSummary.monthlyContribution)}
+                মাসিক কিস্তি: {formatBDT(myFinancialSummary.monthlyContribution)} {myMemberRecord.shares_count > 1 ? `(${myMemberRecord.shares_count}টি নাম)` : ''}
               </span>
             </div>
           </div>

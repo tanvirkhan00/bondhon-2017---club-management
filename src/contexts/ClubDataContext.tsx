@@ -36,6 +36,9 @@ interface ClubDataContextType {
   setDefaultDueAmount: (amount: number) => void;
   refreshData: () => Promise<void>;
 
+  // Member self-link helper
+  linkMyMemberAccount: (memberCode: string) => Promise<{ success: boolean; error?: string }>;
+
   // Admin member operations
   addMember: (memberData: Omit<Member, 'id' | 'created_at' | 'updated_at'>) => Promise<{ success: boolean; error?: string }>;
   updateMember: (id: string, updates: Partial<Member>) => Promise<{ success: boolean; error?: string }>;
@@ -45,6 +48,7 @@ interface ClubDataContextType {
   // Admin payment operations
   generateMonthlyDues: (month: number, year: number) => Promise<{ success: boolean; createdCount?: number; existingCount?: number; error?: string }>;
   markAsPaid: (dueId: string, amountPaid?: number, paidAt?: string) => Promise<{ success: boolean; error?: string }>;
+  recordNewPayment: (params: { memberId: string; month: number; year: number; amountPaid: number; amountDue?: number; paidAt?: string; notes?: string }) => Promise<{ success: boolean; error?: string }>;
   updateDueRecord: (dueId: string, updates: { amount_paid: number; amount_due?: number; paid_at?: string | null }) => Promise<{ success: boolean; error?: string }>;
   deleteDueRecord: (dueId: string) => Promise<{ success: boolean; error?: string }>;
 
@@ -53,31 +57,25 @@ interface ClubDataContextType {
 
 const ClubDataContext = createContext<ClubDataContextType | undefined>(undefined);
 
+const MEMBERS_STORAGE_KEY = 'bondhon_local_members_v5';
+const DUES_STORAGE_KEY = 'bondhon_local_dues_v5';
+
 export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAdmin, user, profile } = useAuth();
 
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonthNum = now.getMonth() + 1; // 1-12
-
-  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
-  const [selectedMonth, setSelectedMonth] = useState<number>(currentMonthNum);
+  const [selectedYear, setSelectedYear] = useState<number>(2026);
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [defaultDueAmount, setDefaultDueAmount] = useState<number>(() => {
     const saved = localStorage.getItem('bondhon_default_due_amount');
-    return saved ? Number(saved) : 1000;
+    return saved ? Number(saved) : 500;
   });
 
   const [members, setMembers] = useState<Member[]>(() => {
-    const saved = localStorage.getItem('bondhon_local_members');
+    const saved = localStorage.getItem(MEMBERS_STORAGE_KEY);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (
-          Array.isArray(parsed) &&
-          parsed.length === 20 &&
-          parsed[0]?.full_name === 'Soykot Dhali' &&
-          parsed[3]?.full_name === 'Tanvir Khan'
-        ) {
+        if (Array.isArray(parsed) && parsed.length > 0) {
           return parsed;
         }
       } catch { /* ignore */ }
@@ -86,31 +84,12 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   });
 
   const [monthlyDues, setMonthlyDues] = useState<MonthlyDue[]>(() => {
-    const saved = localStorage.getItem('bondhon_local_dues');
+    const saved = localStorage.getItem(DUES_STORAGE_KEY);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          return parsed.map((item: any, idx: number) => {
-            let yr = Number(item.year);
-            let mo = Number(item.month);
-            if (isNaN(yr) || !yr) {
-              if (typeof item.month === 'string' && item.month.includes('-')) {
-                const parts = item.month.split('-');
-                yr = parseInt(parts[0], 10);
-                mo = parseInt(parts[1], 10);
-              } else {
-                yr = 2026;
-              }
-            }
-            if (isNaN(mo) || !mo) mo = 11;
-            return {
-              ...item,
-              id: item.id || `due-local-${idx}`,
-              year: yr,
-              month: mo,
-            };
-          });
+          return parsed;
         }
       } catch { /* ignore */ }
     }
@@ -121,29 +100,50 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return INITIAL_PUBLIC_MEMBERS;
   });
 
+  // Tracks whether Supabase actually has seeded rows in `members`
+  const [supabaseSyncedMembers, setSupabaseSyncedMembers] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   const isConfigured = isSupabaseConfigured();
 
-  // Persist local state for smooth testing without requiring Supabase keys immediately
+  // Always keep local backup synced when not using live populated Supabase tables
   useEffect(() => {
-    if (!isConfigured) {
-      localStorage.setItem('bondhon_local_members', JSON.stringify(members));
+    if (!supabaseSyncedMembers) {
+      localStorage.setItem(MEMBERS_STORAGE_KEY, JSON.stringify(members));
     }
-  }, [members, isConfigured]);
+  }, [members, supabaseSyncedMembers]);
 
   useEffect(() => {
-    if (!isConfigured) {
-      localStorage.setItem('bondhon_local_dues', JSON.stringify(monthlyDues));
+    if (!supabaseSyncedMembers) {
+      localStorage.setItem(DUES_STORAGE_KEY, JSON.stringify(monthlyDues));
     }
-  }, [monthlyDues, isConfigured]);
+  }, [monthlyDues, supabaseSyncedMembers]);
 
   useEffect(() => {
     localStorage.setItem('bondhon_default_due_amount', String(defaultDueAmount));
   }, [defaultDueAmount]);
 
-  // Load from Supabase
+  // Keep publicMembers derived from active members unless populated directly from Supabase view
+  useEffect(() => {
+    if (!supabaseSyncedMembers) {
+      const activePubs: PublicMember[] = members
+        .filter(m => m.status === 'active')
+        .map(m => ({
+          id: m.id,
+          member_code: m.member_code,
+          full_name: m.full_name,
+          father_name: m.father_name,
+          shares_count: m.shares_count,
+          profile_image_url: m.profile_image_url,
+          designation: m.designation,
+          status: 'active',
+        }));
+      setPublicMembers(activePubs);
+    }
+  }, [members, supabaseSyncedMembers]);
+
+  // Load from Supabase (only replaces local roster if Supabase has populated rows)
   const loadSupabaseData = useCallback(async () => {
     const client = getSupabaseClient();
     if (!client) {
@@ -161,34 +161,37 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         .select('*')
         .order('member_code', { ascending: true });
 
-      if (!pubErr && pubData) {
+      if (!pubErr && Array.isArray(pubData) && pubData.length > 0) {
         setPublicMembers(pubData as PublicMember[]);
       }
 
-      // 2. Fetch full members table (permitted if Admin or authenticated)
+      // 2. Fetch full members table (if authenticated & populated)
       const { data: membersData, error: membersErr } = await client
         .from('members')
         .select('*')
         .order('member_code', { ascending: true });
 
-      if (!membersErr && membersData) {
+      if (!membersErr && Array.isArray(membersData) && membersData.length > 0) {
         setMembers(membersData as Member[]);
-      }
+        setSupabaseSyncedMembers(true);
 
-      // 3. Fetch monthly dues
-      const { data: duesData, error: duesErr } = await client
-        .from('monthly_dues')
-        .select('*')
-        .order('year', { ascending: false })
-        .order('month', { ascending: false });
+        // 3. Fetch monthly dues from Supabase when members table is live
+        const { data: duesData, error: duesErr } = await client
+          .from('monthly_dues')
+          .select('*')
+          .order('year', { ascending: false })
+          .order('month', { ascending: false });
 
-      if (!duesErr && duesData) {
-        setMonthlyDues(duesData as MonthlyDue[]);
+        if (!duesErr && Array.isArray(duesData)) {
+          setMonthlyDues(duesData as MonthlyDue[]);
+        }
+      } else {
+        setSupabaseSyncedMembers(false);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.warn('Supabase data query note:', msg);
-      setError(`Supabase: ${msg}. Showing cached data.`);
+      setSupabaseSyncedMembers(false);
+      setError(msg);
     } finally {
       setIsLoading(false);
     }
@@ -200,7 +203,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } else {
       setIsLoading(false);
     }
-  }, [isConfigured, loadSupabaseData]);
+  }, [isConfigured, user?.id, loadSupabaseData]);
 
   // Combine dues with member details for convenience
   const enrichedDues = useMemo(() => {
@@ -213,34 +216,80 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }));
   }, [members, monthlyDues]);
 
-  // Update public members if in demo mode
-  useEffect(() => {
-    if (!isConfigured) {
-      const activePubs: PublicMember[] = members
-        .filter(m => m.status === 'active')
-        .map(m => ({
-          id: m.id,
-          member_code: m.member_code,
-          full_name: m.full_name,
-          profile_image_url: m.profile_image_url,
-          designation: m.designation,
-          status: 'active',
-        }));
-      setPublicMembers(activePubs);
-    }
-  }, [members, isConfigured]);
-
-  // Active Member Private Record (for Member Portal)
+  // Active Member Private Record (strict matching — never exposes another member's data)
   const myMemberRecord = useMemo<Member | null>(() => {
-    if (!profile) return null;
-    // Match by auth_user_id or by email/name fallback in demo mode
-    const matched = members.find(
-      m => (user && m.auth_user_id === user.id) ||
-           (profile && m.auth_user_id === profile.id) ||
-           (profile && m.full_name.toLowerCase().includes(profile.full_name.toLowerCase().split(' ')[0]))
-    );
-    return matched || members[1] || members[0]; // fallback to Rana or Tanvir in demo mode
+    if (!user && !profile) return null;
+
+    const userEmail = (user?.email || '').toLowerCase().trim();
+    const metaCode = (user?.user_metadata?.member_code || '').toUpperCase().trim();
+
+    // 1. Match by auth_user_id
+    let matched = members.find(m => user && m.auth_user_id === user.id);
+
+    // 2. Match by registered email
+    if (!matched && userEmail) {
+      matched = members.find(m => m.email && m.email.toLowerCase().trim() === userEmail);
+    }
+
+    // 3. Match by member_code in Supabase Auth metadata
+    if (!matched && metaCode) {
+      matched = members.find(m => m.member_code.toUpperCase() === metaCode);
+    }
+
+    // 4. Known treasurer admin account
+    if (!matched && userEmail === 'kmtanvir1111@gmail.com') {
+      matched = members.find(m => m.member_code === 'BND-007');
+    }
+
+    // 5. Exact full_name match
+    if (!matched && profile?.full_name) {
+      const pName = profile.full_name.toLowerCase().trim();
+      matched = members.find(m => m.full_name.toLowerCase().trim() === pName);
+    }
+
+    return matched || null;
   }, [members, user, profile]);
+
+  // Allow an authenticated member to link their own member_code to their profile
+  const linkMyMemberAccount = async (memberCode: string) => {
+    if (!user) {
+      return { success: false, error: 'অনুগ্রহ করে আগে লগইন করুন।' };
+    }
+
+    const codeUpper = memberCode.toUpperCase().trim();
+    const target = members.find(m => m.member_code.toUpperCase() === codeUpper);
+    if (!target) {
+      return { success: false, error: 'সঠিক সদস্য কোড নির্বাচন করুন।' };
+    }
+
+    const client = getSupabaseClient();
+    if (client) {
+      try {
+        await client.auth.updateUser({
+          data: {
+            full_name: target.full_name,
+            member_code: target.member_code,
+          },
+        });
+      } catch {
+        // continue to local update
+      }
+    }
+
+    setMembers(prev =>
+      prev.map(m =>
+        m.member_code.toUpperCase() === codeUpper
+          ? {
+              ...m,
+              auth_user_id: user.id,
+              email: m.email || user.email || null,
+            }
+          : m
+      )
+    );
+
+    return { success: true };
+  };
 
   // My personal monthly dues
   const myDues = useMemo<MonthlyDue[]>(() => {
@@ -256,7 +305,6 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const unpaidMonthsCount = myDues.filter(d => d.status === 'unpaid' || d.status === 'partial').length;
     const totalOutstanding = Math.max(0, totalBilled - totalPaid);
 
-    // Latest month status
     const sorted = [...myDues].sort((a, b) => b.year - a.year || b.month - a.month);
     const currentStatus: DueStatus = sorted.length > 0 ? sorted[0].status : 'paid';
     const lastPaymentDate = sorted.find(d => d.paid_at)?.paid_at || null;
@@ -357,14 +405,17 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     const client = getSupabaseClient();
-    if (isConfigured && client) {
+    if (supabaseSyncedMembers && client) {
       try {
-        const { data, error } = await client
+        const { data, error: insErr } = await client
           .from('members')
           .insert([{
             member_code: memberData.member_code.trim().toUpperCase(),
             full_name: memberData.full_name.trim(),
+            father_name: memberData.father_name?.trim() || null,
+            shares_count: memberData.shares_count || 1,
             phone: memberData.phone?.trim() || null,
+            email: memberData.email?.trim() || null,
             designation: memberData.designation || 'Member',
             profile_image_url: memberData.profile_image_url || null,
             join_date: memberData.join_date,
@@ -375,24 +426,24 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           .select()
           .single();
 
-        if (error) throw error;
+        if (insErr) throw insErr;
         setMembers(prev => [...prev, data as Member]);
         return { success: true };
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         return { success: false, error: msg };
       }
-    } else {
-      const newMember: Member = {
-        ...memberData,
-        id: `m-${Date.now()}`,
-        member_code: memberData.member_code.trim().toUpperCase(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      setMembers(prev => [...prev, newMember]);
-      return { success: true };
     }
+
+    const newMember: Member = {
+      ...memberData,
+      id: crypto.randomUUID ? crypto.randomUUID() : `m-${Date.now()}`,
+      member_code: memberData.member_code.trim().toUpperCase(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    setMembers(prev => [...prev, newMember]);
+    return { success: true };
   };
 
   const updateMember = async (id: string, updates: Partial<Member>) => {
@@ -401,24 +452,24 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     const client = getSupabaseClient();
-    if (isConfigured && client) {
+    if (supabaseSyncedMembers && client) {
       try {
-        const { error } = await client
+        const { error: updErr } = await client
           .from('members')
           .update(updates)
           .eq('id', id);
 
-        if (error) throw error;
+        if (updErr) throw updErr;
         setMembers(prev => prev.map(m => (m.id === id ? { ...m, ...updates, updated_at: new Date().toISOString() } : m)));
         return { success: true };
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         return { success: false, error: msg };
       }
-    } else {
-      setMembers(prev => prev.map(m => (m.id === id ? { ...m, ...updates, updated_at: new Date().toISOString() } : m)));
-      return { success: true };
     }
+
+    setMembers(prev => prev.map(m => (m.id === id ? { ...m, ...updates, updated_at: new Date().toISOString() } : m)));
+    return { success: true };
   };
 
   const toggleMemberStatus = async (id: string) => {
@@ -434,10 +485,10 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     const client = getSupabaseClient();
-    if (isConfigured && client) {
+    if (supabaseSyncedMembers && client) {
       try {
-        const { error } = await client.from('members').delete().eq('id', id);
-        if (error) throw error;
+        const { error: delErr } = await client.from('members').delete().eq('id', id);
+        if (delErr) throw delErr;
         setMembers(prev => prev.filter(m => m.id !== id));
         setMonthlyDues(prev => prev.filter(d => d.member_id !== id));
         return { success: true };
@@ -445,11 +496,11 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const msg = err instanceof Error ? err.message : String(err);
         return { success: false, error: msg };
       }
-    } else {
-      setMembers(prev => prev.filter(m => m.id !== id));
-      setMonthlyDues(prev => prev.filter(d => d.member_id !== id));
-      return { success: true };
     }
+
+    setMembers(prev => prev.filter(m => m.id !== id));
+    setMonthlyDues(prev => prev.filter(d => d.member_id !== id));
+    return { success: true };
   };
 
   // ==========================================
@@ -466,7 +517,6 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return { success: false, error: 'No active members found to generate dues for.' };
     }
 
-    // Check which active members already have dues for this month and year
     const existing = monthlyDues.filter(d => d.month === month && d.year === year);
     const existingIds = new Set(existing.map(d => d.member_id));
     const membersNeedingDues = activeMembers.filter(m => !existingIds.has(m.id));
@@ -476,30 +526,29 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         success: false,
         createdCount: 0,
         existingCount: existing.length,
-        error: `Monthly dues for ${MONTH_NAMES[month - 1]} ${year} already exist for all ${activeMembers.length} active members. Zero duplicate records generated.`,
+        error: `Monthly dues for ${MONTH_NAMES[month - 1]} ${year} already exist for all ${activeMembers.length} active members.`,
       };
     }
 
     const client = getSupabaseClient();
-    if (isConfigured && client) {
+    if (supabaseSyncedMembers && client) {
       try {
-        // Use RPC function if present, or direct batch insert
         const newRecords = membersNeedingDues.map(m => ({
           member_id: m.id,
           month,
           year,
-          amount_due: m.monthly_contribution || defaultDueAmount,
+          amount_due: m.monthly_contribution || (m.shares_count || 1) * defaultDueAmount,
           amount_paid: 0,
           status: 'unpaid' as const,
           recorded_by: user?.id || null,
         }));
 
-        const { data, error } = await client
+        const { data, error: insErr } = await client
           .from('monthly_dues')
           .insert(newRecords)
           .select();
 
-        if (error) throw error;
+        if (insErr) throw insErr;
 
         setMonthlyDues(prev => [...(data as MonthlyDue[]), ...prev]);
         return {
@@ -511,27 +560,27 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const msg = err instanceof Error ? err.message : String(err);
         return { success: false, error: msg };
       }
-    } else {
-      const formatted: MonthlyDue[] = membersNeedingDues.map((m, i) => ({
-        id: `due-${year}-${month}-${m.id}-${i}`,
-        member_id: m.id,
-        month,
-        year,
-        amount_due: m.monthly_contribution || defaultDueAmount,
-        amount_paid: 0,
-        status: 'unpaid',
-        recorded_by: user?.id || null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }));
-
-      setMonthlyDues(prev => [...formatted, ...prev]);
-      return {
-        success: true,
-        createdCount: formatted.length,
-        existingCount: existing.length,
-      };
     }
+
+    const formatted: MonthlyDue[] = membersNeedingDues.map((m, i) => ({
+      id: `due-${year}-${month}-${m.id}-${i}`,
+      member_id: m.id,
+      month,
+      year,
+      amount_due: m.monthly_contribution || (m.shares_count || 1) * defaultDueAmount,
+      amount_paid: 0,
+      status: 'unpaid',
+      recorded_by: user?.id || null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }));
+
+    setMonthlyDues(prev => [...formatted, ...prev]);
+    return {
+      success: true,
+      createdCount: formatted.length,
+      existingCount: existing.length,
+    };
   };
 
   const markAsPaid = async (dueId: string, amountPaid?: number, paidAt?: string) => {
@@ -563,24 +612,132 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     const client = getSupabaseClient();
-    if (isConfigured && client) {
+    if (supabaseSyncedMembers && client) {
       try {
-        const { error } = await client
+        const { error: updErr } = await client
           .from('monthly_dues')
           .update(updates)
           .eq('id', dueId);
 
-        if (error) throw error;
+        if (updErr) throw updErr;
         setMonthlyDues(prev => prev.map(d => (d.id === dueId ? { ...d, ...updates } : d)));
         return { success: true };
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         return { success: false, error: msg };
       }
-    } else {
-      setMonthlyDues(prev => prev.map(d => (d.id === dueId ? { ...d, ...updates } : d)));
-      return { success: true };
     }
+
+    setMonthlyDues(prev => prev.map(d => (d.id === dueId ? { ...d, ...updates } : d)));
+    return { success: true };
+  };
+
+  const recordNewPayment = async (params: {
+    memberId: string;
+    month: number;
+    year: number;
+    amountPaid: number;
+    amountDue?: number;
+    paidAt?: string;
+    notes?: string;
+  }) => {
+    if (!isAdmin) {
+      return { success: false, error: 'Unauthorized: Only Admins can record payments.' };
+    }
+
+    const targetMember = members.find(m => m.id === params.memberId);
+    if (!targetMember) {
+      return { success: false, error: 'Member not found.' };
+    }
+
+    const calculatedDue = params.amountDue !== undefined ? params.amountDue : targetMember.monthly_contribution;
+    const finalPaid = Number(params.amountPaid);
+
+    let status: DueStatus = 'unpaid';
+    if (finalPaid >= calculatedDue && calculatedDue > 0) {
+      status = 'paid';
+    } else if (finalPaid > 0) {
+      status = 'partial';
+    } else {
+      status = 'unpaid';
+    }
+
+    const finalPaidAt = finalPaid > 0 ? (params.paidAt || new Date().toISOString()) : null;
+
+    const client = getSupabaseClient();
+    if (supabaseSyncedMembers && client) {
+      try {
+        const payload = {
+          member_id: params.memberId,
+          month: params.month,
+          year: params.year,
+          amount_due: calculatedDue,
+          amount_paid: finalPaid,
+          status,
+          paid_at: finalPaidAt,
+          recorded_by: user?.id || null,
+        };
+
+        const { data, error: upsertErr } = await client
+          .from('monthly_dues')
+          .upsert(payload, { onConflict: 'member_id,month,year' })
+          .select()
+          .single();
+
+        if (upsertErr) throw upsertErr;
+
+        const updated = data as MonthlyDue;
+        setMonthlyDues(prev => {
+          const idx = prev.findIndex(d => d.member_id === params.memberId && d.month === params.month && d.year === params.year);
+          if (idx >= 0) {
+            const next = [...prev];
+            next[idx] = updated;
+            return next;
+          }
+          return [updated, ...prev];
+        });
+
+        return { success: true };
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { success: false, error: msg };
+      }
+    }
+
+    const existingIdx = monthlyDues.findIndex(
+      d => d.member_id === params.memberId && d.month === params.month && d.year === params.year
+    );
+
+    if (existingIdx >= 0) {
+      setMonthlyDues(prev => {
+        const next = [...prev];
+        next[existingIdx] = {
+          ...next[existingIdx],
+          amount_due: calculatedDue,
+          amount_paid: finalPaid,
+          status,
+          paid_at: finalPaidAt,
+          updated_at: new Date().toISOString(),
+        };
+        return next;
+      });
+    } else {
+      const newDue: MonthlyDue = {
+        id: `due-${params.year}-${params.month}-${params.memberId}-${Date.now()}`,
+        member_id: params.memberId,
+        month: params.month,
+        year: params.year,
+        amount_due: calculatedDue,
+        amount_paid: finalPaid,
+        status,
+        paid_at: finalPaidAt,
+        recorded_by: user?.id || 'admin',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      setMonthlyDues(prev => [newDue, ...prev]);
+    }
+    return { success: true };
   };
 
   const updateDueRecord = async (
@@ -616,24 +773,24 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     const client = getSupabaseClient();
-    if (isConfigured && client) {
+    if (supabaseSyncedMembers && client) {
       try {
-        const { error } = await client
+        const { error: updErr } = await client
           .from('monthly_dues')
           .update(finalPayload)
           .eq('id', dueId);
 
-        if (error) throw error;
+        if (updErr) throw updErr;
         setMonthlyDues(prev => prev.map(d => (d.id === dueId ? { ...d, ...finalPayload } : d)));
         return { success: true };
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         return { success: false, error: msg };
       }
-    } else {
-      setMonthlyDues(prev => prev.map(d => (d.id === dueId ? { ...d, ...finalPayload } : d)));
-      return { success: true };
     }
+
+    setMonthlyDues(prev => prev.map(d => (d.id === dueId ? { ...d, ...finalPayload } : d)));
+    return { success: true };
   };
 
   const deleteDueRecord = async (dueId: string) => {
@@ -642,25 +799,25 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     const client = getSupabaseClient();
-    if (isConfigured && client) {
+    if (supabaseSyncedMembers && client) {
       try {
-        const { error } = await client.from('monthly_dues').delete().eq('id', dueId);
-        if (error) throw error;
+        const { error: delErr } = await client.from('monthly_dues').delete().eq('id', dueId);
+        if (delErr) throw delErr;
         setMonthlyDues(prev => prev.filter(d => d.id !== dueId));
         return { success: true };
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         return { success: false, error: msg };
       }
-    } else {
-      setMonthlyDues(prev => prev.filter(d => d.id !== dueId));
-      return { success: true };
     }
+
+    setMonthlyDues(prev => prev.filter(d => d.id !== dueId));
+    return { success: true };
   };
 
   const resetDemoData = () => {
-    localStorage.removeItem('bondhon_local_members');
-    localStorage.removeItem('bondhon_local_dues');
+    localStorage.removeItem(MEMBERS_STORAGE_KEY);
+    localStorage.removeItem(DUES_STORAGE_KEY);
     setMembers(INITIAL_MEMBERS);
     setMonthlyDues(INITIAL_MONTHLY_DUES);
     setPublicMembers(INITIAL_PUBLIC_MEMBERS);
@@ -685,12 +842,14 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setSelectedMonth,
       setDefaultDueAmount,
       refreshData: loadSupabaseData,
+      linkMyMemberAccount,
       addMember,
       updateMember,
       toggleMemberStatus,
       deleteMember,
       generateMonthlyDues,
       markAsPaid,
+      recordNewPayment,
       updateDueRecord,
       deleteDueRecord,
       resetDemoData,
@@ -711,6 +870,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       monthSummaries,
       loadSupabaseData,
       isAdmin,
+      user,
     ]
   );
 

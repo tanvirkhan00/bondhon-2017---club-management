@@ -35,7 +35,10 @@ export const AdminMembers: React.FC = () => {
   // Form State
   const [memberCode, setMemberCode] = useState('');
   const [fullName, setFullName] = useState('');
+  const [fatherName, setFatherName] = useState('');
+  const [sharesCount, setSharesCount] = useState<number>(1);
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [designation, setDesignation] = useState('Member');
   const [joinDate, setJoinDate] = useState('');
   const [monthlyContribution, setMonthlyContribution] = useState<number>(defaultDueAmount);
@@ -55,6 +58,7 @@ export const AdminMembers: React.FC = () => {
     return members.filter((m) => {
       const matchSearch =
         m.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (m.father_name && m.father_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
         m.member_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (m.phone && m.phone.includes(searchQuery)) ||
         (m.designation && m.designation.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -83,7 +87,10 @@ export const AdminMembers: React.FC = () => {
     const nextNum = members.length + 1;
     setMemberCode(`BND-${String(nextNum).padStart(3, '0')}`);
     setFullName('');
+    setFatherName('');
+    setSharesCount(1);
     setPhone('+880 ');
+    setEmail('');
     setDesignation('Member');
     setJoinDate(new Date().toISOString().substring(0, 10));
     setMonthlyContribution(defaultDueAmount);
@@ -100,10 +107,13 @@ export const AdminMembers: React.FC = () => {
     setEditingMember(m);
     setMemberCode(m.member_code);
     setFullName(m.full_name);
+    setFatherName(m.father_name || '');
+    setSharesCount(m.shares_count || 1);
     setPhone(m.phone || '');
+    setEmail(m.email || '');
     setDesignation(m.designation || 'Member');
     setJoinDate(m.join_date);
-    setMonthlyContribution(m.monthly_contribution || defaultDueAmount);
+    setMonthlyContribution(m.monthly_contribution || (m.shares_count || 1) * defaultDueAmount);
     setStatus(m.status);
     setAuthUserId(m.auth_user_id || '');
     setAvatarUrl(m.profile_image_url || '');
@@ -144,7 +154,10 @@ export const AdminMembers: React.FC = () => {
       const res = await updateMember(editingMember.id, {
         member_code: memberCode.trim().toUpperCase(),
         full_name: fullName.trim(),
+        father_name: fatherName.trim() || null,
+        shares_count: Number(sharesCount) || 1,
         phone: phone.trim() || null,
+        email: email.trim() || null,
         designation: designation.trim() || 'Member',
         join_date: joinDate,
         monthly_contribution: Number(monthlyContribution),
@@ -163,7 +176,10 @@ export const AdminMembers: React.FC = () => {
       const res = await addMember({
         member_code: memberCode.trim().toUpperCase(),
         full_name: fullName.trim(),
+        father_name: fatherName.trim() || null,
+        shares_count: Number(sharesCount) || 1,
         phone: phone.trim() || null,
+        email: email.trim() || null,
         designation: designation.trim() || 'Member',
         join_date: joinDate,
         monthly_contribution: Number(monthlyContribution),
@@ -188,10 +204,10 @@ export const AdminMembers: React.FC = () => {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
             <Users className="w-6 h-6 text-emerald-700 dark:text-emerald-400" />
-            <span>Member Management Module</span>
+            <span>Club Members Directory</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            Manage club members, avatars, contact numbers, and contribution schedules
+            Manage club members, portal access emails, and monthly contribution shares
           </p>
         </div>
 
@@ -295,14 +311,22 @@ export const AdminMembers: React.FC = () => {
                           )}
                         </div>
                         <div>
-                          <button
-                            onClick={() => setDetailMember(member)}
-                            className="font-semibold text-slate-900 dark:text-slate-100 hover:text-emerald-700 text-left block"
-                          >
-                            {member.full_name}
-                          </button>
-                          <span className="text-[10px] text-slate-400">
-                            {totals.count} dues recorded · Total {formatBDT(totals.totalPaid)}
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setDetailMember(member)}
+                              className="font-semibold text-slate-900 dark:text-slate-100 hover:text-emerald-700 text-left block"
+                            >
+                              {member.full_name}
+                            </button>
+                            {(member.shares_count || 1) > 1 && (
+                              <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded">
+                                {member.shares_count} Shares
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-slate-400 block">
+                            {member.father_name ? `S/O ${member.father_name} · ` : ''}
+                            {totals.count} dues · Total {formatBDT(totals.totalPaid)}
                           </span>
                         </div>
                       </td>
@@ -329,7 +353,10 @@ export const AdminMembers: React.FC = () => {
 
                       {/* Monthly Contribution */}
                       <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                        {formatBDT(member.monthly_contribution || defaultDueAmount)}
+                        {formatBDT(member.monthly_contribution || (member.shares_count || 1) * defaultDueAmount)}
+                        <span className="block text-[10px] font-normal text-slate-400">
+                          {member.shares_count || 1} {(member.shares_count || 1) > 1 ? 'names' : 'name'}
+                        </span>
                       </td>
 
                       {/* Status */}
@@ -432,7 +459,7 @@ export const AdminMembers: React.FC = () => {
               {/* Profile Photo Upload */}
               <div>
                 <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                  Member Profile Photo (Supabase Storage)
+                  Member Profile Photo
                 </label>
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden flex items-center justify-center shrink-0">
@@ -478,28 +505,42 @@ export const AdminMembers: React.FC = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Full Name (বাংলা বা ইংরেজিতে)
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Tanvir Ahmed Khan"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Full Name (সদস্যের নাম)
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Shaikot Dhali"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Father&apos;s Name (পিতার নাম)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Mr. Yusuf Dhali"
+                    value={fatherName}
+                    onChange={(e) => setFatherName(e.target.value)}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg"
+                  />
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                     Phone Number
                   </label>
                   <input
                     type="tel"
-                    required
                     placeholder="+880 1711-223344"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -509,7 +550,27 @@ export const AdminMembers: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Monthly Contribution (BDT ৳)
+                    Shares / Names (নাম সংখ্যা)
+                  </label>
+                  <select
+                    value={sharesCount}
+                    onChange={(e) => {
+                      const count = Number(e.target.value) || 1;
+                      setSharesCount(count);
+                      setMonthlyContribution(count * defaultDueAmount);
+                    }}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-medium"
+                  >
+                    <option value={1}>1 Name (৳{defaultDueAmount})</option>
+                    <option value={2}>2 Names (৳{defaultDueAmount * 2})</option>
+                    <option value={3}>3 Names (৳{defaultDueAmount * 3})</option>
+                    <option value={4}>4 Names (৳{defaultDueAmount * 4})</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Monthly Due (BDT ৳)
                   </label>
                   <input
                     type="number"
@@ -552,20 +613,35 @@ export const AdminMembers: React.FC = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Linked Supabase Auth User ID (Optional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="UUID from auth.users (e.g. 550e8400-e29b-41d4-a716-446655440000)"
-                  value={authUserId}
-                  onChange={(e) => setAuthUserId(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-mono"
-                />
-                <p className="text-[10px] text-slate-400 mt-1">
-                  Links this member directory record to their portal login account.
-                </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Member Portal Login Email
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="member@gmail.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    এই ইমেইল দিয়ে লগইন করলে সদস্য সরাসরি তার প্রোফাইল দেখতে পারবেন।
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Portal Account Link ID (Auto-linked)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Auto-linked when member registers"
+                    value={authUserId}
+                    onChange={(e) => setAuthUserId(e.target.value)}
+                    className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-mono"
+                  />
+                </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
@@ -609,6 +685,11 @@ export const AdminMembers: React.FC = () => {
                   <p className="text-xs text-emerald-700 font-medium">
                     {detailMember.member_code} · {detailMember.designation}
                   </p>
+                  {detailMember.father_name && (
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Father: {detailMember.father_name}
+                    </p>
+                  )}
                 </div>
               </div>
               <button onClick={() => setDetailMember(null)} className="p-1 text-slate-400 hover:text-slate-600">
@@ -627,7 +708,9 @@ export const AdminMembers: React.FC = () => {
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
                 <span className="text-slate-500 block">Monthly Contribution</span>
-                <span className="font-mono font-semibold text-emerald-700">{formatBDT(detailMember.monthly_contribution || defaultDueAmount)}</span>
+                <span className="font-mono font-semibold text-emerald-700">
+                  {formatBDT(detailMember.monthly_contribution || (detailMember.shares_count || 1) * defaultDueAmount)} ({detailMember.shares_count || 1} {(detailMember.shares_count || 1) > 1 ? 'shares' : 'share'})
+                </span>
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
                 <span className="text-slate-500 block">Status</span>

@@ -15,7 +15,9 @@ import {
   CheckCircle2,
   Clock,
   ArrowRight,
+  CreditCard,
 } from 'lucide-react';
+import { RecordPaymentModal } from '../../components/RecordPaymentModal';
 import {
   ResponsiveContainer,
   BarChart,
@@ -44,6 +46,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenGenerateDu
     monthSummaries,
     members,
   } = useClubData();
+
+  const [recordPaymentModalOpen, setRecordPaymentModalOpen] = useState(false);
+  const [selectedMemberForPayment, setSelectedMemberForPayment] = useState<string | undefined>(undefined);
 
   // Dues for selected month and year
   const currentMonthDues = monthlyDues.filter(
@@ -112,12 +117,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenGenerateDu
             <option value={2024}>2024</option>
           </select>
 
+          <button
+            onClick={() => {
+              setSelectedMemberForPayment(undefined);
+              setRecordPaymentModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm transition-all shrink-0 cursor-pointer"
+          >
+            <CreditCard className="w-3.5 h-3.5" />
+            <span>+ Record Payment</span>
+          </button>
+
           <Link
             to="/admin/payments"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg shadow-2xs transition-colors shrink-0"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg shadow-2xs transition-colors shrink-0"
           >
             <PlusCircle className="w-3.5 h-3.5" />
-            <span>Manage Dues</span>
+            <span>Monthly Dues Sheet</span>
           </Link>
         </div>
       </div>
@@ -306,11 +322,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenGenerateDu
                     </span>
                   </div>
 
-                  <div className="text-right">
-                    <span className="font-mono font-bold text-rose-700 dark:text-rose-400 block">
-                      {formatBDT(Number(due.amount_due) - Number(due.amount_paid))} Due
-                    </span>
-                    <StatusBadge status={due.status} size="sm" />
+                  <div className="text-right flex items-center gap-2">
+                    <div>
+                      <span className="font-mono font-bold text-rose-700 dark:text-rose-400 block">
+                        {formatBDT(Number(due.amount_due) - Number(due.amount_paid))} Due
+                      </span>
+                      <StatusBadge status={due.status} size="sm" />
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedMemberForPayment(due.member_id);
+                        setRecordPaymentModalOpen(true);
+                      }}
+                      className="px-2 py-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 rounded-lg border border-emerald-200 transition-colors"
+                      title="Quick Record Payment"
+                    >
+                      + Pay
+                    </button>
                   </div>
                 </div>
               ))
@@ -367,6 +395,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenGenerateDu
           </div>
         </div>
       </div>
+
+      {/* Record Payment Modal */}
+      <RecordPaymentModal
+        isOpen={recordPaymentModalOpen}
+        onClose={() => setRecordPaymentModalOpen(false)}
+        initialMemberId={selectedMemberForPayment}
+        initialMonth={selectedMonth}
+        initialYear={selectedYear}
+      />
     </div>
   );
 };

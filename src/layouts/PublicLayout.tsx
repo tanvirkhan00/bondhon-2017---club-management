@@ -13,7 +13,7 @@ export const PublicLayout: React.FC = () => {
     { to: '/', label: 'Home' },
     { to: '/about', label: 'About Club' },
     { to: '/members', label: 'Member Directory' },
-    { to: '/constitution', label: 'গঠনতন্ত্র (Constitution)' },
+    { to: '/constitution', label: 'Constitution' },
   ];
 
   return (
@@ -170,7 +170,7 @@ export const PublicLayout: React.FC = () => {
                 <strong>বন্ধুত্ব সমবায় সমিতি</strong> (Bondhon 2017) · এস.এস.সি ব্যাচ ২০১৭। চরচান্দা খাসমহল বাজার। স্থাপিত: ০১/০৪/২০২৪ ইং। পারস্পরিক সঞ্চয়, আর্থিক স্বচ্ছতা ও সামাজিক কল্যাণ।
               </p>
               <div className="text-xs text-slate-400">
-                মাসিক সঞ্চয় কিস্তি: <span className="font-semibold text-emerald-700 dark:text-emerald-400">১,০০০ ৳</span> (প্রতি মাসের ১২ তারিখের মধ্যে জমাদান বাধ্যতামুলক, বিলম্ব ফি ৫০ ৳)
+                মাসিক সঞ্চয় কিস্তি: <span className="font-semibold text-emerald-700 dark:text-emerald-400">৫০০ ৳</span> (প্রতি মাসের ১২ তারিখের মধ্যে জমাদান বাধ্যতামূলক, বিলম্ব ফি ৫০ ৳)
               </div>
             </div>
 
@@ -200,9 +200,9 @@ export const PublicLayout: React.FC = () => {
           </div>
 
           <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
-            <p>© {new Date().getFullYear()} Bondhon 2017 Club. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} Bondhon 2017 · বন্ধুত্ব সমবায় সমিতি। সর্বস্বত্ব সংরক্ষিত।</p>
             <p className="flex items-center gap-1">
-              Secured with Supabase Row Level Security · Hosted on Netlify
+              চরচান্দা খাসমহল বাজার · এস.এস.সি ব্যাচ ২০১৭
             </p>
           </div>
         </div>

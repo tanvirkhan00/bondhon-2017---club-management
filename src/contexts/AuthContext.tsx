@@ -4,6 +4,12 @@ import { Profile, UserRole } from '../types';
 import { getSupabaseClient, isSupabaseConfigured } from '../services/supabase/client';
 import { INITIAL_PROFILES } from '../lib/mockData';
 
+interface SignUpResult {
+  success: boolean;
+  needsEmailConfirmation?: boolean;
+  error?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   profile: Profile | null;
@@ -15,7 +21,7 @@ interface AuthContextType {
   isConfigured: boolean;
   error: string | null;
   signInWithPassword: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (email: string, pass: string, fullName: string) => Promise<{ success: boolean; error?: string }>;
+  signUp: (email: string, pass: string, fullName: string, memberCode?: string) => Promise<SignUpResult>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ success: boolean; message?: string; error?: string }>;
   switchDemoRole: (role: UserRole) => void;
@@ -24,51 +30,59 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const ADMIN_EMAILS = ['kmtanvir1111@gmail.com'];
+
+function isAdminEmail(email?: string | null): boolean {
+  if (!email) return false;
+  return ADMIN_EMAILS.includes(email.toLowerCase().trim());
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(() => {
-    const saved = localStorage.getItem('bondhon_demo_profile');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        // fallback
-      }
-    }
-    // In dev mode, initialize with Demo Admin
-    return INITIAL_PROFILES[0];
-  });
-
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   const configured = isSupabaseConfigured();
 
-  const fetchSupabaseProfile = async (userId: string) => {
+  const fetchSupabaseProfile = async (authUser: User) => {
     const client = getSupabaseClient();
     if (!client) return;
+
+    const userEmail = (authUser.email || '').toLowerCase();
+    const knownAdmin = isAdminEmail(userEmail);
+    const metaFullName =
+      authUser.user_metadata?.full_name ||
+      (knownAdmin ? 'Tanvir Khan' : userEmail.split('@')[0] || 'Club Member');
 
     try {
       const { data, error: profileErr } = await client
         .from('profiles')
         .select('*')
-        .eq('id', userId)
+        .eq('id', authUser.id)
         .single();
 
-      if (profileErr) {
-        console.warn('Profile fetch note:', profileErr.message);
-        // default fallback if row hasn't synced
+      if (profileErr || !data) {
         setProfile({
-          id: userId,
-          full_name: user?.user_metadata?.full_name || 'Club Member',
-          role: 'member',
+          id: authUser.id,
+          full_name: metaFullName,
+          role: knownAdmin ? 'admin' : 'member',
         });
-      } else if (data) {
-        setProfile(data as Profile);
+      } else {
+        const dbProfile = data as Profile;
+        setProfile({
+          ...dbProfile,
+          full_name: dbProfile.full_name || metaFullName,
+          role: knownAdmin ? 'admin' : (dbProfile.role || 'member'),
+        });
       }
-    } catch (err) {
-      console.error('Failed to load Supabase profile:', err);
+    } catch {
+      setProfile({
+        id: authUser.id,
+        full_name: metaFullName,
+        role: knownAdmin ? 'admin' : 'member',
+      });
     }
   };
 
@@ -76,11 +90,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const client = getSupabaseClient();
 
     if (configured && client) {
-      client.auth.getSession().then(({ data: { session } }) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          fetchSupabaseProfile(session.user.id);
+      client.auth.getSession().then(async ({ data: { session: activeSession } }) => {
+        setSession(activeSession);
+        setUser(activeSession?.user ?? null);
+        if (activeSession?.user) {
+          await fetchSupabaseProfile(activeSession.user);
+        } else {
+          setProfile(null);
         }
         setIsLoading(false);
       });
@@ -90,10 +106,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(newSession);
           setUser(newSession?.user ?? null);
           if (newSession?.user) {
-            await fetchSupabaseProfile(newSession.user.id);
+            await fetchSupabaseProfile(newSession.user);
           } else {
-            const saved = localStorage.getItem('bondhon_demo_profile');
-            setProfile(saved ? JSON.parse(saved) : null);
+            setProfile(null);
           }
           setIsLoading(false);
         }
@@ -111,34 +126,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
     const client = getSupabaseClient();
 
-    // If Supabase not configured, allow testing sign-in with admin@bondhon.com or member@bondhon.com
     if (!client) {
-      if (email.toLowerCase().includes('admin')) {
-        setProfile(INITIAL_PROFILES[0]);
-        localStorage.setItem('bondhon_demo_profile', JSON.stringify(INITIAL_PROFILES[0]));
-        return { success: true };
-      } else {
-        setProfile(INITIAL_PROFILES[1]);
-        localStorage.setItem('bondhon_demo_profile', JSON.stringify(INITIAL_PROFILES[1]));
-        return { success: true };
-      }
+      const msg = 'অথেনটিকেশন সার্ভিস সংযুক্ত নয়। অনুগ্রহ করে অ্যাডমিনের সাথে যোগাযোগ করুন।';
+      setError(msg);
+      return { success: false, error: msg };
     }
 
     try {
-      const { data, error } = await client.auth.signInWithPassword({
-        email,
+      const { data, error: authErr } = await client.auth.signInWithPassword({
+        email: email.trim(),
         password: pass,
       });
 
-      if (error) {
-        setError(error.message);
-        return { success: false, error: error.message };
+      if (authErr) {
+        let friendlyMsg = authErr.message;
+        const lower = authErr.message.toLowerCase();
+        if (lower.includes('invalid login credentials')) {
+          friendlyMsg =
+            'ইমেইল বা পাসওয়ার্ড সঠিক নয়। আপনি যদি নতুন সদস্য হন, তবে "নতুন অ্যাকাউন্ট (Sign Up)" ট্যাব থেকে আগে নিবন্ধন করুন।';
+        } else if (lower.includes('email not confirmed')) {
+          friendlyMsg =
+            'আপনার ইমেইল এখনো ভেরিফাই করা হয়নি। ইমেইলের ইনবক্স বা স্প্যাম ফোল্ডারে পাঠানো কনফার্মেশন লিঙ্কে ক্লিক করুন।';
+        }
+        setError(friendlyMsg);
+        return { success: false, error: friendlyMsg };
       }
 
       setSession(data.session);
       setUser(data.user);
       if (data.user) {
-        await fetchSupabaseProfile(data.user.id);
+        await fetchSupabaseProfile(data.user);
       }
       return { success: true };
     } catch (err: unknown) {
@@ -148,35 +165,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signUp = async (email: string, pass: string, fullName: string) => {
+  const signUp = async (email: string, pass: string, fullName: string, memberCode?: string): Promise<SignUpResult> => {
     setError(null);
     const client = getSupabaseClient();
     if (!client) {
-      return { success: false, error: 'Supabase is not configured yet. Configure URL and Key in Settings.' };
+      return { success: false, error: 'অথেনটিকেশন সার্ভিস সংযুক্ত নয়।' };
     }
 
     try {
-      const { data, error } = await client.auth.signUp({
-        email,
+      const { data, error: signUpErr } = await client.auth.signUp({
+        email: email.trim(),
         password: pass,
         options: {
           data: {
-            full_name: fullName,
+            full_name: fullName.trim(),
+            member_code: memberCode || null,
           },
         },
       });
 
-      if (error) {
-        setError(error.message);
-        return { success: false, error: error.message };
+      if (signUpErr) {
+        let friendlyMsg = signUpErr.message;
+        if (signUpErr.message.toLowerCase().includes('already registered')) {
+          friendlyMsg = 'এই ইমেইল দিয়ে আগেই অ্যাকাউন্ট তৈরি করা হয়েছে। অনুগ্রহ করে লগইন করুন।';
+        }
+        setError(friendlyMsg);
+        return { success: false, error: friendlyMsg };
       }
 
-      setSession(data.session);
-      setUser(data.user);
-      if (data.user) {
-        await fetchSupabaseProfile(data.user.id);
+      if (data.session && data.user) {
+        setSession(data.session);
+        setUser(data.user);
+        await fetchSupabaseProfile(data.user);
+        return { success: true, needsEmailConfirmation: false };
       }
-      return { success: true };
+
+      // Account created, waiting for email confirmation
+      return { success: true, needsEmailConfirmation: true };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
@@ -187,15 +212,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const resetPassword = async (email: string) => {
     const client = getSupabaseClient();
     if (!client) {
-      return { success: true, message: 'In local development mode: password reset simulated.' };
+      return { success: false, error: 'অথেনটিকেশন সার্ভিস সংযুক্ত নয়।' };
     }
 
     try {
-      const { error } = await client.auth.resetPasswordForEmail(email, {
+      const { error: resetErr } = await client.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: `${window.location.origin}/login`,
       });
-      if (error) throw error;
-      return { success: true, message: 'Password reset link sent to your email.' };
+      if (resetErr) throw resetErr;
+      return { success: true, message: 'পাসওয়ার্ড রিসেট লিঙ্ক আপনার ইমেইলে পাঠানো হয়েছে।' };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       return { success: false, error: msg };
@@ -214,21 +239,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const switchDemoRole = (newRole: UserRole) => {
-    const target = newRole === 'admin' ? INITIAL_PROFILES[0] : INITIAL_PROFILES[1];
-    setProfile(target);
-    localStorage.setItem('bondhon_demo_profile', JSON.stringify(target));
+    const target = INITIAL_PROFILES[0];
+    setProfile({ ...target, role: newRole });
   };
 
   const refreshProfile = async () => {
     if (user) {
-      await fetchSupabaseProfile(user.id);
+      await fetchSupabaseProfile(user);
     }
   };
 
-  const role: UserRole = profile?.role || 'member';
+  const userEmail = (user?.email || '').toLowerCase();
+  const knownAdminEmail = isAdminEmail(userEmail);
+  const role: UserRole = profile?.role === 'admin' || knownAdminEmail ? 'admin' : (profile?.role || 'member');
   const isAdmin = role === 'admin';
   const isMember = role === 'member';
-  const isAuthenticated = Boolean(user || profile);
+  const isAuthenticated = Boolean(user && session);
 
   const value = useMemo(
     () => ({
@@ -248,7 +274,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       switchDemoRole,
       refreshProfile,
     }),
-    [user, profile, role, isAdmin, isMember, isAuthenticated, isLoading, configured, error]
+    [user, session, profile, role, isAdmin, isMember, isAuthenticated, isLoading, configured, error]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

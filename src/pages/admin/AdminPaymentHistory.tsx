@@ -7,16 +7,14 @@ import {
   History,
   Search,
   Download,
-  Calendar,
-  Filter,
-  Users,
   ChevronLeft,
   ChevronRight,
-  ArrowUpDown,
+  CreditCard,
 } from 'lucide-react';
+import { RecordPaymentModal } from '../../components/RecordPaymentModal';
 
 export const AdminPaymentHistory: React.FC = () => {
-  const { monthlyDues, members } = useClubData();
+  const { monthlyDues, members, selectedMonth, selectedYear } = useClubData();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedYearFilter, setSelectedYearFilter] = useState<string>('all');
@@ -24,6 +22,7 @@ export const AdminPaymentHistory: React.FC = () => {
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('all');
   const [selectedMemberFilter, setSelectedMemberFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [recordModalOpen, setRecordModalOpen] = useState(false);
   const pageSize = 15;
 
   // Extract unique years
@@ -128,20 +127,30 @@ export const AdminPaymentHistory: React.FC = () => {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
             <History className="w-6 h-6 text-emerald-700 dark:text-emerald-400" />
-            <span>Complete Financial Payment Ledger</span>
+            <span>Payment Ledger & History</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            Full audit log of all membership contributions in BDT (৳) with pagination and CSV export
+            সমিতির সকল সদস্যের মাসিক সঞ্চয় ও জমার পূর্ণাঙ্গ হিসাব বিবরণী (Currency: BDT ৳)
           </p>
         </div>
 
-        <button
-          onClick={handleExportCsv}
-          className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg shadow-2xs transition-colors self-start sm:self-auto shrink-0"
-        >
-          <Download className="w-3.5 h-3.5" />
-          <span>Export Ledger CSV</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto shrink-0">
+          <button
+            onClick={() => setRecordModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm transition-colors cursor-pointer"
+          >
+            <CreditCard className="w-3.5 h-3.5" />
+            <span>+ Record Payment</span>
+          </button>
+
+          <button
+            onClick={handleExportCsv}
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg shadow-2xs transition-colors cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export CSV</span>
+          </button>
+        </div>
       </div>
 
       {/* Summary KPI Strip */}
@@ -271,7 +280,21 @@ export const AdminPaymentHistory: React.FC = () => {
               {paginatedRecords.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="py-12 text-center text-slate-400">
-                    No payment records match your filters.
+                    {monthlyDues.length === 0 ? (
+                      <div className="space-y-2">
+                        <p className="font-semibold text-slate-700 dark:text-slate-300">
+                          এখনো কোনো পেমেন্ট হিস্ট্রি যুক্ত করা হয়নি।
+                        </p>
+                        <button
+                          onClick={() => setRecordModalOpen(true)}
+                          className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold underline cursor-pointer"
+                        >
+                          নতুন পেমেন্ট এন্ট্রি করতে এখানে ক্লিক করুন (+ Record Payment)
+                        </button>
+                      </div>
+                    ) : (
+                      'No payment records match your filters.'
+                    )}
                   </td>
                 </tr>
               ) : (
@@ -312,8 +335,8 @@ export const AdminPaymentHistory: React.FC = () => {
                         {due.paid_at ? formatDate(due.paid_at) : '—'}
                       </td>
 
-                      <td className="py-3 px-4 text-slate-400 text-[11px] whitespace-nowrap">
-                        Admin Audit Log
+                      <td className="py-3 px-4 text-slate-500 text-[11px] whitespace-nowrap">
+                        Treasurer / Admin
                       </td>
                     </tr>
                   );
@@ -351,6 +374,13 @@ export const AdminPaymentHistory: React.FC = () => {
           </div>
         </div>
       </div>
+      {/* Record Payment Modal */}
+      <RecordPaymentModal
+        isOpen={recordModalOpen}
+        onClose={() => setRecordModalOpen(false)}
+        initialMonth={selectedMonth}
+        initialYear={selectedYear}
+      />
     </div>
   );
 };

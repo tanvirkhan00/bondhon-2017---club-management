@@ -17,12 +17,12 @@ import crestImage from '../../assets/images/bondhon_club_crest_1793703027252.jpg
 
 export const About: React.FC = () => {
   const committee = [
-    { role: 'সভাপতি (President)', name: 'সৈকত ঢালী (Soykot Dhali)', img: '/assets/aistudio/Soykot_f8261d98.jpg', note: 'প্রধান নির্বাহী' },
-    { role: 'সহ-সভাপতি (Vice President)', name: 'তানজিম (Tanjim)', img: '/assets/aistudio/Tanjim_8e20d7a3.jpg', note: 'নির্বাহী সমন্বয়ক' },
-    { role: 'সাধারণ সম্পাদক (General Secretary)', name: 'জাফর (Jafor)', img: '/assets/aistudio/Jafor_a1548d21.jpg', note: 'রেকর্ড ও প্রশাসন' },
+    { role: 'সভাপতি (President)', name: 'সৈকত ঢালী (Shaikot Dhali)', img: '/assets/aistudio/Soykot_f8261d98.jpg', note: 'প্রধান নির্বাহী' },
+    { role: 'সহ-সভাপতি (Vice President)', name: 'মুশফিকুর সালেহীন (Musfiqur Salehin)', img: '/assets/aistudio/Tanjim_8e20d7a3.jpg', note: 'নির্বাহী সমন্বয়ক' },
+    { role: 'সাধারণ সম্পাদক (General Secretary)', name: 'জাফর মোল্লা (Jafor Molla)', img: '/assets/aistudio/Jafor_a1548d21.jpg', note: 'রেকর্ড ও প্রশাসন' },
     { role: 'কোষাধ্যক্ষ (Treasurer)', name: 'তানভীর খান (Tanvir Khan)', img: '/assets/aistudio/Tanvir_Khan_db922a3d.jpg', note: 'অর্থ ও হিসাব' },
     { role: 'সহ-কোষাধ্যক্ষ (Assistant Treasurer)', name: 'অমিত ঘোষ (Amit Ghosh)', img: '/assets/aistudio/Amit_f054cc9a.jpg', note: 'আর্থিক নিরীক্ষা' },
-    { role: 'সাংগঠনিক সম্পাদক (Organizing Secretary)', name: 'তানবীর আহমেদ (Tanbeer Ahmed)', img: '/assets/aistudio/Tanbeer_Ahmed_6333333c.jpg', note: 'সাংগঠনিক দায়িত্ব' },
+    { role: 'সাংগঠনিক সম্পাদক (Organizing Secretary)', name: 'তানভীর আহমেদ (Tanvir Ahmed)', img: '/assets/aistudio/Tanbeer_Ahmed_6333333c.jpg', note: 'সাংগঠনিক দায়িত্ব' },
   ];
 
   return (
@@ -88,7 +88,7 @@ export const About: React.FC = () => {
             ২০১৭ সালের এস.এস.সি ব্যাচের বন্ধুদের আন্তরিক প্রচেষ্টায় গঠিত এই সমবায় সমিতি পারস্পরিক সঞ্চয় ও সৌহার্দ্য বৃদ্ধির এক নির্ভরযোগ্য প্ল্যাটফর্ম। ০১ এপ্রিল ২০২৪ তারিখে আনুষ্ঠানিকভাবে যাত্রা শুরু করে সমিতিটি একটি সুসংগঠিত নিয়মতান্ত্রিক কাঠামোর রূপ নেয়।
           </p>
           <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-            সমিতির সকল ২০ জন সদস্য প্রতি মাসের <strong>১২ তারিখের মধ্যে</strong> নিয়মিত সঞ্চয় কিস্তি জমা দেন। নির্দিষ্ট সময়ের পরে জমা দিলে গঠনতন্ত্র অনুযায়ী ৫০ টাকা বিলম্ব জরিমানা কার্যকর হয়, যা প্রতিটি সদস্যের জবাবদিহিতা ও সমিতির আর্থিক শৃঙ্খলা বজায় রাখে।
+            সমিতির সকল ২১ জন সদস্য প্রতি মাসের <strong>১২ তারিখের মধ্যে</strong> নিয়মিত সঞ্চয় কিস্তি (৫০০ ৳) জমা দেন। নির্দিষ্ট সময়ের পরে জমা দিলে গঠনতন্ত্র অনুযায়ী ৫০ টাকা বিলম্ব জরিমানা কার্যকর হয়, যা প্রতিটি সদস্যের জবাবদিহিতা ও সমিতির আর্থিক শৃঙ্খলা বজায় রাখে।
           </p>
         </div>
       </div>

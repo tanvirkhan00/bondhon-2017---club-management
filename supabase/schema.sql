@@ -34,13 +34,16 @@ create table public.members (
   id uuid default gen_random_uuid() primary key,
   member_code text not null unique,
   full_name text not null,
+  father_name text,
   phone text,
+  email text,
   profile_image_url text,
   designation text default 'Member', -- e.g. 'President', 'General Secretary', 'Executive Member', 'Member'
-  join_date date not null default '2017-01-01',
+  shares_count smallint not null default 1 check (shares_count >= 1),
+  join_date date not null default '2024-04-01',
   status text not null default 'active' check (status in ('active', 'inactive')),
   auth_user_id uuid unique references auth.users(id) on delete set null,
-  monthly_contribution numeric(12, 2) not null default 1000.00 check (monthly_contribution >= 0),
+  monthly_contribution numeric(12, 2) not null default 500.00 check (monthly_contribution >= 0),
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -63,8 +66,10 @@ select
   id,
   member_code,
   full_name,
+  father_name,
   profile_image_url,
   designation,
+  shares_count,
   status
 from public.members
 where status = 'active';
@@ -142,7 +147,8 @@ create trigger trg_calc_dues_status
   for each row execute function public.calc_dues_status();
 
 -- Trigger for new user signup:
--- If first registered user in profiles, auto-assign 'admin', else 'member'
+-- Assigns 'admin' if first user or kmtanvir1111@gmail.com, else 'member'.
+-- Auto-links member record by member_code, email, or full_name.
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -151,22 +157,30 @@ set search_path = public
 as $$
 declare
   is_first boolean;
+  v_member_code text;
 begin
   select count(*) = 0 into is_first from public.profiles;
+  v_member_code := nullif(trim(coalesce(new.raw_user_meta_data->>'member_code', '')), '');
 
   insert into public.profiles (id, full_name, role)
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
-    case when is_first then 'admin' else 'member' end
+    case
+      when is_first or lower(new.email) = 'kmtanvir1111@gmail.com' then 'admin'
+      else 'member'
+    end
   )
   on conflict (id) do nothing;
 
-  -- Attempt to auto-link member record if email or phone metadata matches
   update public.members
-  set auth_user_id = new.id
+  set
+    auth_user_id = new.id,
+    email = coalesce(email, new.email)
   where auth_user_id is null and (
-    lower(full_name) = lower(coalesce(new.raw_user_meta_data->>'full_name', ''))
+    (v_member_code is not null and upper(member_code) = upper(v_member_code))
+    or lower(coalesce(email, '')) = lower(new.email)
+    or lower(full_name) = lower(coalesce(new.raw_user_meta_data->>'full_name', ''))
   );
 
   return new;
@@ -271,7 +285,11 @@ grant select on public.public_members to anon, authenticated;
 create policy "Members view own record or admins view all"
   on public.members for select
   to authenticated
-  using (auth_user_id = auth.uid() or public.is_admin());
+  using (
+    auth_user_id = auth.uid()
+    or lower(coalesce(email, '')) = lower(coalesce(auth.jwt()->>'email', ''))
+    or public.is_admin()
+  );
 
 -- Only Admins can modify member records
 create policy "Admins insert members"
@@ -299,7 +317,11 @@ create policy "Members view own dues or admins view all"
   to authenticated
   using (
     public.is_admin() or
-    member_id in (select id from public.members where auth_user_id = auth.uid())
+    member_id in (
+      select id from public.members
+      where auth_user_id = auth.uid()
+         or lower(coalesce(email, '')) = lower(coalesce(auth.jwt()->>'email', ''))
+    )
   );
 
 -- Only Admins can insert, update, or delete dues

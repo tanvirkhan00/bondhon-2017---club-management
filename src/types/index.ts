@@ -15,24 +15,29 @@ export interface Member {
   id: string;
   member_code: string;
   full_name: string;
+  father_name?: string | null;
   phone?: string | null;
   profile_image_url?: string | null;
   designation?: string | null;
+  shares_count: number; // 1, 2, or 3 shares (names)
   join_date: string;
   status: MemberStatus;
+  email?: string | null;
   auth_user_id?: string | null;
-  monthly_contribution: number;
+  monthly_contribution: number; // shares_count * 500
   created_at?: string;
   updated_at?: string;
 }
 
-// Public Member Directory interface - Strict Privacy (No phone, join_date, financials)
+// Public Member Directory interface - Strict Privacy (No phone, join_date, private balance)
 export interface PublicMember {
   id: string;
   member_code: string;
   full_name: string;
+  father_name?: string | null;
   profile_image_url?: string | null;
   designation?: string | null;
+  shares_count?: number;
   status: 'active';
 }
 

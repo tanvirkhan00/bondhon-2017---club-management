@@ -16,6 +16,7 @@ import {
   X,
   AlertTriangle,
 } from 'lucide-react';
+import { RecordPaymentModal } from '../../components/RecordPaymentModal';
 
 export const AdminPayments: React.FC = () => {
   const {
@@ -35,6 +36,8 @@ export const AdminPayments: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'partial' | 'unpaid'>('all');
   const [generateModalOpen, setGenerateModalOpen] = useState(false);
+  const [recordModalOpen, setRecordModalOpen] = useState(false);
+  const [targetMemberForRecord, setTargetMemberForRecord] = useState<string | undefined>(undefined);
   const [targetGenMonth, setTargetGenMonth] = useState<number>(selectedMonth);
   const [targetGenYear, setTargetGenYear] = useState<number>(selectedYear);
   const [genMessage, setGenMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -43,7 +46,7 @@ export const AdminPayments: React.FC = () => {
   // Edit payment modal
   const [editDue, setEditDue] = useState<MonthlyDue | null>(null);
   const [editAmountPaid, setEditAmountPaid] = useState<number>(0);
-  const [editAmountDue, setEditAmountDue] = useState<number>(1000);
+  const [editAmountDue, setEditAmountDue] = useState<number>(500);
   const [editPaidDate, setEditPaidDate] = useState<string>('');
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
@@ -178,11 +181,22 @@ export const AdminPayments: React.FC = () => {
           </select>
 
           <button
+            onClick={() => {
+              setTargetMemberForRecord(undefined);
+              setRecordModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm transition-all shrink-0 cursor-pointer"
+          >
+            <CreditCard className="w-3.5 h-3.5" />
+            <span>+ Record Payment</span>
+          </button>
+
+          <button
             onClick={() => setGenerateModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg shadow-2xs transition-colors shrink-0"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg shadow-2xs transition-colors shrink-0"
           >
             <PlusCircle className="w-3.5 h-3.5" />
-            <span>Generate Monthly Dues</span>
+            <span>Generate Dues</span>
           </button>
         </div>
       </div>
@@ -324,7 +338,19 @@ export const AdminPayments: React.FC = () => {
                       </td>
 
                       <td className="py-3 px-4 font-medium text-slate-900 dark:text-slate-100">
-                        {due.member?.full_name}
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-semibold">{due.member?.full_name}</span>
+                          {due.member?.shares_count && due.member.shares_count > 1 && (
+                            <span className="px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold text-[9px] shrink-0">
+                              {due.member.shares_count}টি নাম
+                            </span>
+                          )}
+                        </div>
+                        {due.member?.father_name && (
+                          <span className="block text-[11px] text-slate-400 font-normal">
+                            পিতা: {due.member.father_name}
+                          </span>
+                        )}
                       </td>
 
                       <td className="py-3 px-4 font-mono text-slate-500 whitespace-nowrap">
@@ -357,7 +383,7 @@ export const AdminPayments: React.FC = () => {
                             <button
                               onClick={() => markAsPaid(due.id, due.amount_due)}
                               className="px-2 py-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 rounded border border-emerald-200 transition-colors flex items-center gap-1"
-                              title="Mark Full Paid (৳1,000)"
+                              title="Mark Full Paid (৳500)"
                             >
                               <CheckCircle2 className="w-3 h-3" />
                               <span>Mark Paid</span>
@@ -471,7 +497,7 @@ export const AdminPayments: React.FC = () => {
                 <p>• সকল সক্রিয় সদস্যের জন্য নির্ধারিত মাসিক কিস্তি হিসাব তৈরি হবে।</p>
                 <p>• <strong>গঠনতন্ত্রের ধারা ৪.১.১:</strong> প্রতি মাসের ১২ তারিখের মধ্যে সঞ্চয় জমা দেওয়া বাধ্যতামূলক।</p>
                 <p>• <strong>গঠনতন্ত্রের ধারা ৪.১.২:</strong> ১২ তারিখের পরে কিস্তিতে ৫০ টাকা বিলম্ব জরিমানা কার্যকর হবে।</p>
-                <p>• ডাটাবেস ইউনিক নিয়ম <code className="font-mono text-emerald-600">UNIQUE(member_id, month, year)</code> দ্বৈত এন্ট্রি রোধ করে।</p>
+                <p>• একই সদস্য ও একই মাসের জন্য দ্বৈত এন্ট্রি স্বয়ংক্রিয়ভাবে রোধ করা হয়।</p>
               </div>
 
               <div className="flex justify-end gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
@@ -612,6 +638,15 @@ export const AdminPayments: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Direct Record Payment Modal */}
+      <RecordPaymentModal
+        isOpen={recordModalOpen}
+        onClose={() => setRecordModalOpen(false)}
+        initialMemberId={targetMemberForRecord}
+        initialMonth={selectedMonth}
+        initialYear={selectedYear}
+      />
     </div>
   );
 };
