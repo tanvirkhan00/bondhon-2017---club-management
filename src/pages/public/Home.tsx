@@ -6,11 +6,8 @@ import { formatBDT } from '../../utils/formatters';
 import {
   Users,
   ShieldCheck,
-  Calendar,
   Sparkles,
   ArrowRight,
-  Award,
-  CheckCircle2,
   AlertTriangle,
   FileText,
   MapPin,
@@ -35,13 +32,6 @@ export const Home: React.FC = () => {
     return publicMembers.filter(
       (m) => m.designation && !m.designation.toLowerCase().startsWith('member')
     );
-  }, [publicMembers]);
-
-  // Preview of general members
-  const previewGeneralMembers = useMemo(() => {
-    return publicMembers
-      .filter((m) => !m.designation || m.designation.toLowerCase().startsWith('member'))
-      .slice(0, 10);
   }, [publicMembers]);
 
   // Savings projection calculation based on 34 shares across 21 members
@@ -85,7 +75,7 @@ export const Home: React.FC = () => {
 
               {/* Tagline / Subtitle */}
               <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl">
-                চরচান্দা খাসমহল বাজার ভিত্তিক এসএসসি ব্যাচ ২০১৭ বন্ধুদের ঐক্যবদ্ধ সমবায় প্ল্যাটফর্ম। পারস্পরিক সঞ্চয় <strong>(মাসিক ৫০০ ৳)</strong>, ১২ তারিখের মধ্যে নিয়মতান্ত্রিক কিস্তি জমাদান এবং সম্পূর্ণ ডিজিটাল হিসাব ব্যবস্থাপনার আধুনিক রূপরেখা।
+                চরচান্দা খাসমহল বাজার ভিত্তিক এসএসসি ব্যাচ ২০১৭-এর সমবায় প্ল্যাটফর্ম। নিয়মিত সঞ্চয়, স্বচ্ছ হিসাবরক্ষণ ও যৌথ উন্নয়নের সমন্বিত উদ্যোগ।
               </p>
 
               {/* CTA Group */}

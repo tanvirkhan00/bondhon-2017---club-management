@@ -1,16 +1,13 @@
 import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useClubData } from '../../hooks/useClubData';
-import { formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/formatters';
+import { formatBDT } from '../../utils/formatters';
+import { computeMemberFinancialSummary } from '../../utils/fineCalculator';
 import { downloadCsv } from '../../utils/csvExport';
 import {
   BarChart3,
   Download,
   Calendar,
-  FileSpreadsheet,
-  TrendingUp,
-  AlertCircle,
-  Users,
-  Award,
 } from 'lucide-react';
 
 export const AdminReports: React.FC = () => {
@@ -20,7 +17,6 @@ export const AdminReports: React.FC = () => {
     setSelectedYear,
     monthlyDues,
     members,
-    selectedMonth,
   } = useClubData();
 
   const [activeTab, setActiveTab] = useState<'monthly' | 'yearly' | 'members'>('monthly');
@@ -31,25 +27,23 @@ export const AdminReports: React.FC = () => {
   const totalYearOutstanding = Math.max(0, totalYearTarget - totalYearCollected);
   const yearCollectionRate = totalYearTarget > 0 ? Math.round((totalYearCollected / totalYearTarget) * 100) : 0;
 
-  // Member-wise ranking report
+  // Member-wise ranking report using real-time complete ledger
   const memberRankings = useMemo(() => {
+    const now = new Date();
     return members
       .map((m) => {
         const dues = monthlyDues.filter(d => d.member_id === m.id);
-        const billed = dues.reduce((acc, d) => acc + Number(d.amount_due), 0);
-        const paid = dues.reduce((acc, d) => acc + Number(d.amount_paid), 0);
-        const outstanding = Math.max(0, billed - paid);
-        const paidMonths = dues.filter(d => d.status === 'paid').length;
-        const unpaidMonths = dues.filter(d => d.status === 'unpaid' || d.status === 'partial').length;
+        const summary = computeMemberFinancialSummary(m, dues, now);
+        const paidTotal = summary.totalPaid + summary.totalFinePaid;
 
         return {
           member: m,
-          billed,
-          paid,
-          outstanding,
-          paidMonths,
-          unpaidMonths,
-          settlementRate: billed > 0 ? Math.round((paid / billed) * 100) : 0,
+          billed: summary.totalBilled,
+          paid: paidTotal,
+          outstanding: summary.totalOutstanding,
+          paidMonths: summary.totalPaidMonths,
+          unpaidMonths: summary.unpaidMonthsCount,
+          settlementRate: summary.totalBilled > 0 ? Math.round((paidTotal / summary.totalBilled) * 100) : 0,
         };
       })
       .sort((a, b) => b.paid - a.paid);
@@ -317,7 +311,12 @@ export const AdminReports: React.FC = () => {
                       #{index + 1}
                     </td>
                     <td className="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100">
-                      {r.member.full_name}
+                      <Link
+                        to={`/admin/members/${r.member.id}`}
+                        className="hover:text-emerald-700 dark:hover:text-emerald-400"
+                      >
+                        {r.member.full_name}
+                      </Link>
                       <span className="block text-[10px] text-emerald-700 font-normal">
                         {r.member.designation || 'Member'}
                       </span>

@@ -38,7 +38,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
   const [amountDue, setAmountDue] = useState<number>(500);
   const [fineDue, setFineDue] = useState<number>(0);
   const [finePaid, setFinePaid] = useState<number>(0);
-  const [paymentMethod, setPaymentMethod] = useState<string>('Cash (নগদ)');
+  const [paymentMethod, setPaymentMethod] = useState<string>('Cash');
   const [notes, setNotes] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -151,10 +151,10 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                নতুন পেমেন্ট এন্ট্রি (Record Member Payment)
+                Record Payment
               </h2>
-              <span className="text-[10px] text-slate-500">
-                শুধুমাত্র কোষাধ্যক্ষ / অ্যাডমিনদের জন্য
+              <span className="text-[11px] text-slate-500">
+                Treasurer &amp; Admin Ledger Entry
               </span>
             </div>
           </div>
@@ -189,7 +189,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
               <User className="w-3.5 h-3.5 text-emerald-600" />
-              <span>সদস্য নির্বাচন করুন (Select Member)</span>
+              <span>Member</span>
             </label>
             <select
               required
@@ -199,14 +199,14 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
             >
               {members.map((m) => (
                 <option key={m.id} value={m.id}>
-                  {m.member_code} - {m.full_name} ({m.shares_count > 1 ? `${m.shares_count}টি নাম/শেয়ার · ` : ''}মাসিক: ৳{m.monthly_contribution})
+                  {m.member_code} - {m.full_name} ({m.shares_count > 1 ? `${m.shares_count} shares · ` : ''}৳{m.monthly_contribution}/mo)
                 </option>
               ))}
             </select>
             {selectedMember && (
               <div className="mt-1.5 p-2 bg-slate-50 dark:bg-slate-800/60 rounded-lg text-[11px] text-slate-500 flex justify-between">
-                <span>পিতার নাম: <strong>{selectedMember.father_name || '—'}</strong></span>
-                <span>শেয়ার সংখ্যা: <strong>{selectedMember.shares_count}টি ({formatBDT(selectedMember.monthly_contribution)}/মাস)</strong></span>
+                <span>Father: <strong>{selectedMember.father_name || '—'}</strong></span>
+                <span>Shares: <strong>{selectedMember.shares_count} ({formatBDT(selectedMember.monthly_contribution)}/mo)</strong></span>
               </div>
             )}
           </div>
@@ -217,7 +217,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
               <div>
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>কোন মাসের কিস্তি (Billing Month)</span>
+                  <span>Billing Month</span>
                 </label>
                 <select
                   value={month}
@@ -237,7 +237,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
 
               <div>
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  সাল (Fiscal Year)
+                  Fiscal Year
                 </label>
                 <select
                   value={year}
@@ -262,19 +262,19 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                   onChange={(e) => handleToggleAutoSync(e.target.checked)}
                   className="rounded border-slate-300 text-emerald-600"
                 />
-                <span>পেমেন্টের তারিখ অনুযায়ী আগের মাসে যোগ করুন (যেমন: ফেব্রুয়ারির টাকা → জানুয়ারি)</span>
+                <span>Auto-map payment date to prior billing month</span>
               </label>
               <div className="flex flex-wrap items-center justify-between gap-1 text-[10px] pl-5">
                 <span className="text-slate-500">
-                  জরিমানা ছাড়া শেষ সময়: <strong className="text-slate-700 dark:text-slate-200">{deadlineDay} {getMonthName(deadlineMonth)} {deadlineYear}</strong>
+                  Due deadline: <strong className="text-slate-700 dark:text-slate-200">{deadlineDay} {getMonthName(deadlineMonth)} {deadlineYear}</strong>
                 </span>
                 {isPaidDateLate ? (
                   <span className="font-bold text-amber-700 dark:text-amber-400">
-                    ১২ {getMonthName(deadlineMonth)} অতিক্রান্ত (জরিমানা প্রযোজ্য)
+                    Past deadline (Late fine applies)
                   </span>
                 ) : (
                   <span className="font-bold text-emerald-700 dark:text-emerald-400">
-                    সময়মতো জমা (জরিমানা নেই)
+                    On time (No fine)
                   </span>
                 )}
               </div>
@@ -285,7 +285,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                নির্ধারিত কিস্তি (Due ৳)
+                Principal Due (৳)
               </label>
               <input
                 type="number"
@@ -299,7 +299,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
 
             <div>
               <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
-                <span>পরিশোধিত টাকা (Paid ৳)</span>
+                <span>Principal Paid (৳)</span>
               </label>
               <input
                 type="number"
@@ -319,21 +319,21 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
               onClick={() => setAmountPaid(amountDue)}
               className="flex-1 py-1 px-2 text-xs font-semibold rounded-lg bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300"
             >
-              পূর্ণ কিস্তি (৳{amountDue})
+              Full Principal (৳{amountDue})
             </button>
             <button
               type="button"
               onClick={() => setAmountPaid(500)}
               className="py-1 px-3 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
             >
-              ৳৫০০
+              ৳500
             </button>
             <button
               type="button"
               onClick={() => setAmountPaid(0)}
               className="py-1 px-3 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
             >
-              ৳০ (Unpaid)
+              ৳0 (Unpaid)
             </button>
           </div>
 
@@ -342,14 +342,14 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
             <div className="flex items-center justify-between text-[11px] font-semibold text-amber-900 dark:text-amber-300">
               <span className="flex items-center gap-1">
                 <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
-                <span>বিলম্ব জরিমানা ({deadlineDay} {getMonthName(deadlineMonth)}-এর পর ৫০৳/নাম)</span>
+                <span>Late Fine (৳50/share after {deadlineDay} {getMonthName(deadlineMonth)})</span>
               </span>
-              <span className="font-mono">মোট জমা: {formatBDT(Number(amountPaid) + Number(finePaid))}</span>
+              <span className="font-mono">Total: {formatBDT(Number(amountPaid) + Number(finePaid))}</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
-                  আরোপিত জরিমানা (Fine Due ৳)
+                  Fine Due (৳)
                 </label>
                 <input
                   type="number"
@@ -361,7 +361,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
               </div>
               <div>
                 <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
-                  পরিশোধিত জরিমানা (Fine Paid ৳)
+                  Fine Paid (৳)
                 </label>
                 <input
                   type="number"
@@ -378,7 +378,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                পরিশোধের তারিখ (Payment Date)
+                Payment Date
               </label>
               <input
                 type="date"
@@ -391,17 +391,17 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
 
             <div>
               <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                পেমেন্ট মাধ্যম (Method)
+                Method
               </label>
               <select
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs"
               >
-                <option value="Cash (নগদ)">Cash (নগদ)</option>
-                <option value="bKash (বিকাশ)">bKash (বিকাশ)</option>
-                <option value="Nagad (নগদ)">Nagad (নগদ অ্যাপ)</option>
-                <option value="Bank Transfer (ব্যাংক)">Bank Transfer (ব্যাংক)</option>
+                <option value="Cash">Cash</option>
+                <option value="bKash">bKash</option>
+                <option value="Nagad">Nagad</option>
+                <option value="Bank Transfer">Bank Transfer</option>
               </select>
             </div>
           </div>
@@ -409,11 +409,11 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
           {/* Note */}
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              মন্তব্য / রসিদ রেফারেন্স (ঐচ্ছিক)
+              Notes / Reference
             </label>
             <input
               type="text"
-              placeholder="যেমন: TrxID বা হাতেনাতে জমা..."
+              placeholder="Receipt or TrxID (optional)"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs"
@@ -427,7 +427,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
               onClick={onClose}
               className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 rounded-xl"
             >
-              বাতিল
+              Cancel
             </button>
             <button
               type="submit"
@@ -435,7 +435,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
               className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm disabled:opacity-50 flex items-center gap-1.5"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>{loading ? 'সংরক্ষণ হচ্ছে...' : 'পেমেন্ট সংরক্ষণ করুন (Save Payment)'}</span>
+              <span>{loading ? 'Saving...' : 'Save Payment'}</span>
             </button>
           </div>
         </form>

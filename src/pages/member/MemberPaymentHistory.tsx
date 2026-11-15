@@ -6,12 +6,6 @@ import { StatusBadge } from '../../components/StatusBadge';
 import {
   History,
   Search,
-  Calendar,
-  Filter,
-  CreditCard,
-  DollarSign,
-  AlertCircle,
-  CheckCircle2,
 } from 'lucide-react';
 
 export const MemberPaymentHistory: React.FC = () => {
@@ -81,10 +75,10 @@ export const MemberPaymentHistory: React.FC = () => {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
             <History className="w-6 h-6 text-emerald-700 dark:text-emerald-400" />
-            <span>My Contribution Payment Ledger</span>
+            <span>Payment Ledger</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            {myMemberRecord?.full_name} ({myMemberRecord?.member_code}) · প্রতি মাসের কিস্তি পরবর্তী মাসের ১২ তারিখের মধ্যে পরিশোধযোগ্য (১২ তারিখের পর প্রতি নামে ৫০৳ জরিমানা)
+            {myMemberRecord?.full_name} · {myMemberRecord?.member_code}
           </p>
         </div>
       </div>
@@ -92,15 +86,15 @@ export const MemberPaymentHistory: React.FC = () => {
       {/* Summary KPI Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
-          <span className="text-[11px] font-medium text-slate-500 uppercase">সর্বমোট বিল (জরিমানাসহ)</span>
+          <span className="text-[11px] font-medium text-slate-500 uppercase">Total Billed</span>
           <div className="text-xl font-bold font-mono text-slate-900 dark:text-slate-100 tabular-nums mt-1">
             {formatBDT(filteredBreakdown.due)}
           </div>
-          <span className="text-[11px] text-slate-500 mt-0.5 block">{filteredRecords.length} মাস</span>
+          <span className="text-[11px] text-slate-500 mt-0.5 block">{filteredRecords.length} cycles</span>
         </div>
 
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
-          <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400 uppercase">মোট মূল সঞ্চয় জমা</span>
+          <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400 uppercase">Principal Paid</span>
           <div className="text-xl font-bold font-mono text-emerald-700 dark:text-emerald-400 tabular-nums mt-1">
             {formatBDT(filteredBreakdown.paid)}
           </div>
@@ -110,22 +104,22 @@ export const MemberPaymentHistory: React.FC = () => {
         </div>
 
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
-          <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400 uppercase">মোট জরিমানা পরিশোধ</span>
+          <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400 uppercase">Fines Paid</span>
           <div className="text-xl font-bold font-mono text-amber-700 dark:text-amber-400 tabular-nums mt-1">
             {formatBDT(filteredBreakdown.finePaid)}
           </div>
           <span className="text-[11px] text-slate-500 mt-0.5 block">
-            বিলম্ব ফি জমা হিসাব
+            Late fees settled
           </span>
         </div>
 
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
-          <span className="text-[11px] font-medium text-rose-700 dark:text-rose-400 uppercase">মোট বকেয়া (মূল+জরিমানা)</span>
+          <span className="text-[11px] font-medium text-rose-700 dark:text-rose-400 uppercase">Outstanding</span>
           <div className="text-xl font-bold font-mono text-rose-700 dark:text-rose-400 tabular-nums mt-1">
             {formatBDT(filteredBreakdown.outstanding)}
           </div>
           <span className="text-[11px] text-rose-600 mt-0.5 block">
-            {filteredBreakdown.outstanding === 0 ? 'সকল বকেয়া পরিশোধিত' : 'পরিশোধযোগ্য বকেয়া'}
+            {filteredBreakdown.outstanding === 0 ? 'Account settled' : 'Balance due'}
           </span>
         </div>
       </div>
@@ -200,11 +194,11 @@ export const MemberPaymentHistory: React.FC = () => {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
               <tr>
-                <th className="py-3 px-4 font-semibold">Month & Year</th>
-                <th className="py-3 px-4 font-semibold text-right">Amount Due (৳)</th>
-                <th className="py-3 px-4 font-semibold text-right">জরিমানা (৳)</th>
+                <th className="py-3 px-4 font-semibold">Period</th>
+                <th className="py-3 px-4 font-semibold text-right">Due (৳)</th>
+                <th className="py-3 px-4 font-semibold text-right">Fine (৳)</th>
                 <th className="py-3 px-4 font-semibold text-right">Paid (৳)</th>
-                <th className="py-3 px-4 font-semibold text-right">মোট বকেয়া (৳)</th>
+                <th className="py-3 px-4 font-semibold text-right">Outstanding (৳)</th>
                 <th className="py-3 px-4 font-semibold text-center">Status</th>
                 <th className="py-3 px-4 font-semibold">Payment Date</th>
               </tr>
@@ -221,12 +215,12 @@ export const MemberPaymentHistory: React.FC = () => {
                   const bd = calculateDueBreakdown(d, myMemberRecord?.shares_count);
 
                   return (
-                    <tr key={d.id || `my-due-${idx}-${d.year}-${d.month}`} className="hover:bg-slate-50/60 transition-colors">
+                    <tr key={d.id || `my-due-${idx}-${d.year}-${d.month}`} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
                       <td className="py-3 px-4 font-medium text-slate-900 dark:text-slate-100">
                         {getMonthName(d.month)} {d.year}
                       </td>
 
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-600">
+                      <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-600 dark:text-slate-400">
                         {formatBDT(bd.principalDue)}
                       </td>
 
@@ -236,7 +230,7 @@ export const MemberPaymentHistory: React.FC = () => {
                             {formatBDT(bd.fineDue)}
                             {bd.finePaid > 0 && (
                               <span className="block text-[10px] text-emerald-600">
-                                জমা: {formatBDT(bd.finePaid)}
+                                Paid: {formatBDT(bd.finePaid)}
                               </span>
                             )}
                           </span>

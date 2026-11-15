@@ -60,7 +60,7 @@ export const MemberProfile: React.FC = () => {
 
   const recentDues = [...myDues]
     .sort((a, b) => b.year - a.year || b.month - a.month)
-    .slice(0, 5);
+    .slice(0, 6);
 
   const handleLinkProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,10 +165,10 @@ export const MemberProfile: React.FC = () => {
         </div>
         <div>
           <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            আপনার সদস্য প্রোফাইল যুক্ত করুন
+            Link Member Profile
           </h2>
-          <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-            আপনার অ্যাকাউন্ট ({user?.email}) সফলভাবে যাচাই হয়েছে। আপনার ব্যক্তিগত সঞ্চয় ও জমার হিসাব দেখতে ক্লাবের তালিকা থেকে আপনার নাম ও কোড নির্বাচন করুন।
+          <p className="text-xs text-slate-500 mt-1">
+            Select your profile to view contribution records for {user?.email}.
           </p>
         </div>
 
@@ -185,7 +185,7 @@ export const MemberProfile: React.FC = () => {
             onChange={(e) => setSelectedCode(e.target.value)}
             className="w-full px-3 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl"
           >
-            <option value="">-- আপনার নাম ও কোড নির্বাচন করুন --</option>
+            <option value="">Select member...</option>
             {publicMembers.map((m) => (
               <option key={m.id} value={m.member_code}>
                 {m.member_code} — {m.full_name}
@@ -197,7 +197,7 @@ export const MemberProfile: React.FC = () => {
             disabled={linking || !selectedCode}
             className="w-full py-2.5 px-4 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-xl disabled:opacity-50 cursor-pointer"
           >
-            {linking ? 'যুক্ত করা হচ্ছে...' : 'প্রোফাইল যুক্ত করুন'}
+            {linking ? 'Linking...' : 'Link Profile'}
           </button>
         </form>
       </div>
@@ -242,93 +242,85 @@ export const MemberProfile: React.FC = () => {
               {myMemberRecord.father_name && (
                 <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
                   <User className="w-3.5 h-3.5 text-slate-400" />
-                  পিতার নাম: {myMemberRecord.father_name}
+                  {myMemberRecord.father_name}
                 </span>
               )}
               <span className="flex items-center gap-1.5 font-mono text-slate-700 dark:text-slate-300">
                 <Phone className="w-3.5 h-3.5 text-slate-400" />
-                {myMemberRecord.phone || 'Phone not registered'}
+                {myMemberRecord.phone || '—'}
               </span>
               <span className="flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                সদস্য সাল: {formatDate(myMemberRecord.join_date)}
+                Joined {formatDate(myMemberRecord.join_date)}
               </span>
               <span className="flex items-center gap-1.5 font-semibold text-emerald-700 dark:text-emerald-400">
                 <CreditCard className="w-3.5 h-3.5" />
-                মাসিক কিস্তি: {formatBDT(myFinancialSummary.monthlyContribution)} {myMemberRecord.shares_count > 1 ? `(${myMemberRecord.shares_count}টি নাম)` : ''}
+                {formatBDT(myFinancialSummary.monthlyContribution)}/mo
+                {myMemberRecord.shares_count > 1 ? ` (${myMemberRecord.shares_count} shares)` : ''}
               </span>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Constitution Financial Policy Alert */}
-      <div className="p-4 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-        <div className="flex items-start gap-2.5">
-          <AlertCircle className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5" />
-          <div className="text-slate-800 dark:text-slate-200">
-            <span className="font-bold text-amber-900 dark:text-amber-300">গঠনতন্ত্রের ধারা ৪.১ (সঞ্চয় ও জরিমানা নিয়মাবলী): </span>
-            প্রতি মাসের কিস্তি পরবর্তী মাসের <strong>১২ তারিখের মধ্যে</strong> (যেমন: জানুয়ারি মাসের কিস্তি ফেব্রুয়ারির ১২ তারিখের মধ্যে) জমা দেবেন। পরবর্তী মাসের ১২ তারিখের পর প্রতি নামের জন্য ৫০ টাকা হারে বিলম্ব জরিমানা প্রযোজ্য (১ নাম = ৫৫০৳, ২ নাম = ১,১০০৳, ৩ নাম = ১,৬৫০৳)।
-          </div>
-        </div>
-        <Link
-          to="/constitution"
-          className="px-3 py-1 bg-amber-100 dark:bg-amber-900/60 hover:bg-amber-200 text-amber-900 dark:text-amber-200 rounded-lg font-semibold shrink-0 text-center"
-        >
-          গঠনতন্ত্র দেখুন
-        </Link>
       </div>
 
       {/* Personal Financial Summary */}
       <div className="space-y-3">
-        <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
-          Personal Contribution Summary
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+            Contribution Summary
+          </h2>
+          <Link
+            to="/constitution"
+            className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline"
+          >
+            Club Policy
+          </Link>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
-            <span className="text-[11px] font-medium text-slate-500 uppercase">মোট সঞ্চয় জমা (Total Paid)</span>
+            <span className="text-[11px] font-medium text-slate-500 uppercase">Total Paid</span>
             <div className="text-2xl font-bold font-mono text-emerald-700 dark:text-emerald-400 tabular-nums mt-1">
               {formatBDT(myFinancialSummary.totalPaid)}
             </div>
             <span className="text-[11px] text-slate-500 mt-0.5 block">
-              {myFinancialSummary.totalPaidMonths} মাস পূর্ণ ক্লিয়ার
+              {myFinancialSummary.totalPaidMonths} months cleared
             </span>
           </div>
 
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
-            <span className="text-[11px] font-medium text-slate-500 uppercase">মোট বকেয়া (জরিমানাসহ)</span>
+            <span className="text-[11px] font-medium text-slate-500 uppercase">Total Outstanding</span>
             <div className="text-2xl font-bold font-mono text-rose-700 dark:text-rose-400 tabular-nums mt-1">
               {formatBDT(myFinancialSummary.totalOutstanding)}
             </div>
             <span className="text-[11px] text-slate-500 mt-0.5 block">
-              মূল: {formatBDT(myFinancialSummary.principalOutstanding)} + জরিমানা: {formatBDT(myFinancialSummary.totalFinePending)} ({myFinancialSummary.unpaidMonthsCount} মাস)
+              Principal {formatBDT(myFinancialSummary.principalOutstanding)} + Fine {formatBDT(myFinancialSummary.totalFinePending)} ({myFinancialSummary.unpaidMonthsCount} mos)
             </span>
           </div>
 
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
-            <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400 uppercase">এ পর্যন্ত মোট জরিমানা পরিশোধ</span>
+            <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400 uppercase">Fines Paid</span>
             <div className="text-2xl font-bold font-mono text-amber-700 dark:text-amber-400 tabular-nums mt-1">
               {formatBDT(myFinancialSummary.totalFinePaid)}
             </div>
             <span className="text-[11px] text-slate-500 mt-0.5 block">
-              মোট আরোপিত জরিমানা: {formatBDT(myFinancialSummary.totalFineCharged)}
+              Total charged: {formatBDT(myFinancialSummary.totalFineCharged)}
             </span>
           </div>
 
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
-            <span className="text-[11px] font-medium text-slate-500 uppercase">Current Status & Last Payment</span>
+            <span className="text-[11px] font-medium text-slate-500 uppercase">Account Status</span>
             <div className="mt-1.5 flex items-center gap-2">
               <StatusBadge status={myFinancialSummary.currentStatus} />
             </div>
             <span className="text-[11px] text-slate-500 mt-1.5 block font-mono">
-              শেষ জমা: {myFinancialSummary.lastPaymentDate ? formatDate(myFinancialSummary.lastPaymentDate) : 'কোনো জমা নেই'}
+              Last payment: {myFinancialSummary.lastPaymentDate ? formatDate(myFinancialSummary.lastPaymentDate) : 'None'}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Member Security & Communication: Change Password + Notify Admin */}
+      {/* Member Security & Communication */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Card 1: Change Password */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-4">
@@ -338,10 +330,10 @@ export const MemberProfile: React.FC = () => {
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                পাসওয়ার্ড পরিবর্তন করুন (Change Password)
+                Account Security
               </h3>
               <p className="text-[11px] text-slate-500">
-                ডিফল্ট পাসওয়ার্ড (123456) পরিবর্তন করে আপনার নিজস্ব গোপন পাসওয়ার্ড সেট করুন
+                Update your portal password
               </p>
             </div>
           </div>
@@ -366,7 +358,7 @@ export const MemberProfile: React.FC = () => {
           <form onSubmit={handleChangePassword} className="space-y-3 text-xs">
             <div>
               <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                নতুন পাসওয়ার্ড (New Password)
+                New Password
               </label>
               <div className="relative">
                 <Lock className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
@@ -374,7 +366,7 @@ export const MemberProfile: React.FC = () => {
                   type={showPass ? 'text' : 'password'}
                   required
                   minLength={6}
-                  placeholder="কমপক্ষে ৬ অক্ষরের পাসওয়ার্ড"
+                  placeholder="Minimum 6 characters"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="w-full pl-9 pr-9 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm"
@@ -391,7 +383,7 @@ export const MemberProfile: React.FC = () => {
 
             <div>
               <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                পাসওয়ার্ড নিশ্চিত করুন (Confirm Password)
+                Confirm Password
               </label>
               <div className="relative">
                 <Lock className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
@@ -399,7 +391,7 @@ export const MemberProfile: React.FC = () => {
                   type={showPass ? 'text' : 'password'}
                   required
                   minLength={6}
-                  placeholder="পুনরায় নতুন পাসওয়ার্ড লিখুন"
+                  placeholder="Re-enter password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm"
@@ -412,12 +404,12 @@ export const MemberProfile: React.FC = () => {
               disabled={passLoading}
               className="w-full py-2.5 px-4 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold rounded-xl shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
             >
-              {passLoading ? 'আপডেট হচ্ছে...' : 'পাসওয়ার্ড আপডেট করুন (Update Password)'}
+              {passLoading ? 'Updating...' : 'Update Password'}
             </button>
           </form>
         </div>
 
-        {/* Card 2: Update Phone & Send Payment Notice to Admin */}
+        {/* Card 2: Contact & Treasurer Notice */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-5">
           <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100 dark:border-slate-800">
             <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center">
@@ -425,17 +417,17 @@ export const MemberProfile: React.FC = () => {
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                তথ্য আপডেট ও অ্যাডমিনকে বার্তা (Notify Treasurer)
+                Contact &amp; Treasurer Notice
               </h3>
               <p className="text-[11px] text-slate-500">
-                মোবাইল নম্বর আপডেট করুন অথবা কিস্তি পরিশোধের তথ্য অ্যাডমিনকে জানান
+                Update contact phone or notify the treasurer
               </p>
             </div>
           </div>
 
           <form onSubmit={handleUpdatePhone} className="space-y-2 text-xs">
             <label className="block font-semibold text-slate-700 dark:text-slate-300">
-              মোবাইল নম্বর (Contact Phone)
+              Phone Number
             </label>
             <div className="flex gap-2">
               <input
@@ -450,7 +442,7 @@ export const MemberProfile: React.FC = () => {
                 disabled={phoneSaving}
                 className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 text-white font-semibold rounded-xl text-xs cursor-pointer disabled:opacity-50"
               >
-                {phoneSaving ? 'সেভ...' : 'নম্বর সেভ'}
+                {phoneSaving ? 'Saving...' : 'Save'}
               </button>
             </div>
             {phoneFeedback && (
@@ -462,7 +454,7 @@ export const MemberProfile: React.FC = () => {
 
           <form onSubmit={handleSendNotice} className="space-y-2 text-xs pt-2 border-t border-slate-100 dark:border-slate-800">
             <label className="block font-semibold text-slate-700 dark:text-slate-300">
-              কোষাধ্যক্ষ / অ্যাডমিনকে পেমেন্ট বার্তা পাঠান
+              Message to Treasurer
             </label>
             <div className="flex gap-2">
               <input
@@ -470,7 +462,7 @@ export const MemberProfile: React.FC = () => {
                 required
                 value={noticeMessage}
                 onChange={(e) => setNoticeMessage(e.target.value)}
-                placeholder="যেমন: চলতি মাসের ৫০০৳ বিকাশ করেছি (TrxID...)"
+                placeholder="Payment reference or TrxID..."
                 className="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs"
               />
               <button
@@ -479,7 +471,7 @@ export const MemberProfile: React.FC = () => {
                 className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold rounded-xl text-xs flex items-center gap-1 cursor-pointer disabled:opacity-50"
               >
                 <Send className="w-3.5 h-3.5" />
-                <span>{noticeSending ? 'পাঠাচ্ছে...' : 'পাঠান'}</span>
+                <span>{noticeSending ? 'Sending...' : 'Send'}</span>
               </button>
             </div>
             {noticeFeedback && (
@@ -496,17 +488,14 @@ export const MemberProfile: React.FC = () => {
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-              Recent Monthly Contributions
+              Recent Billing Cycles
             </h3>
-            <p className="text-xs text-slate-500">
-              Showing your latest 5 billing cycles
-            </p>
           </div>
           <Link
             to="/member/payment-history"
             className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline flex items-center gap-1"
           >
-            <span>View Full Payment History</span>
+            <span>Full Ledger</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -515,31 +504,31 @@ export const MemberProfile: React.FC = () => {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
               <tr>
-                <th className="py-2.5 px-3 font-semibold">Month & Year</th>
+                <th className="py-2.5 px-3 font-semibold">Period</th>
                 <th className="py-2.5 px-3 font-semibold text-right">Due (৳)</th>
-                <th className="py-2.5 px-3 font-semibold text-right">জরিমানা (৳)</th>
+                <th className="py-2.5 px-3 font-semibold text-right">Fine (৳)</th>
                 <th className="py-2.5 px-3 font-semibold text-right">Paid (৳)</th>
-                <th className="py-2.5 px-3 font-semibold text-right">বকেয়া (৳)</th>
+                <th className="py-2.5 px-3 font-semibold text-right">Outstanding (৳)</th>
                 <th className="py-2.5 px-3 font-semibold text-center">Status</th>
-                <th className="py-2.5 px-3 font-semibold">Date Paid</th>
+                <th className="py-2.5 px-3 font-semibold">Payment Date</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {recentDues.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-slate-400">
-                    এখনো কোনো পেমেন্ট এন্ট্রি করা হয়নি।
+                    No billing records available.
                   </td>
                 </tr>
               ) : (
                 recentDues.map((d) => {
                   const bd = calculateDueBreakdown(d, myMemberRecord.shares_count);
                   return (
-                    <tr key={d.id} className="hover:bg-slate-50/50">
+                    <tr key={d.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
                       <td className="py-2.5 px-3 font-medium text-slate-900 dark:text-slate-100">
                         {getMonthName(d.month)} {d.year}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-600">
+                      <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-600 dark:text-slate-400">
                         {formatBDT(bd.principalDue)}
                       </td>
                       <td className="py-2.5 px-3 text-right font-mono tabular-nums text-amber-700 dark:text-amber-400">
@@ -548,7 +537,7 @@ export const MemberProfile: React.FC = () => {
                             {formatBDT(bd.fineDue)}
                             {bd.finePaid > 0 && (
                               <span className="block text-[10px] text-emerald-600">
-                                জমা: {formatBDT(bd.finePaid)}
+                                Paid: {formatBDT(bd.finePaid)}
                               </span>
                             )}
                           </span>

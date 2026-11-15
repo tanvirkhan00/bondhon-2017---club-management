@@ -1,18 +1,16 @@
 import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useClubData } from '../../hooks/useClubData';
 import {
   Search,
   Users,
   ArrowUpDown,
   Shield,
-  Info,
   Crown,
   CheckCircle2,
-  Phone,
   Sparkles,
   Award,
 } from 'lucide-react';
-import { PublicMember } from '../../types';
 
 export const PublicMembers: React.FC = () => {
   const { publicMembers } = useClubData();
@@ -276,12 +274,12 @@ export const PublicMembers: React.FC = () => {
           </p>
         </div>
 
-        <a
-          href="/constitution"
+        <Link
+          to="/constitution"
           className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs shadow-md transition-colors whitespace-nowrap shrink-0"
         >
           গঠনতন্ত্র বিস্তারিত পড়ুন
-        </a>
+        </Link>
       </div>
     </div>
   );

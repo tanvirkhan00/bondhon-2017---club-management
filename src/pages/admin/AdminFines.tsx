@@ -1,11 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useClubData } from '../../hooks/useClubData';
 import { MonthlyDue } from '../../types';
 import { formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/formatters';
 import {
+  buildMemberCompleteLedger,
   calculateDueBreakdown,
   FINE_PER_SHARE,
   isAfterMonthDeadline,
+  MonthlyDueWithMeta,
 } from '../../utils/fineCalculator';
 import {
   AlertTriangle,
@@ -61,9 +64,30 @@ export const AdminFines: React.FC = () => {
     return map;
   }, [members]);
 
+  // Complete ledgers across all active members (includes unentered overdue months)
+  const allEffectiveDues = useMemo<MonthlyDueWithMeta[]>(() => {
+    const now = new Date();
+    const list: MonthlyDueWithMeta[] = [];
+    const seenMemberIds = new Set<string>();
+
+    members.forEach((m) => {
+      seenMemberIds.add(m.id);
+      const realDues = monthlyDues.filter((d) => d.member_id === m.id);
+      list.push(...buildMemberCompleteLedger(m, realDues, now));
+    });
+
+    monthlyDues.forEach((d) => {
+      if (!seenMemberIds.has(d.member_id)) {
+        list.push({ ...d, isVirtual: false });
+      }
+    });
+
+    return list;
+  }, [members, monthlyDues]);
+
   // All due rows with fine activity (either explicit fine_due/fine_paid/fine_waived or auto-late unpaid after 12th)
   const fineRows = useMemo(() => {
-    return monthlyDues
+    return allEffectiveDues
       .map((due) => {
         const mem = due.member || memberMap.get(due.member_id);
         const shares = mem?.shares_count || 1;
@@ -74,7 +98,7 @@ export const AdminFines: React.FC = () => {
       })
       .filter((item) => item.hasAnyFineContext)
       .sort((a, b) => b.due.year * 100 + b.due.month - (a.due.year * 100 + a.due.month));
-  }, [monthlyDues, memberMap]);
+  }, [allEffectiveDues, memberMap]);
 
   // Aggregate KPIs across all fine records
   const fineKpis = useMemo(() => {
@@ -84,7 +108,7 @@ export const AdminFines: React.FC = () => {
     let totalCombinedOutstanding = 0;
     let pendingFineCount = 0;
 
-    monthlyDues.forEach((due) => {
+    allEffectiveDues.forEach((due) => {
       const mem = due.member || memberMap.get(due.member_id);
       const bd = calculateDueBreakdown(due, mem?.shares_count || 1);
       totalFineCharged += bd.fineDue;
@@ -101,13 +125,13 @@ export const AdminFines: React.FC = () => {
       totalCombinedOutstanding,
       pendingFineCount,
     };
-  }, [monthlyDues, memberMap]);
+  }, [allEffectiveDues, memberMap]);
 
-  // Member-wise summary: কে কত টাকা জরিমানা দিয়েছে ও বকেয়া আছে
+  // Member-wise fine & due summary
   const memberFineSummaries = useMemo(() => {
     return members
       .map((m) => {
-        const mDues = monthlyDues.filter((d) => d.member_id === m.id);
+        const mDues = allEffectiveDues.filter((d) => d.member_id === m.id);
         let fineCharged = 0;
         let finePaid = 0;
         let finePending = 0;
@@ -150,7 +174,7 @@ export const AdminFines: React.FC = () => {
           b.finePaid - a.finePaid ||
           a.member.member_code.localeCompare(b.member.member_code)
       );
-  }, [members, monthlyDues, searchQuery]);
+  }, [members, allEffectiveDues, searchQuery]);
 
   // Filtered ledger rows for Tab 1
   const filteredFineRows = useMemo(() => {
@@ -266,8 +290,12 @@ export const AdminFines: React.FC = () => {
     }
   };
 
-  const handleQuickWaive = async (dueId: string) => {
-    await waiveMemberFine(dueId);
+  const handleQuickWaive = async (due: MonthlyDueWithMeta) => {
+    await waiveMemberFine(due.id, {
+      memberId: due.member_id,
+      month: due.month,
+      year: due.year,
+    });
   };
 
   const selectedFormMember = members.find((m) => m.id === formMemberId);
@@ -279,10 +307,10 @@ export const AdminFines: React.FC = () => {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
             <AlertTriangle className="w-6 h-6 text-amber-600" />
-            <span>জরিমানা ও বকেয়া শিট (Fines & Due Clearance)</span>
+            <span>Fines &amp; Due Clearance</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            যেমন: জানুয়ারি মাসের কিস্তি ফেব্রুয়ারির ১২ তারিখের মধ্যে পরিশোধযোগ্য · পরবর্তী মাসের ১২ তারিখের পর প্রতি নামে ৫০৳ হারে জরিমানা (১ নাম = ৫৫০৳, ২ নাম = ১,১০০৳)
+            ৳50/share late fine applies after the 12th of the following collection month
           </p>
         </div>
 
@@ -292,7 +320,7 @@ export const AdminFines: React.FC = () => {
           className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm transition-colors cursor-pointer self-start sm:self-auto shrink-0"
         >
           <PlusCircle className="w-4 h-4" />
-          <span>+ জরিমানা / বকেয়া ক্লিয়ার এন্ট্রি</span>
+          <span>Clear Fine / Due</span>
         </button>
       </div>
 
@@ -359,7 +387,7 @@ export const AdminFines: React.FC = () => {
               }`}
             >
               <Receipt className="w-3.5 h-3.5" />
-              <span>জরিমানা ও বকেয়া শিট ({filteredFineRows.length})</span>
+              <span>Monthly Fines ({filteredFineRows.length})</span>
             </button>
             <button
               type="button"
@@ -371,7 +399,7 @@ export const AdminFines: React.FC = () => {
               }`}
             >
               <Users className="w-3.5 h-3.5" />
-              <span>সদস্যভিত্তিক জরিমানার হিসাব (কে কত দিয়েছে)</span>
+              <span>Member Summary</span>
             </button>
           </div>
 
@@ -470,12 +498,19 @@ export const AdminFines: React.FC = () => {
                             <span className="font-mono font-bold text-slate-700 dark:text-slate-300">
                               {member?.member_code}
                             </span>
-                            <span className="font-semibold text-slate-900 dark:text-slate-100">
-                              {member?.full_name}
-                            </span>
+                            {member ? (
+                              <Link
+                                to={`/admin/members/${member.id}`}
+                                className="font-semibold text-slate-900 dark:text-slate-100 hover:text-emerald-700 dark:hover:text-emerald-400"
+                              >
+                                {member.full_name}
+                              </Link>
+                            ) : (
+                              <span className="font-semibold text-slate-900 dark:text-slate-100">—</span>
+                            )}
                             {breakdown.sharesCount > 1 && (
                               <span className="px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-[9px] font-bold">
-                                {breakdown.sharesCount}টি নাম
+                                {breakdown.sharesCount} Shares
                               </span>
                             )}
                           </div>
@@ -485,7 +520,7 @@ export const AdminFines: React.FC = () => {
                             {formatBDT(breakdown.principalDue)}
                           </span>
                           <span className="block text-[10px] text-emerald-600">
-                            জমা: {formatBDT(breakdown.principalPaid)}
+                            Paid: {formatBDT(breakdown.principalPaid)}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-amber-700 dark:text-amber-400">
@@ -505,15 +540,15 @@ export const AdminFines: React.FC = () => {
                         <td className="py-3 px-4 text-center whitespace-nowrap">
                           {isWaived ? (
                             <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-semibold">
-                              মওকুফকৃত
+                              Waived
                             </span>
                           ) : isCleared ? (
                             <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-[10px] font-semibold">
-                              পরিশোধিত (Cleared)
+                              Cleared
                             </span>
                           ) : (
                             <span className="px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 text-[10px] font-semibold">
-                              বকেয়া (Due)
+                              Due
                             </span>
                           )}
                         </td>
@@ -525,17 +560,17 @@ export const AdminFines: React.FC = () => {
                               className="px-2.5 py-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 rounded-lg border border-emerald-200 transition-colors flex items-center gap-1 cursor-pointer"
                             >
                               <CheckCircle2 className="w-3 h-3" />
-                              <span>{isCleared ? 'আপডেট' : 'জমা ও ক্লিয়ার'}</span>
+                              <span>{isCleared ? 'Update' : 'Settle'}</span>
                             </button>
                             {!isWaived && breakdown.fineOutstanding > 0 && (
                               <button
                                 type="button"
-                                onClick={() => handleQuickWaive(due.id)}
+                                onClick={() => handleQuickWaive(due)}
                                 className="px-2 py-1 text-[11px] font-semibold text-slate-600 hover:text-amber-700 bg-slate-100 hover:bg-amber-50 dark:bg-slate-800 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
-                                title="জরিমানা মওকুফ করুন"
+                                title="Waive Fine"
                               >
                                 <Ban className="w-3 h-3" />
-                                <span>মওকুফ</span>
+                                <span>Waive</span>
                               </button>
                             )}
                           </div>
@@ -549,21 +584,21 @@ export const AdminFines: React.FC = () => {
           </div>
         </div>
       ) : (
-        /* Tab 2: Member-Wise Total Fine Paid Leaderboard & Pending Ledger */
+        /* Tab 2: Member-Wise Fine Summary */
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
                 <tr>
-                  <th className="py-3 px-4 font-semibold">কোড</th>
-                  <th className="py-3 px-4 font-semibold">সদস্যের নাম</th>
-                  <th className="py-3 px-4 font-semibold text-center">শেয়ার / নাম</th>
-                  <th className="py-3 px-4 font-semibold text-center">জরিমানার মাস</th>
-                  <th className="py-3 px-4 font-semibold text-right">মোট জরিমানা (Charged)</th>
-                  <th className="py-3 px-4 font-semibold text-right">এ পর্যন্ত পরিশোধিত জরিমানা</th>
-                  <th className="py-3 px-4 font-semibold text-right">বকেয়া জরিমানা</th>
-                  <th className="py-3 px-4 font-semibold text-right">সর্বমোট বকেয়া (মূল+জরিমানা)</th>
-                  <th className="py-3 px-4 font-semibold text-right">অ্যাকশন</th>
+                  <th className="py-3 px-4 font-semibold">Code</th>
+                  <th className="py-3 px-4 font-semibold">Member</th>
+                  <th className="py-3 px-4 font-semibold text-center">Shares</th>
+                  <th className="py-3 px-4 font-semibold text-center">Fined Months</th>
+                  <th className="py-3 px-4 font-semibold text-right">Fines Charged</th>
+                  <th className="py-3 px-4 font-semibold text-right">Fines Paid</th>
+                  <th className="py-3 px-4 font-semibold text-right">Pending Fines</th>
+                  <th className="py-3 px-4 font-semibold text-right">Total Due (Incl. Fine)</th>
+                  <th className="py-3 px-4 font-semibold text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -576,10 +611,15 @@ export const AdminFines: React.FC = () => {
                       {row.member.member_code}
                     </td>
                     <td className="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100">
-                      {row.member.full_name}
+                      <Link
+                        to={`/admin/members/${row.member.id}`}
+                        className="hover:text-emerald-700 dark:hover:text-emerald-400"
+                      >
+                        {row.member.full_name}
+                      </Link>
                     </td>
                     <td className="py-3 px-4 text-center font-mono">
-                      {row.member.shares_count}টি ({formatBDT(row.member.shares_count * FINE_PER_SHARE)}/মাস)
+                      {row.member.shares_count} ({formatBDT(row.member.shares_count * FINE_PER_SHARE)}/mo)
                     </td>
                     <td className="py-3 px-4 text-center font-mono">
                       {row.finedMonths}
@@ -602,7 +642,7 @@ export const AdminFines: React.FC = () => {
                         onClick={() => openEntryModal(row.member.id)}
                         className="px-2.5 py-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 rounded-lg border border-emerald-200 cursor-pointer"
                       >
-                        + এন্ট্রি / ক্লিয়ার
+                        + Clear / Record
                       </button>
                     </td>
                   </tr>
@@ -624,10 +664,10 @@ export const AdminFines: React.FC = () => {
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                    জরিমানা ও বকেয়া নিষ্পত্তি (Clear Fine & Due)
+                    Clear Fine &amp; Due
                   </h2>
-                  <p className="text-[10px] text-slate-500">
-                    এখানে এন্ট্রি করলে সদস্য প্রোফাইল ও অ্যাডমিন ড্যাশবোর্ড থেকে বকেয়া ক্লিয়ার হবে
+                  <p className="text-[11px] text-slate-500">
+                    Settle outstanding late fee and monthly contribution
                   </p>
                 </div>
               </div>
@@ -660,7 +700,7 @@ export const AdminFines: React.FC = () => {
             <form onSubmit={handleClearBothSubmit} className="space-y-4 text-xs">
               <div>
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  সদস্য নির্বাচন করুন
+                  Member
                 </label>
                 <select
                   required
@@ -670,8 +710,8 @@ export const AdminFines: React.FC = () => {
                 >
                   {members.map((m) => (
                     <option key={m.id} value={m.id}>
-                      {m.member_code} - {m.full_name} ({m.shares_count}টি নাম · জরিমানা ৳
-                      {m.shares_count * FINE_PER_SHARE})
+                      {m.member_code} - {m.full_name} ({m.shares_count} share{m.shares_count > 1 ? 's' : ''} · ৳
+                      {m.shares_count * FINE_PER_SHARE} fine)
                     </option>
                   ))}
                 </select>
@@ -680,7 +720,7 @@ export const AdminFines: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    মাস
+                    Billing Month
                   </label>
                   <select
                     value={formMonth}
@@ -697,7 +737,7 @@ export const AdminFines: React.FC = () => {
 
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    সাল
+                    Year
                   </label>
                   <select
                     value={formYear}
@@ -715,7 +755,7 @@ export const AdminFines: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    নির্ধারিত জরিমানা (৳)
+                    Fine Due (৳)
                   </label>
                   <input
                     type="number"
@@ -729,7 +769,7 @@ export const AdminFines: React.FC = () => {
 
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    পরিশোধিত জরিমানা (৳)
+                    Fine Paid (৳)
                   </label>
                   <input
                     type="number"
@@ -752,14 +792,14 @@ export const AdminFines: React.FC = () => {
                     className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-600"
                   />
                   <span>
-                    মূল মাসিক কিস্তিও পরিশোধ হিসেবে ক্লিয়ার করুন (
+                    Also mark monthly principal as paid (
                     {formatBDT(selectedFormMember?.monthly_contribution || 500)})
                   </span>
                 </label>
 
                 {formClearPrincipal && (
                   <div className="flex items-center justify-between gap-3 pt-1">
-                    <span className="text-[11px] text-slate-500">মূল কিস্তি জমা (৳):</span>
+                    <span className="text-[11px] text-slate-500">Principal Paid (৳):</span>
                     <input
                       type="number"
                       min={0}
@@ -771,7 +811,7 @@ export const AdminFines: React.FC = () => {
                 )}
 
                 <div className="pt-1 border-t border-slate-200 dark:border-slate-700 flex justify-between text-[11px] font-bold">
-                  <span>সর্বমোট জমা (কিস্তি + জরিমানা):</span>
+                  <span>Total Payment (Principal + Fine):</span>
                   <span className="text-emerald-700 dark:text-emerald-400 font-mono">
                     {formatBDT(
                       (formClearPrincipal ? Number(formPrincipalPaid) : 0) + Number(formFinePaid)
@@ -783,7 +823,7 @@ export const AdminFines: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    তারিখ
+                    Payment Date
                   </label>
                   <input
                     type="date"
@@ -795,11 +835,11 @@ export const AdminFines: React.FC = () => {
                 </div>
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    নোট / মন্তব্য
+                    Notes
                   </label>
                   <input
                     type="text"
-                    placeholder="যেমন: জরিমানাসহ নগদ পরিশোধ"
+                    placeholder="Cash / bKash / Reference"
                     value={formNotes}
                     onChange={(e) => setFormNotes(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl"
@@ -813,7 +853,7 @@ export const AdminFines: React.FC = () => {
                   onClick={() => setModalOpen(false)}
                   className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
                 >
-                  বাতিল
+                  Cancel
                 </button>
                 <button
                   type="submit"
@@ -821,7 +861,7 @@ export const AdminFines: React.FC = () => {
                   className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>{saving ? 'সংরক্ষণ হচ্ছে...' : 'জরিমানা ও বকেয়া ক্লিয়ার করুন'}</span>
+                  <span>{saving ? 'Saving...' : 'Confirm Settlement'}</span>
                 </button>
               </div>
             </form>

@@ -19,6 +19,7 @@ import { MemberPaymentHistory } from '../pages/member/MemberPaymentHistory';
 // Admin Pages
 import { AdminDashboard } from '../pages/admin/AdminDashboard';
 import { AdminMembers } from '../pages/admin/AdminMembers';
+import { AdminMemberProfile } from '../pages/admin/AdminMemberProfile';
 import { AdminPayments } from '../pages/admin/AdminPayments';
 import { AdminFines } from '../pages/admin/AdminFines';
 import { AdminPaymentHistory } from '../pages/admin/AdminPaymentHistory';
@@ -64,6 +65,7 @@ export const AppRoutes: React.FC = () => {
         <Route index element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="members" element={<AdminMembers />} />
+        <Route path="members/:memberId" element={<AdminMemberProfile />} />
         <Route path="payments" element={<AdminPayments />} />
         <Route path="fines" element={<AdminFines />} />
         <Route path="payment-history" element={<AdminPaymentHistory />} />

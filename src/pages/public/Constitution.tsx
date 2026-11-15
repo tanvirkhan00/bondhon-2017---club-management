@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
-  FileText,
   Printer,
   ShieldCheck,
   Calendar,
@@ -12,7 +11,6 @@ import {
   DollarSign,
   Scale,
   CheckCircle2,
-  ExternalLink,
 } from 'lucide-react';
 import crestImage from '../../assets/images/bondhon_club_crest_1793703027252.jpg';
 

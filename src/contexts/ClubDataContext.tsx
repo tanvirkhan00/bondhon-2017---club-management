@@ -18,7 +18,12 @@ import {
 } from '../lib/mockData';
 import { useAuth } from './AuthContext';
 import { MONTH_NAMES, SHORT_MONTH_NAMES } from '../utils/formatters';
-import { calculateDueBreakdown, getBillingPeriodFromPaymentDate } from '../utils/fineCalculator';
+import {
+  buildMemberCompleteLedger,
+  computeMemberFinancialSummary,
+  getBillingPeriodFromPaymentDate,
+  MonthlyDueWithMeta,
+} from '../utils/fineCalculator';
 
 interface LogActivityParams {
   actorUserId?: string | null;
@@ -34,7 +39,7 @@ interface ClubDataContextType {
   publicMembers: PublicMember[];
   members: Member[];
   myMemberRecord: Member | null;
-  myDues: MonthlyDue[];
+  myDues: MonthlyDueWithMeta[];
   myFinancialSummary: MemberFinancialSummary;
   monthlyDues: MonthlyDue[];
   notifications: ClubNotification[];
@@ -118,7 +123,10 @@ interface ClubDataContextType {
     paidAt?: string;
     notes?: string;
   }) => Promise<{ success: boolean; error?: string }>;
-  waiveMemberFine: (dueId: string) => Promise<{ success: boolean; error?: string }>;
+  waiveMemberFine: (
+    dueId: string,
+    fallback?: { memberId: string; month: number; year: number }
+  ) => Promise<{ success: boolean; error?: string }>;
   deleteDueRecord: (dueId: string) => Promise<{ success: boolean; error?: string }>;
 
   resetDemoData: () => void;
@@ -602,70 +610,34 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     [notifications]
   );
 
-  // My personal monthly dues
-  const myDues = useMemo<MonthlyDue[]>(() => {
+  // Complete month-by-month personal ledger (synthesizes unentered months from join_date to current billing cycle)
+  const myDues = useMemo<MonthlyDueWithMeta[]>(() => {
     if (!myMemberRecord) return [];
-    return enrichedDues.filter(d => d.member_id === myMemberRecord.id);
+    const realDues = enrichedDues.filter((d) => d.member_id === myMemberRecord.id);
+    return buildMemberCompleteLedger(myMemberRecord, realDues, new Date());
   }, [enrichedDues, myMemberRecord]);
 
-  // My Personal Financial Summary (includes automatic late fee after 12th per share)
+  // Real-time Personal Financial Summary (includes unentered months & automatic late fines after 12th)
   const myFinancialSummary = useMemo<MemberFinancialSummary>(() => {
-    const shares = myMemberRecord?.shares_count || 1;
-    let totalPrincipalBilled = 0;
-    let totalPaid = 0;
-    let principalOutstanding = 0;
-    let totalFineCharged = 0;
-    let totalFinePaid = 0;
-    let totalFinePending = 0;
-    let totalPaidMonths = 0;
-    let unpaidMonthsCount = 0;
-
-    myDues.forEach((d) => {
-      const bd = calculateDueBreakdown(d, shares);
-      totalPrincipalBilled += bd.principalDue;
-      totalPaid += bd.principalPaid;
-      principalOutstanding += bd.principalOutstanding;
-      totalFineCharged += bd.fineDue;
-      totalFinePaid += bd.finePaid;
-      totalFinePending += bd.fineOutstanding;
-
-      if (d.status === 'paid' && bd.fineOutstanding === 0) {
-        totalPaidMonths += 1;
-      } else {
-        unpaidMonthsCount += 1;
-      }
-    });
-
-    const totalBilled = totalPrincipalBilled + totalFineCharged;
-    const totalOutstanding = principalOutstanding + totalFinePending;
-
-    const sorted = [...myDues].sort((a, b) => b.year - a.year || b.month - a.month);
-    let currentStatus: DueStatus = 'paid';
-    if (sorted.length > 0) {
-      const latestBd = calculateDueBreakdown(sorted[0], shares);
-      if (sorted[0].status === 'paid' && latestBd.fineOutstanding > 0) {
-        currentStatus = 'partial';
-      } else {
-        currentStatus = sorted[0].status;
-      }
+    if (!myMemberRecord) {
+      return {
+        totalBilled: 0,
+        totalPaid: 0,
+        totalPaidMonths: 0,
+        totalOutstanding: 0,
+        principalOutstanding: 0,
+        totalFineCharged: 0,
+        totalFinePaid: 0,
+        totalFinePending: 0,
+        unpaidMonthsCount: 0,
+        currentStatus: 'unpaid',
+        lastPaymentDate: null,
+        monthlyContribution: defaultDueAmount,
+      };
     }
-    const lastPaymentDate = sorted.find(d => d.paid_at)?.paid_at || null;
-
-    return {
-      totalBilled,
-      totalPaid,
-      totalPaidMonths,
-      totalOutstanding,
-      principalOutstanding,
-      totalFineCharged,
-      totalFinePaid,
-      totalFinePending,
-      unpaidMonthsCount,
-      currentStatus,
-      lastPaymentDate,
-      monthlyContribution: myMemberRecord?.monthly_contribution || defaultDueAmount,
-    };
-  }, [myDues, myMemberRecord, defaultDueAmount]);
+    const realDues = enrichedDues.filter((d) => d.member_id === myMemberRecord.id);
+    return computeMemberFinancialSummary(myMemberRecord, realDues, new Date());
+  }, [enrichedDues, myMemberRecord, defaultDueAmount]);
 
   // Club-wide standard monthly target across all active shares (34 shares × 500 = ৳17,000)
   const clubMonthlyTarget = useMemo<number>(() => {
@@ -1385,9 +1357,26 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
   };
 
-  const waiveMemberFine = async (dueId: string) => {
+  const waiveMemberFine = async (
+    dueId: string,
+    fallback?: { memberId: string; month: number; year: number }
+  ) => {
     const target = monthlyDues.find(d => d.id === dueId);
-    if (!target) return { success: false, error: 'Record not found.' };
+    if (!target) {
+      if (fallback) {
+        return recordFinePayment({
+          memberId: fallback.memberId,
+          month: fallback.month,
+          year: fallback.year,
+          fineDue: 0,
+          finePaid: 0,
+          waiveFine: true,
+          clearPrincipal: false,
+          notes: 'জরিমানা মওকুফ',
+        });
+      }
+      return { success: false, error: 'Record not found.' };
+    }
     return updateDueRecord(dueId, {
       amount_paid: target.amount_paid,
       amount_due: target.amount_due,

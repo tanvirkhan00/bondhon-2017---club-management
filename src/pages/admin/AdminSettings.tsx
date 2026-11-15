@@ -103,7 +103,7 @@ export const AdminSettings: React.FC = () => {
           <span>Club Administration Settings</span>
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-          সমিতির তথ্য, মাসিক কিস্তির হার এবং আর্থিক ব্যাকআপ পরিচালনা করুন
+          Configure monthly contribution rates, contact details, and data backups
         </p>
       </div>
 
@@ -114,7 +114,7 @@ export const AdminSettings: React.FC = () => {
             Club Details &amp; Monthly Fee
           </h2>
           <p className="text-xs text-slate-500">
-            প্রতি শেয়ার/নামের বিপরীতে নির্ধারিত মাসিক সঞ্চয় কিস্তি (BDT ৳)
+            Standard monthly contribution per share (BDT ৳)
           </p>
         </div>
 
@@ -212,7 +212,7 @@ export const AdminSettings: React.FC = () => {
           <span>Financial Records Backup &amp; Reset</span>
         </h2>
         <p className="text-xs text-slate-500">
-          সদস্য তালিকা ও সকল পেমেন্ট রেকর্ডের সম্পূর্ণ ব্যাকআপ ডাউনলোড করুন।
+          Export full JSON backup of member profiles and payment records.
         </p>
 
         <div className="flex flex-wrap items-center gap-3 pt-1">

@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { Menu, X, LogIn, ShieldCheck, User as UserIcon, Heart, ExternalLink } from 'lucide-react';
+import { Menu, X, LogIn, ShieldCheck, User as UserIcon } from 'lucide-react';
 import crestImage from '../assets/images/bondhon_club_crest_1793703027252.jpg';
 
 export const PublicLayout: React.FC = () => {
-  const { isAuthenticated, isAdmin, profile, signOut } = useAuth();
+  const { isAuthenticated, isAdmin, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const navigate = useNavigate();
 
   const navLinks = [
     { to: '/', label: 'Home' },
@@ -167,22 +166,22 @@ export const PublicLayout: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md leading-relaxed">
-                <strong>বন্ধুত্ব সমবায় সমিতি</strong> (Bondhon 2017) · এস.এস.সি ব্যাচ ২০১৭। চরচান্দা খাসমহল বাজার। স্থাপিত: ০১/০৪/২০২৪ ইং। পারস্পরিক সঞ্চয়, আর্থিক স্বচ্ছতা ও সামাজিক কল্যাণ।
+                <strong>বন্ধুত্ব সমবায় সমিতি</strong> (Bondhon 2017) · এস.এস.সি ব্যাচ ২০১৭ · চরচান্দা খাসমহল বাজার। স্থাপিত: ০১/০৪/২০২৪ ইং।
               </p>
               <div className="text-xs text-slate-400">
-                মাসিক সঞ্চয় কিস্তি: <span className="font-semibold text-emerald-700 dark:text-emerald-400">৫০০ ৳</span> (প্রতি মাসের ১২ তারিখের মধ্যে জমাদান বাধ্যতামূলক, বিলম্ব ফি ৫০ ৳)
+                মাসিক কিস্তি: <span className="font-semibold text-emerald-700 dark:text-emerald-400">৳৫০০ / শেয়ার</span>
               </div>
             </div>
 
             <div>
               <h3 className="text-xs font-semibold text-slate-900 dark:text-slate-100 uppercase tracking-wider mb-3">
-                Public Navigation
+                Navigation
               </h3>
               <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
-                <li><Link to="/" className="hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors">Home Page</Link></li>
-                <li><Link to="/about" className="hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors">About History & Mission</Link></li>
-                <li><Link to="/members" className="hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors">Public Member Directory</Link></li>
-                <li><Link to="/constitution" className="hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors font-medium text-emerald-600">গঠনতন্ত্র ও নীতিমালা (Constitution)</Link></li>
+                <li><Link to="/" className="hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors">Home</Link></li>
+                <li><Link to="/about" className="hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors">About Club</Link></li>
+                <li><Link to="/members" className="hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors">Member Directory</Link></li>
+                <li><Link to="/constitution" className="hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors font-medium text-emerald-600">Constitution</Link></li>
               </ul>
             </div>
 

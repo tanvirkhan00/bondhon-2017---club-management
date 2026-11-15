@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useClubData } from '../../hooks/useClubData';
 import { MonthlyDue } from '../../types';
 import { formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/formatters';
@@ -13,7 +14,6 @@ import {
   AlertCircle,
   Edit2,
   Trash2,
-  DollarSign,
   X,
   AlertTriangle,
 } from 'lucide-react';
@@ -314,16 +314,21 @@ export const AdminPayments: React.FC = () => {
 
                       <td className="py-3 px-4 font-medium text-slate-900 dark:text-slate-100">
                         <div className="flex items-center gap-1.5">
-                          <span className="font-semibold">{due.member?.full_name}</span>
+                          <Link
+                            to={`/admin/members/${due.member_id}`}
+                            className="font-semibold hover:text-emerald-700 dark:hover:text-emerald-400"
+                          >
+                            {due.member?.full_name}
+                          </Link>
                           {due.member?.shares_count && due.member.shares_count > 1 && (
                             <span className="px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold text-[9px] shrink-0">
-                              {due.member.shares_count}টি নাম
+                              {due.member.shares_count} shares
                             </span>
                           )}
                         </div>
                         {due.member?.father_name && (
                           <span className="block text-[11px] text-slate-400 font-normal">
-                            পিতা: {due.member.father_name}
+                            {due.member.father_name}
                           </span>
                         )}
                       </td>
@@ -336,7 +341,7 @@ export const AdminPayments: React.FC = () => {
                         <span>{formatBDT(due.amount_due)}</span>
                         {bd.fineDue > 0 && (
                           <span className="block text-[10px] font-semibold text-amber-700 dark:text-amber-400">
-                            +{formatBDT(bd.fineDue)} জরিমানা
+                            +{formatBDT(bd.fineDue)} fine
                           </span>
                         )}
                       </td>
@@ -345,7 +350,7 @@ export const AdminPayments: React.FC = () => {
                         <span>{formatBDT(due.amount_paid)}</span>
                         {bd.finePaid > 0 && (
                           <span className="block text-[10px] font-normal text-emerald-600">
-                            +{formatBDT(bd.finePaid)} জরিমানা
+                            +{formatBDT(bd.finePaid)} fine
                           </span>
                         )}
                       </td>
@@ -374,7 +379,7 @@ export const AdminPayments: React.FC = () => {
                                 })
                               }
                               className="px-2 py-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 rounded border border-emerald-200 transition-colors flex items-center gap-1"
-                              title={`সব বকেয়া ক্লিয়ার করুন (${formatBDT(due.amount_due + bd.fineDue)})`}
+                              title={`Settle total (${formatBDT(due.amount_due + bd.fineDue)})`}
                             >
                               <CheckCircle2 className="w-3 h-3" />
                               <span>{bd.fineOutstanding > 0 ? 'Clear All' : 'Mark Paid'}</span>
@@ -484,11 +489,9 @@ export const AdminPayments: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
-                <p>• সকল সক্রিয় সদস্যের জন্য নির্ধারিত মাসিক কিস্তি হিসাব তৈরি হবে।</p>
-                <p>• <strong>গঠনতন্ত্রের ধারা ৪.১.১:</strong> প্রতিটি মাসের কিস্তি পরবর্তী মাসের ১২ তারিখের মধ্যে (যেমন: জানুয়ারির কিস্তি ১২ ফেব্রুয়ারির মধ্যে) জমা দেওয়া বাধ্যতামূলক।</p>
-                <p>• <strong>গঠনতন্ত্রের ধারা ৪.১.২:</strong> পরবর্তী মাসের ১২ তারিখের পরে কিস্তিতে প্রতি নামে ৫০ টাকা বিলম্ব জরিমানা কার্যকর হবে।</p>
-                <p>• একই সদস্য ও একই মাসের জন্য দ্বৈত এন্ট্রি স্বয়ংক্রিয়ভাবে রোধ করা হয়।</p>
+              <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl space-y-1 text-xs text-slate-600 dark:text-slate-400">
+                <p>Creates monthly dues entries (৳500/share) for all active members without duplicating existing records.</p>
+                <p>Collection window ends on the 12th of the following month (৳50/share late fine thereafter).</p>
               </div>
 
               <div className="flex justify-end gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">

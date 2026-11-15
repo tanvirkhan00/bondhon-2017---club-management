@@ -10,7 +10,6 @@ import {
   Target,
   Banknote,
   AlertCircle,
-  TrendingUp,
   PlusCircle,
   Calendar,
   CheckCircle2,
@@ -32,11 +31,8 @@ import {
   Cell,
 } from 'recharts';
 
-interface AdminDashboardProps {
-  onOpenGenerateDues?: () => void;
-}
 
-export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenGenerateDues }) => {
+export const AdminDashboard: React.FC = () => {
   const {
     stats,
     selectedMonth,
@@ -45,7 +41,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenGenerateDu
     setSelectedYear,
     monthlyDues,
     monthSummaries,
-    members,
   } = useClubData();
 
   const [recordPaymentModalOpen, setRecordPaymentModalOpen] = useState(false);
@@ -137,7 +132,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenGenerateDu
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 rounded-lg shadow-2xs transition-colors shrink-0"
           >
             <AlertCircle className="w-3.5 h-3.5" />
-            <span>জরিমানা শিট</span>
+            <span>Fines Sheet</span>
           </Link>
 
           <Link
@@ -328,9 +323,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenGenerateDu
                       <span className="font-mono text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded mr-1.5">
                         {due.member?.member_code}
                       </span>
-                      <span className="font-medium text-slate-900 dark:text-slate-100">
+                      <Link
+                        to={`/admin/members/${due.member_id}`}
+                        className="font-medium text-slate-900 dark:text-slate-100 hover:text-emerald-700 dark:hover:text-emerald-400"
+                      >
                         {due.member?.full_name}
-                      </span>
+                      </Link>
                       <span className="block text-[11px] font-mono text-slate-400">
                         {due.member?.phone || '—'}
                       </span>
@@ -343,7 +341,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenGenerateDu
                         </span>
                         {bd.fineOutstanding > 0 && (
                           <span className="block text-[10px] text-amber-700 dark:text-amber-400 font-semibold">
-                            (+{formatBDT(bd.fineOutstanding)} জরিমানা)
+                            (+{formatBDT(bd.fineOutstanding)} fine)
                           </span>
                         )}
                         <StatusBadge status={due.status} size="sm" />
@@ -395,11 +393,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenGenerateDu
               recentPayments.map((due) => (
                 <div key={due.id} className="py-2.5 flex items-center justify-between text-xs">
                   <div>
-                    <span className="font-medium text-slate-900 dark:text-slate-100 block">
+                    <Link
+                      to={`/admin/members/${due.member_id}`}
+                      className="font-medium text-slate-900 dark:text-slate-100 hover:text-emerald-700 dark:hover:text-emerald-400 block"
+                    >
                       {due.member?.full_name || 'Member'}
-                    </span>
+                    </Link>
                     <span className="text-[11px] text-slate-500">
-                      Month: {getMonthName(due.month)} {due.year} · {due.paid_at ? formatDate(due.paid_at) : 'Paid'}
+                      {getMonthName(due.month)} {due.year} · {due.paid_at ? formatDate(due.paid_at) : 'Paid'}
                     </span>
                   </div>
 

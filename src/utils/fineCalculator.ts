@@ -1,7 +1,11 @@
-import { MonthlyDue } from '../types';
+import { DueStatus, Member, MemberFinancialSummary, MonthlyDue } from '../types';
 
 export const FINE_PER_SHARE = 50;
 export const MONTHLY_DEADLINE_DAY = 12;
+
+export type MonthlyDueWithMeta = MonthlyDue & {
+  isVirtual?: boolean;
+};
 
 /**
  * Parses a Date or YYYY-MM-DD string into local year/month/day without UTC timezone drift.
@@ -144,5 +148,166 @@ export function calculateDueBreakdown(
     totalOutstanding,
     isLate: effectiveFineDue > 0,
     isFullySettled: totalOutstanding === 0,
+  };
+}
+
+/**
+ * Builds a complete month-by-month ledger for a member from their join date (default 2024-04)
+ * through the current active collection period (previous calendar month of referenceDate).
+ * Missing months for active members are dynamically represented as unpaid rows with auto-fines.
+ */
+export function buildMemberCompleteLedger(
+  member: Member,
+  existingDues: MonthlyDue[],
+  referenceDate: Date = new Date()
+): MonthlyDueWithMeta[] {
+  const existingMap = new Map<string, MonthlyDue>();
+  let minExistingKey = Infinity;
+
+  existingDues.forEach((d) => {
+    const key = d.year * 100 + d.month;
+    if (key < minExistingKey) minExistingKey = key;
+    existingMap.set(`${d.year}-${d.month}`, { ...d, member });
+  });
+
+  const joinParsed = parseLocalDate(member.join_date || '2024-04-01');
+  const joinYear = joinParsed.getFullYear();
+  const joinMonth = joinParsed.getMonth() + 1;
+  const joinKey = joinYear * 100 + joinMonth;
+
+  const startKey = Math.min(joinKey, minExistingKey);
+  let startYear = Math.floor(startKey / 100);
+  let startMonth = startKey % 100;
+
+  const { billingMonth: activeEndMonth, billingYear: activeEndYear } =
+    getBillingPeriodFromPaymentDate(referenceDate);
+  const activeEndKey = activeEndYear * 100 + activeEndMonth;
+
+  const result: MonthlyDueWithMeta[] = [];
+  const includedKeys = new Set<string>();
+
+  if (member.status === 'active' && startKey <= activeEndKey) {
+    let y = startYear;
+    let m = startMonth;
+    const defaultMonthly = member.monthly_contribution || (member.shares_count || 1) * 500;
+
+    while (y * 100 + m <= activeEndKey) {
+      const keyStr = `${y}-${m}`;
+      includedKeys.add(keyStr);
+      const real = existingMap.get(keyStr);
+      if (real) {
+        result.push({ ...real, isVirtual: false });
+      } else {
+        result.push({
+          id: `virtual-${member.id}-${y}-${m}`,
+          member_id: member.id,
+          member,
+          month: m,
+          year: y,
+          amount_due: defaultMonthly,
+          amount_paid: 0,
+          fine_due: 0,
+          fine_paid: 0,
+          status: 'unpaid',
+          paid_at: null,
+          isVirtual: true,
+        });
+      }
+
+      if (m === 12) {
+        m = 1;
+        y += 1;
+      } else {
+        m += 1;
+      }
+    }
+  }
+
+  // Append any existing records outside the active window (e.g. advance payments or inactive member records)
+  existingDues.forEach((d) => {
+    const keyStr = `${d.year}-${d.month}`;
+    if (!includedKeys.has(keyStr)) {
+      result.push({ ...d, member, isVirtual: false });
+    }
+  });
+
+  return result.sort((a, b) => b.year * 100 + b.month - (a.year * 100 + a.month));
+}
+
+/**
+ * Computes real-time financial summary across all expected & recorded billing months.
+ */
+export function computeMemberFinancialSummary(
+  member: Member,
+  existingDues: MonthlyDue[],
+  referenceDate: Date = new Date()
+): MemberFinancialSummary {
+  const ledger = buildMemberCompleteLedger(member, existingDues, referenceDate);
+  const shares = member.shares_count || 1;
+
+  let totalPrincipalBilled = 0;
+  let totalPaid = 0;
+  let principalOutstanding = 0;
+  let totalFineCharged = 0;
+  let totalFinePaid = 0;
+  let totalFinePending = 0;
+  let totalPaidMonths = 0;
+  let unpaidMonthsCount = 0;
+
+  ledger.forEach((d) => {
+    const bd = calculateDueBreakdown(d, shares, referenceDate);
+    totalPrincipalBilled += bd.principalDue;
+    totalPaid += bd.principalPaid;
+    principalOutstanding += bd.principalOutstanding;
+    totalFineCharged += bd.fineDue;
+    totalFinePaid += bd.finePaid;
+    totalFinePending += bd.fineOutstanding;
+
+    if (d.status === 'paid' && bd.fineOutstanding === 0) {
+      totalPaidMonths += 1;
+    } else {
+      unpaidMonthsCount += 1;
+    }
+  });
+
+  const totalBilled = totalPrincipalBilled + totalFineCharged;
+  const totalOutstanding = principalOutstanding + totalFinePending;
+
+  const { billingMonth: activeMonth, billingYear: activeYear } =
+    getBillingPeriodFromPaymentDate(referenceDate);
+  const activeCycleDue = ledger.find((d) => d.month === activeMonth && d.year === activeYear);
+
+  let currentStatus: DueStatus = 'paid';
+  if (activeCycleDue) {
+    const activeBd = calculateDueBreakdown(activeCycleDue, shares, referenceDate);
+    if (!activeBd.isFullySettled) {
+      currentStatus = activeBd.totalPaid > 0 ? 'partial' : 'unpaid';
+    } else if (totalOutstanding > 0) {
+      currentStatus = 'partial';
+    } else {
+      currentStatus = 'paid';
+    }
+  } else if (totalOutstanding > 0) {
+    currentStatus = totalPaid > 0 ? 'partial' : 'unpaid';
+  }
+
+  const lastPaymentDate =
+    existingDues
+      .filter((d) => d.paid_at && Number(d.amount_paid) > 0)
+      .sort((a, b) => (b.paid_at || '').localeCompare(a.paid_at || ''))[0]?.paid_at || null;
+
+  return {
+    totalBilled,
+    totalPaid,
+    totalPaidMonths,
+    totalOutstanding,
+    principalOutstanding,
+    totalFineCharged,
+    totalFinePaid,
+    totalFinePending,
+    unpaidMonthsCount,
+    currentStatus,
+    lastPaymentDate,
+    monthlyContribution: member.monthly_contribution || shares * 500,
   };
 }

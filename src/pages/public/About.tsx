@@ -1,9 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Heart,
-  HandHeart,
-  ShieldCheck,
   Compass,
   Award,
   Sparkles,
@@ -97,10 +94,10 @@ export const About: React.FC = () => {
       <div className="space-y-6">
         <div className="text-center space-y-1">
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-            বর্তমান ব্যবস্থাপনা কমিটি (Management Committee)
+            বর্তমান ব্যবস্থাপনা কমিটি
           </h2>
           <p className="text-xs sm:text-sm text-slate-500">
-            গঠনতন্ত্রের ধারা ৩.১ অনুসারে নির্বাচিত বর্তমান কার্যনির্বাহী পরিষদ
+            গঠনতন্ত্রের ধারা ৩.১ অনুসারে নির্বাচিত কার্যনির্বাহী পরিষদ
           </p>
         </div>
 
@@ -137,7 +134,7 @@ export const About: React.FC = () => {
           <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-bold">
             <Compass className="w-5 h-5" />
           </div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">আমাদের লক্ষ্য (Mission)</h3>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">আমাদের লক্ষ্য</h3>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
             সদস্যদের আর্থিক উন্নয়ন সাধন করা, সঞ্চয় প্রথা গড়ে তোলা এবং প্রতিটি সদস্যের ভবিষ্যৎ আর্থিক নিরাপত্তা ও সৌহার্দ্যপূর্ণ সম্পর্ক সুদৃঢ় করা।
           </p>
@@ -147,7 +144,7 @@ export const About: React.FC = () => {
           <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-bold">
             <Award className="w-5 h-5" />
           </div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">আমাদের দর্শন (Vision)</h3>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">আমাদের দর্শন</h3>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
             শতভাগ আর্থিক স্বচ্ছতা ও ডিজিটাল হিসাবরক্ষণের মাধ্যমে সদস্যদের পারস্পরিক আস্থা অর্জন এবং একটি আদর্শ সমবায় সমিতির দৃষ্টান্ত স্থাপন করা।
           </p>

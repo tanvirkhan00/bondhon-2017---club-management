@@ -96,7 +96,7 @@ export const AdminLayout: React.FC = () => {
     { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/admin/members', label: 'Member Directory', icon: Users },
     { to: '/admin/payments', label: 'Monthly Dues', icon: CreditCard },
-    { to: '/admin/fines', label: 'Fines Sheet (জরিমানা)', icon: AlertTriangle },
+    { to: '/admin/fines', label: 'Fines Sheet', icon: AlertTriangle },
     { to: '/admin/payment-history', label: 'Payment Ledger', icon: History },
     { to: '/admin/reports', label: 'Financial Reports', icon: BarChart3 },
     { to: '/admin/settings', label: 'Settings', icon: Settings },
@@ -104,7 +104,11 @@ export const AdminLayout: React.FC = () => {
 
   // Get active page title
   const currentItem = navItems.find(item => location.pathname === item.to);
-  const pageTitle = currentItem ? currentItem.label : 'Admin Console';
+  const pageTitle = currentItem
+    ? currentItem.label
+    : location.pathname.startsWith('/admin/members/')
+    ? 'Member Profile & Ledger'
+    : 'Admin Console';
 
   return (
     <div className="min-h-screen flex bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
@@ -244,7 +248,7 @@ export const AdminLayout: React.FC = () => {
                 }}
                 className="relative p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 aria-label="Member Notifications"
-                title="সদস্যদের কার্যক্রম ও নোটিফিকেশন"
+                title="Member Activity & Notifications"
               >
                 <Bell className="w-5 h-5" />
                 {unreadNotificationCount > 0 && (
@@ -259,10 +263,10 @@ export const AdminLayout: React.FC = () => {
                   <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/40">
                     <div>
                       <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                        সদস্য নোটিফিকেশন ({unreadNotificationCount} অপঠিত)
+                        Notifications ({unreadNotificationCount} unread)
                       </h3>
                       <p className="text-[10px] text-slate-500">
-                        সদস্যদের লগইন, লগআউট, পাসওয়ার্ড ও বার্তা
+                        Sign-ins, password updates, and member notices
                       </p>
                     </div>
                     <div className="flex items-center gap-1">
@@ -299,13 +303,10 @@ export const AdminLayout: React.FC = () => {
 
                   <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
                     {notifications.length === 0 ? (
-                      <div className="py-10 px-4 text-center space-y-1.5">
+                      <div className="py-10 px-4 text-center space-y-1">
                         <Bell className="w-7 h-7 text-slate-300 mx-auto" />
                         <p className="text-xs font-medium text-slate-500">
-                          এখনো কোনো নতুন নোটিফিকেশন নেই
-                        </p>
-                        <p className="text-[11px] text-slate-400">
-                          কোনো সদস্য লগইন, পাসওয়ার্ড পরিবর্তন বা বার্তা পাঠালে এখানে দেখাবে।
+                          No notifications yet
                         </p>
                       </div>
                     ) : (

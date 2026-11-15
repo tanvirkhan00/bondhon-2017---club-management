@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useClubData } from '../../hooks/useClubData';
 import { formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/formatters';
 import { calculateDueBreakdown } from '../../utils/fineCalculator';
@@ -167,7 +168,7 @@ export const AdminPaymentHistory: React.FC = () => {
             <span>Payment Ledger & History</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            সমিতির সকল সদস্যের মাসিক সঞ্চয় ও জমার পূর্ণাঙ্গ হিসাব বিবরণী · মাসিক ক্লাব টার্গেট: {formatBDT(clubMonthlyTarget)}
+            Complete contribution history and audit trail · Monthly Target: {formatBDT(clubMonthlyTarget)}
           </p>
         </div>
 
@@ -200,7 +201,7 @@ export const AdminPaymentHistory: React.FC = () => {
             {formatBDT(effectiveTarget)}
           </div>
           <span className="text-[11px] text-slate-500 mt-0.5 block">
-            {filteredRecords.length} entries · মাসিক টার্গেট {formatBDT(clubMonthlyTarget)}
+            {filteredRecords.length} entries · Target {formatBDT(clubMonthlyTarget)}/mo
           </span>
         </div>
 
@@ -215,7 +216,7 @@ export const AdminPaymentHistory: React.FC = () => {
         </div>
 
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
-          <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400 uppercase">Fines Collected (জরিমানা)</span>
+          <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400 uppercase">Fines Collected</span>
           <div className="text-xl font-bold font-mono text-amber-700 dark:text-amber-400 tabular-nums mt-1">
             {formatBDT(ledgerSummary.finePaid)}
           </div>
@@ -318,12 +319,12 @@ export const AdminPaymentHistory: React.FC = () => {
                 <th className="py-3 px-4 font-semibold">Code</th>
                 <th className="py-3 px-4 font-semibold">Member Name</th>
                 <th className="py-3 px-4 font-semibold text-right">Due (৳)</th>
-                <th className="py-3 px-4 font-semibold text-right">জরিমানা (৳)</th>
+                <th className="py-3 px-4 font-semibold text-right">Fine (৳)</th>
                 <th className="py-3 px-4 font-semibold text-right">Paid (৳)</th>
                 <th className="py-3 px-4 font-semibold text-right">Outstanding (৳)</th>
                 <th className="py-3 px-4 font-semibold text-center">Status</th>
                 <th className="py-3 px-4 font-semibold">Paid Date</th>
-                <th className="py-3 px-4 font-semibold text-right">Actions (সংশোধন)</th>
+                <th className="py-3 px-4 font-semibold text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -333,13 +334,13 @@ export const AdminPaymentHistory: React.FC = () => {
                     {monthlyDues.length === 0 ? (
                       <div className="space-y-2">
                         <p className="font-semibold text-slate-700 dark:text-slate-300">
-                          এখনো কোনো পেমেন্ট হিস্ট্রি যুক্ত করা হয়নি।
+                          No payment records yet.
                         </p>
                         <button
                           onClick={() => setRecordModalOpen(true)}
                           className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold underline cursor-pointer"
                         >
-                          নতুন পেমেন্ট এন্ট্রি করতে এখানে ক্লিক করুন (+ Record Payment)
+                          + Record First Payment
                         </button>
                       </div>
                     ) : (
@@ -363,7 +364,12 @@ export const AdminPaymentHistory: React.FC = () => {
                       </td>
 
                       <td className="py-3 px-4 font-medium text-slate-900 dark:text-slate-100">
-                        <span>{due.member?.full_name}</span>
+                        <Link
+                          to={`/admin/members/${due.member_id}`}
+                          className="hover:text-emerald-700 dark:hover:text-emerald-400 font-semibold"
+                        >
+                          {due.member?.full_name}
+                        </Link>
                         {due.notes && (
                           <span className="block text-[10px] text-slate-400 truncate max-w-[180px]">
                             {due.notes}
@@ -377,13 +383,13 @@ export const AdminPaymentHistory: React.FC = () => {
 
                       <td className="py-3 px-4 text-right font-mono tabular-nums text-amber-700 dark:text-amber-400">
                         {due.fine_waived ? (
-                          <span className="text-[10px] text-slate-400">মওকুফ</span>
+                          <span className="text-[10px] text-slate-400">Waived</span>
                         ) : bd.fineDue > 0 ? (
                           <span>
                             {formatBDT(bd.fineDue)}
                             {bd.finePaid > 0 && (
                               <span className="block text-[10px] text-emerald-600">
-                                জমা: {formatBDT(bd.finePaid)}
+                                Paid: {formatBDT(bd.finePaid)}
                               </span>
                             )}
                           </span>
@@ -414,7 +420,7 @@ export const AdminPaymentHistory: React.FC = () => {
                             type="button"
                             onClick={() => setEditDue(due)}
                             className="p-1.5 text-slate-500 hover:text-emerald-700 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                            title="সংশোধন করুন (Edit Member/Month/Amount/Fine)"
+                            title="Edit Payment"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
@@ -444,7 +450,7 @@ export const AdminPaymentHistory: React.FC = () => {
                               type="button"
                               onClick={() => setDeleteConfirmId(due.id)}
                               className="p-1.5 text-slate-400 hover:text-rose-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                              title="মুছে ফেলুন (Delete Record)"
+                              title="Delete Record"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>

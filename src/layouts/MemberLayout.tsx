@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useClubData } from '../hooks/useClubData';
-import { User, History, LogOut, ArrowLeft, ShieldCheck, CreditCard } from 'lucide-react';
+import { User, History, LogOut, ArrowLeft, ShieldCheck } from 'lucide-react';
 import crestImage from '../assets/images/bondhon_club_crest_1793703027252.jpg';
 
 export const MemberLayout: React.FC = () => {
@@ -131,7 +131,7 @@ export const MemberLayout: React.FC = () => {
 
       {/* Quiet Member Portal Footer */}
       <footer className="border-t border-slate-200 dark:border-slate-800 py-4 text-center text-xs text-slate-400">
-        <p>Bondhon 2017 Private Member Portal · Read-only personal financial records · Currency: BDT (৳)</p>
+        <p>Bondhon 2017 Member Portal · Verified Financial Ledger · BDT (৳)</p>
       </footer>
     </div>
   );
