@@ -4,6 +4,7 @@ import { formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/fo
 import { calculateDueBreakdown } from '../../utils/fineCalculator';
 import { StatusBadge } from '../../components/StatusBadge';
 import { downloadCsv } from '../../utils/csvExport';
+import { MonthlyDue } from '../../types';
 import {
   History,
   Search,
@@ -11,11 +12,14 @@ import {
   ChevronLeft,
   ChevronRight,
   CreditCard,
+  Edit2,
+  Trash2,
 } from 'lucide-react';
 import { RecordPaymentModal } from '../../components/RecordPaymentModal';
+import { EditPaymentModal } from '../../components/EditPaymentModal';
 
 export const AdminPaymentHistory: React.FC = () => {
-  const { monthlyDues, members, selectedMonth, selectedYear } = useClubData();
+  const { monthlyDues, members, selectedMonth, selectedYear, clubMonthlyTarget, deleteDueRecord } = useClubData();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedYearFilter, setSelectedYearFilter] = useState<string>('all');
@@ -24,6 +28,8 @@ export const AdminPaymentHistory: React.FC = () => {
   const [selectedMemberFilter, setSelectedMemberFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [recordModalOpen, setRecordModalOpen] = useState(false);
+  const [editDue, setEditDue] = useState<MonthlyDue | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const pageSize = 15;
 
   // Extract unique years
@@ -137,6 +143,20 @@ export const AdminPaymentHistory: React.FC = () => {
     downloadCsv(`Bondhon_2017_Ledger_${new Date().toISOString().substring(0, 10)}.csv`, headers, rows);
   };
 
+  const isSingleMonthScope =
+    selectedMonthFilter !== 'all' &&
+    selectedMemberFilter === 'all' &&
+    selectedStatusFilter === 'all' &&
+    !searchQuery.trim();
+
+  const effectiveTarget = isSingleMonthScope
+    ? Math.max(clubMonthlyTarget, ledgerSummary.due)
+    : ledgerSummary.due;
+
+  const effectiveOutstanding = isSingleMonthScope
+    ? Math.max(0, effectiveTarget - ledgerSummary.paid)
+    : ledgerSummary.outstanding;
+
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
       {/* Header */}
@@ -147,7 +167,7 @@ export const AdminPaymentHistory: React.FC = () => {
             <span>Payment Ledger & History</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            সমিতির সকল সদস্যের মাসিক সঞ্চয় ও জমার পূর্ণাঙ্গ হিসাব বিবরণী (Currency: BDT ৳)
+            সমিতির সকল সদস্যের মাসিক সঞ্চয় ও জমার পূর্ণাঙ্গ হিসাব বিবরণী · মাসিক ক্লাব টার্গেট: {formatBDT(clubMonthlyTarget)}
           </p>
         </div>
 
@@ -173,11 +193,15 @@ export const AdminPaymentHistory: React.FC = () => {
       {/* Summary KPI Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
-          <span className="text-[11px] font-medium text-slate-500 uppercase">Filtered Target (incl. Fine)</span>
+          <span className="text-[11px] font-medium text-slate-500 uppercase">
+            {isSingleMonthScope ? 'Monthly Target' : 'Filtered Target (incl. Fine)'}
+          </span>
           <div className="text-xl font-bold font-mono text-slate-900 dark:text-slate-100 tabular-nums mt-1">
-            {formatBDT(ledgerSummary.due)}
+            {formatBDT(effectiveTarget)}
           </div>
-          <span className="text-[11px] text-slate-500 mt-0.5 block">{filteredRecords.length} dues records</span>
+          <span className="text-[11px] text-slate-500 mt-0.5 block">
+            {filteredRecords.length} entries · মাসিক টার্গেট {formatBDT(clubMonthlyTarget)}
+          </span>
         </div>
 
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
@@ -186,7 +210,7 @@ export const AdminPaymentHistory: React.FC = () => {
             {formatBDT(ledgerSummary.paid)}
           </div>
           <span className="text-[11px] text-emerald-600 mt-0.5 block">
-            {ledgerSummary.due > 0 ? Math.round((ledgerSummary.paid / ledgerSummary.due) * 100) : 0}% collected
+            {effectiveTarget > 0 ? Math.round((ledgerSummary.paid / effectiveTarget) * 100) : 0}% of {formatBDT(effectiveTarget)}
           </span>
         </div>
 
@@ -201,7 +225,7 @@ export const AdminPaymentHistory: React.FC = () => {
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
           <span className="text-[11px] font-medium text-rose-700 dark:text-rose-400 uppercase">Outstanding Balance</span>
           <div className="text-xl font-bold font-mono text-rose-700 dark:text-rose-400 tabular-nums mt-1">
-            {formatBDT(ledgerSummary.outstanding)}
+            {formatBDT(effectiveOutstanding)}
           </div>
           <span className="text-[11px] text-rose-600 mt-0.5 block">Pending settlement</span>
         </div>
@@ -299,7 +323,7 @@ export const AdminPaymentHistory: React.FC = () => {
                 <th className="py-3 px-4 font-semibold text-right">Outstanding (৳)</th>
                 <th className="py-3 px-4 font-semibold text-center">Status</th>
                 <th className="py-3 px-4 font-semibold">Paid Date</th>
-                <th className="py-3 px-4 font-semibold">Recorded By</th>
+                <th className="py-3 px-4 font-semibold text-right">Actions (সংশোধন)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -326,6 +350,7 @@ export const AdminPaymentHistory: React.FC = () => {
               ) : (
                 paginatedRecords.map((due, idx) => {
                   const bd = calculateDueBreakdown(due, due.member?.shares_count);
+                  const isDeleting = deleteConfirmId === due.id;
 
                   return (
                     <tr key={due.id || `due-${due.member_id || idx}-${due.year}-${due.month}`} className="hover:bg-slate-50/70 transition-colors">
@@ -338,7 +363,12 @@ export const AdminPaymentHistory: React.FC = () => {
                       </td>
 
                       <td className="py-3 px-4 font-medium text-slate-900 dark:text-slate-100">
-                        {due.member?.full_name}
+                        <span>{due.member?.full_name}</span>
+                        {due.notes && (
+                          <span className="block text-[10px] text-slate-400 truncate max-w-[180px]">
+                            {due.notes}
+                          </span>
+                        )}
                       </td>
 
                       <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-600">
@@ -346,7 +376,9 @@ export const AdminPaymentHistory: React.FC = () => {
                       </td>
 
                       <td className="py-3 px-4 text-right font-mono tabular-nums text-amber-700 dark:text-amber-400">
-                        {bd.fineDue > 0 ? (
+                        {due.fine_waived ? (
+                          <span className="text-[10px] text-slate-400">মওকুফ</span>
+                        ) : bd.fineDue > 0 ? (
                           <span>
                             {formatBDT(bd.fineDue)}
                             {bd.finePaid > 0 && (
@@ -376,8 +408,48 @@ export const AdminPaymentHistory: React.FC = () => {
                         {due.paid_at ? formatDate(due.paid_at) : '—'}
                       </td>
 
-                      <td className="py-3 px-4 text-slate-500 text-[11px] whitespace-nowrap">
-                        Treasurer / Admin
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setEditDue(due)}
+                            className="p-1.5 text-slate-500 hover:text-emerald-700 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                            title="সংশোধন করুন (Edit Member/Month/Amount/Fine)"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+
+                          {isDeleting ? (
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  deleteDueRecord(due.id);
+                                  setDeleteConfirmId(null);
+                                }}
+                                className="px-2 py-0.5 bg-rose-600 text-white rounded text-[10px] font-semibold cursor-pointer"
+                              >
+                                Confirm
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDeleteConfirmId(null)}
+                                className="px-1.5 py-0.5 text-slate-500 text-[10px] cursor-pointer"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setDeleteConfirmId(due.id)}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                              title="মুছে ফেলুন (Delete Record)"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -422,6 +494,9 @@ export const AdminPaymentHistory: React.FC = () => {
         initialMonth={selectedMonth}
         initialYear={selectedYear}
       />
+
+      {/* Full Edit Payment Modal */}
+      <EditPaymentModal due={editDue} onClose={() => setEditDue(null)} />
     </div>
   );
 };

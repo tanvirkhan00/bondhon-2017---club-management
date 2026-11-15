@@ -45,6 +45,7 @@ interface ClubDataContextType {
   selectedYear: number;
   selectedMonth: number; // 1 - 12
   defaultDueAmount: number;
+  clubMonthlyTarget: number;
   stats: ClubStats;
   monthSummaries: MonthSummary[];
   setSelectedYear: (year: number) => void;
@@ -92,6 +93,9 @@ interface ClubDataContextType {
   updateDueRecord: (
     dueId: string,
     updates: {
+      member_id?: string;
+      month?: number;
+      year?: number;
       amount_paid: number;
       amount_due?: number;
       paid_at?: string | null;
@@ -662,7 +666,15 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   }, [myDues, myMemberRecord, defaultDueAmount]);
 
-  // Admin Dashboard Global Stats
+  // Club-wide standard monthly target across all active shares (34 shares × 500 = ৳17,000)
+  const clubMonthlyTarget = useMemo<number>(() => {
+    const activeTotal = members
+      .filter(m => m.status === 'active')
+      .reduce((sum, m) => sum + Number(m.monthly_contribution || (m.shares_count || 1) * defaultDueAmount), 0);
+    return activeTotal > 0 ? activeTotal : 17000;
+  }, [members, defaultDueAmount]);
+
+  // Admin Dashboard Global Stats (always anchored to ৳17,000 monthly target)
   const stats = useMemo<ClubStats>(() => {
     const active = members.filter(m => m.status === 'active');
     const inactive = members.filter(m => m.status === 'inactive');
@@ -671,13 +683,14 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       d => d.month === selectedMonth && d.year === selectedYear
     );
 
-    const monthlyTarget = monthDues.reduce((sum, d) => sum + Number(d.amount_due), 0);
+    const duesTarget = monthDues.reduce((sum, d) => sum + Number(d.amount_due), 0);
+    const monthlyTarget = Math.max(clubMonthlyTarget, duesTarget);
     const totalCollected = monthDues.reduce((sum, d) => sum + Number(d.amount_paid), 0);
     const totalOutstanding = Math.max(0, monthlyTarget - totalCollected);
 
     const paidMembersCount = monthDues.filter(d => d.status === 'paid').length;
-    const unpaidMembersCount = monthDues.filter(d => d.status === 'unpaid').length;
     const partialMembersCount = monthDues.filter(d => d.status === 'partial').length;
+    const unpaidMembersCount = Math.max(0, active.length - paidMembersCount - partialMembersCount);
 
     const collectionRate = monthlyTarget > 0 ? Math.round((totalCollected / monthlyTarget) * 100) : 0;
 
@@ -693,9 +706,9 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       partialMembersCount,
       collectionRate,
     };
-  }, [members, enrichedDues, selectedMonth, selectedYear]);
+  }, [members, enrichedDues, selectedMonth, selectedYear, clubMonthlyTarget]);
 
-  // 12-Month Summaries for Selected Fiscal Year
+  // 12-Month Summaries for Selected Fiscal Year (anchored to ৳17,000/month target)
   const monthSummaries = useMemo<MonthSummary[]>(() => {
     const activeCount = members.filter(m => m.status === 'active').length;
 
@@ -705,11 +718,13 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         d => d.month === monthNum && d.year === selectedYear
       );
 
-      const target = duesForMonth.reduce((acc, d) => acc + Number(d.amount_due), 0);
+      const duesTarget = duesForMonth.reduce((acc, d) => acc + Number(d.amount_due), 0);
+      const target = Math.max(clubMonthlyTarget, duesTarget);
       const collected = duesForMonth.reduce((acc, d) => acc + Number(d.amount_paid), 0);
       const outstanding = Math.max(0, target - collected);
       const paidCount = duesForMonth.filter(d => d.status === 'paid').length;
-      const unpaidCount = duesForMonth.filter(d => d.status === 'unpaid').length;
+      const partialCount = duesForMonth.filter(d => d.status === 'partial').length;
+      const unpaidCount = Math.max(0, activeCount - paidCount - partialCount);
       const collectionRate = target > 0 ? Math.round((collected / target) * 100) : 0;
 
       return {
@@ -727,7 +742,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         collectionRate,
       };
     });
-  }, [selectedYear, enrichedDues, members]);
+  }, [selectedYear, enrichedDues, members, clubMonthlyTarget]);
 
   // ==========================================
   // ADMIN MEMBER ACTIONS
@@ -1177,6 +1192,9 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const updateDueRecord = async (
     dueId: string,
     updates: {
+      member_id?: string;
+      month?: number;
+      year?: number;
       amount_paid: number;
       amount_due?: number;
       paid_at?: string | null;
@@ -1194,6 +1212,14 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const target = monthlyDues.find(d => d.id === dueId);
     if (!target) return { success: false, error: 'Record not found.' };
 
+    const nextMemberId = updates.member_id || target.member_id;
+    const nextMonth = updates.month !== undefined ? updates.month : target.month;
+    const nextYear = updates.year !== undefined ? updates.year : target.year;
+    const keyChanged =
+      nextMemberId !== target.member_id ||
+      nextMonth !== target.month ||
+      nextYear !== target.year;
+
     const dueAmount = updates.amount_due !== undefined ? updates.amount_due : target.amount_due;
     const paidAmount = updates.amount_paid;
 
@@ -1207,6 +1233,9 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     const basePayload = {
+      member_id: nextMemberId,
+      month: nextMonth,
+      year: nextYear,
       amount_due: dueAmount,
       amount_paid: paidAmount,
       status,
@@ -1224,9 +1253,51 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       notes: updates.notes !== undefined ? updates.notes : (target.notes || null),
     };
 
+    const conflicting = keyChanged
+      ? monthlyDues.find(
+          d =>
+            d.id !== dueId &&
+            d.member_id === nextMemberId &&
+            d.month === nextMonth &&
+            d.year === nextYear
+        )
+      : undefined;
+
     const client = getSupabaseClient();
     if (supabaseSyncedMembers && client) {
       try {
+        if (conflicting) {
+          // Move/merge onto the existing (member_id, month, year) row and remove the wrong entry
+          let { data: mergedData, error: mergeErr } = await client
+            .from('monthly_dues')
+            .update(fullPayload)
+            .eq('id', conflicting.id)
+            .select()
+            .single();
+
+          if (mergeErr && isMissingColumnError(mergeErr)) {
+            const retry = await client
+              .from('monthly_dues')
+              .update(basePayload)
+              .eq('id', conflicting.id)
+              .select()
+              .single();
+            mergedData = retry.data;
+            mergeErr = retry.error;
+          }
+          if (mergeErr) throw mergeErr;
+
+          const { error: delErr } = await client.from('monthly_dues').delete().eq('id', dueId);
+          if (delErr) throw delErr;
+
+          setMonthlyDues(prev =>
+            prev
+              .filter(d => d.id !== dueId)
+              .map(d => (d.id === conflicting.id ? { ...(mergedData as MonthlyDue), ...fullPayload } : d))
+          );
+          return { success: true };
+        }
+
         let { error: updErr } = await client
           .from('monthly_dues')
           .update(fullPayload)
@@ -1249,7 +1320,15 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
     }
 
-    setMonthlyDues(prev => prev.map(d => (d.id === dueId ? { ...d, ...fullPayload } : d)));
+    if (conflicting) {
+      setMonthlyDues(prev =>
+        prev
+          .filter(d => d.id !== dueId)
+          .map(d => (d.id === conflicting.id ? { ...d, ...fullPayload } : d))
+      );
+    } else {
+      setMonthlyDues(prev => prev.map(d => (d.id === dueId ? { ...d, ...fullPayload } : d)));
+    }
     return { success: true };
   };
 
@@ -1362,6 +1441,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       selectedYear,
       selectedMonth,
       defaultDueAmount,
+      clubMonthlyTarget,
       stats,
       monthSummaries,
       setSelectedYear,
@@ -1403,6 +1483,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       selectedYear,
       selectedMonth,
       defaultDueAmount,
+      clubMonthlyTarget,
       stats,
       monthSummaries,
       loadSupabaseData,

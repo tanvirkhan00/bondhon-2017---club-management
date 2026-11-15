@@ -25,10 +25,9 @@ export const AdminReports: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'monthly' | 'yearly' | 'members'>('monthly');
 
-  // Yearly aggregates
-  const yearDues = monthlyDues.filter(d => d.year === selectedYear);
-  const totalYearTarget = yearDues.reduce((sum, d) => sum + Number(d.amount_due), 0);
-  const totalYearCollected = yearDues.reduce((sum, d) => sum + Number(d.amount_paid), 0);
+  // Yearly aggregates anchored to ৳17,000/month club target via monthSummaries
+  const totalYearTarget = monthSummaries.reduce((sum, m) => sum + m.target, 0);
+  const totalYearCollected = monthSummaries.reduce((sum, m) => sum + m.collected, 0);
   const totalYearOutstanding = Math.max(0, totalYearTarget - totalYearCollected);
   const yearCollectionRate = totalYearTarget > 0 ? Math.round((totalYearCollected / totalYearTarget) * 100) : 0;
 

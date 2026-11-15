@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useClubData } from '../../hooks/useClubData';
 import { MonthlyDue } from '../../types';
 import { formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/formatters';
+import { calculateDueBreakdown } from '../../utils/fineCalculator';
 import { StatusBadge } from '../../components/StatusBadge';
 import {
   CreditCard,
@@ -17,6 +18,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { RecordPaymentModal } from '../../components/RecordPaymentModal';
+import { EditPaymentModal } from '../../components/EditPaymentModal';
 
 export const AdminPayments: React.FC = () => {
   const {
@@ -27,10 +29,9 @@ export const AdminPayments: React.FC = () => {
     setSelectedYear,
     generateMonthlyDues,
     markAsPaid,
-    updateDueRecord,
     deleteDueRecord,
     members,
-    defaultDueAmount,
+    clubMonthlyTarget,
   } = useClubData();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -45,11 +46,6 @@ export const AdminPayments: React.FC = () => {
 
   // Edit payment modal
   const [editDue, setEditDue] = useState<MonthlyDue | null>(null);
-  const [editAmountPaid, setEditAmountPaid] = useState<number>(0);
-  const [editAmountDue, setEditAmountDue] = useState<number>(500);
-  const [editPaidDate, setEditPaidDate] = useState<string>('');
-  const [editLoading, setEditLoading] = useState(false);
-  const [editError, setEditError] = useState<string | null>(null);
 
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
@@ -76,41 +72,17 @@ export const AdminPayments: React.FC = () => {
     });
   }, [currentMonthDues, searchQuery, statusFilter]);
 
-  const targetTotal = currentMonthDues.reduce((sum, d) => sum + Number(d.amount_due), 0);
+  const activeMembersCount = members.filter(m => m.status === 'active').length;
+  const duesTarget = currentMonthDues.reduce((sum, d) => sum + Number(d.amount_due), 0);
+  const targetTotal = Math.max(clubMonthlyTarget, duesTarget);
   const collectedTotal = currentMonthDues.reduce((sum, d) => sum + Number(d.amount_paid), 0);
   const outstandingTotal = Math.max(0, targetTotal - collectedTotal);
   const paidCount = currentMonthDues.filter(d => d.status === 'paid').length;
-  const unpaidCount = currentMonthDues.filter(d => d.status === 'unpaid').length;
   const partialCount = currentMonthDues.filter(d => d.status === 'partial').length;
+  const unpaidCount = Math.max(0, activeMembersCount - paidCount - partialCount);
 
   const handleOpenEdit = (due: MonthlyDue) => {
     setEditDue(due);
-    setEditAmountPaid(due.amount_paid);
-    setEditAmountDue(due.amount_due);
-    setEditPaidDate(due.paid_at ? due.paid_at.substring(0, 10) : new Date().toISOString().substring(0, 10));
-    setEditError(null);
-  };
-
-  const handleSaveEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editDue) return;
-    setEditLoading(true);
-    setEditError(null);
-
-    const paidAtTimestamp = editAmountPaid > 0 && editPaidDate ? new Date(editPaidDate).toISOString() : null;
-
-    const res = await updateDueRecord(editDue.id, {
-      amount_paid: Number(editAmountPaid),
-      amount_due: Number(editAmountDue),
-      paid_at: paidAtTimestamp,
-    });
-
-    setEditLoading(false);
-    if (res.success) {
-      setEditDue(null);
-    } else {
-      setEditError(res.error || 'Failed to update payment.');
-    }
   };
 
   const handleExecuteGenerate = async (e: React.FormEvent) => {
@@ -208,7 +180,7 @@ export const AdminPayments: React.FC = () => {
           <div className="text-xl font-bold font-mono text-slate-900 dark:text-slate-100 tabular-nums mt-1">
             {formatBDT(targetTotal)}
           </div>
-          <span className="text-[11px] text-slate-500 mt-0.5 block">{currentMonthDues.length} members billed</span>
+          <span className="text-[11px] text-slate-500 mt-0.5 block">{activeMembersCount} active members · {currentMonthDues.length} entries</span>
         </div>
 
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
@@ -217,7 +189,7 @@ export const AdminPayments: React.FC = () => {
             {formatBDT(collectedTotal)}
           </div>
           <span className="text-[11px] text-emerald-600 mt-0.5 block">
-            {targetTotal > 0 ? Math.round((collectedTotal / targetTotal) * 100) : 0}% settled
+            {targetTotal > 0 ? Math.round((collectedTotal / targetTotal) * 100) : 0}% of {formatBDT(targetTotal)}
           </span>
         </div>
 
@@ -232,9 +204,11 @@ export const AdminPayments: React.FC = () => {
         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
           <span className="text-[11px] font-medium text-slate-500 uppercase">Paid Ratio</span>
           <div className="text-xl font-bold font-mono text-slate-900 dark:text-slate-100 tabular-nums mt-1">
-            {paidCount} / {currentMonthDues.length}
+            {paidCount} / {activeMembersCount}
           </div>
-          <span className="text-[11px] text-slate-500 mt-0.5 block">Total active: {members.filter(m => m.status === 'active').length}</span>
+          <span className="text-[11px] text-slate-500 mt-0.5 block">
+            {activeMembersCount > 0 ? Math.round((paidCount / activeMembersCount) * 100) : 0}% members paid
+          </span>
         </div>
       </div>
 
@@ -328,7 +302,8 @@ export const AdminPayments: React.FC = () => {
                 </tr>
               ) : (
                 filteredDues.map((due) => {
-                  const balance = Math.max(0, Number(due.amount_due) - Number(due.amount_paid));
+                  const bd = calculateDueBreakdown(due, due.member?.shares_count);
+                  const balance = bd.totalOutstanding;
                   const isDeleting = deleteConfirmId === due.id;
 
                   return (
@@ -358,11 +333,21 @@ export const AdminPayments: React.FC = () => {
                       </td>
 
                       <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-600">
-                        {formatBDT(due.amount_due)}
+                        <span>{formatBDT(due.amount_due)}</span>
+                        {bd.fineDue > 0 && (
+                          <span className="block text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+                            +{formatBDT(bd.fineDue)} জরিমানা
+                          </span>
+                        )}
                       </td>
 
                       <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-emerald-700 dark:text-emerald-400">
-                        {formatBDT(due.amount_paid)}
+                        <span>{formatBDT(due.amount_paid)}</span>
+                        {bd.finePaid > 0 && (
+                          <span className="block text-[10px] font-normal text-emerald-600">
+                            +{formatBDT(bd.finePaid)} জরিমানা
+                          </span>
+                        )}
                       </td>
 
                       <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold text-rose-700 dark:text-rose-400">
@@ -379,14 +364,20 @@ export const AdminPayments: React.FC = () => {
 
                       <td className="py-3 px-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
-                          {due.status !== 'paid' && (
+                          {(due.status !== 'paid' || bd.fineOutstanding > 0) && (
                             <button
-                              onClick={() => markAsPaid(due.id, due.amount_due)}
+                              onClick={() =>
+                                markAsPaid(due.id, due.amount_due, undefined, {
+                                  fineDue: bd.fineDue,
+                                  finePaid: bd.fineDue,
+                                  fineWaived: Boolean(due.fine_waived),
+                                })
+                              }
                               className="px-2 py-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 rounded border border-emerald-200 transition-colors flex items-center gap-1"
-                              title="Mark Full Paid (৳500)"
+                              title={`সব বকেয়া ক্লিয়ার করুন (${formatBDT(due.amount_due + bd.fineDue)})`}
                             >
                               <CheckCircle2 className="w-3 h-3" />
-                              <span>Mark Paid</span>
+                              <span>{bd.fineOutstanding > 0 ? 'Clear All' : 'Mark Paid'}</span>
                             </button>
                           )}
 
@@ -521,123 +512,8 @@ export const AdminPayments: React.FC = () => {
         </div>
       )}
 
-      {/* Edit Payment Modal */}
-      {editDue && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                Edit Payment Record
-              </h2>
-              <button onClick={() => setEditDue(null)} className="p-1 text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs space-y-1">
-              <div className="flex justify-between font-bold text-slate-900 dark:text-slate-100">
-                <span>{editDue.member?.full_name}</span>
-                <span className="font-mono text-emerald-700">{editDue.member?.member_code}</span>
-              </div>
-              <p className="text-slate-500">
-                Billing Cycle: {getMonthName(editDue.month)} {editDue.year}
-              </p>
-            </div>
-
-            {editError && (
-              <div className="p-3 bg-rose-50 text-rose-800 rounded-lg text-xs">
-                {editError}
-              </div>
-            )}
-
-            <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Amount Due (BDT ৳)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    required
-                    value={editAmountDue}
-                    onChange={(e) => setEditAmountDue(Number(e.target.value))}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Amount Paid (BDT ৳)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    required
-                    value={editAmountPaid}
-                    onChange={(e) => setEditAmountPaid(Number(e.target.value))}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-mono"
-                  />
-                </div>
-              </div>
-
-              {/* Quick shortcuts */}
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEditAmountPaid(editAmountDue)}
-                  className="flex-1 py-1 px-2 text-xs font-semibold bg-emerald-50 text-emerald-800 rounded-lg hover:bg-emerald-100"
-                >
-                  Full (৳{editAmountDue})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditAmountPaid(editAmountDue / 2)}
-                  className="flex-1 py-1 px-2 text-xs font-semibold bg-amber-50 text-amber-800 rounded-lg hover:bg-amber-100"
-                >
-                  Half (৳{editAmountDue / 2})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditAmountPaid(0)}
-                  className="py-1 px-3 text-xs font-semibold bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200"
-                >
-                  Clear (৳0)
-                </button>
-              </div>
-
-              <div>
-                <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Payment Date
-                </label>
-                <input
-                  type="date"
-                  value={editPaidDate}
-                  onChange={(e) => setEditPaidDate(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-mono"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setEditDue(null)}
-                  className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={editLoading}
-                  className="px-4 py-2 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg disabled:opacity-50"
-                >
-                  {editLoading ? 'Saving...' : 'Update Payment Record'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Full Edit Payment Modal */}
+      <EditPaymentModal due={editDue} onClose={() => setEditDue(null)} />
 
       {/* Direct Record Payment Modal */}
       <RecordPaymentModal
