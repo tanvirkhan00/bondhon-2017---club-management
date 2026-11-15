@@ -84,7 +84,7 @@ export const MemberPaymentHistory: React.FC = () => {
             <span>My Contribution Payment Ledger</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            {myMemberRecord?.full_name} ({myMemberRecord?.member_code}) · প্রতি মাসের ১২ তারিখের মধ্যে কিস্তি পরিশোধ বাধ্যতামূলক (১২ তারিখের পর প্রতি নামে ৫০৳ জরিমানা)
+            {myMemberRecord?.full_name} ({myMemberRecord?.member_code}) · প্রতি মাসের কিস্তি পরবর্তী মাসের ১২ তারিখের মধ্যে পরিশোধযোগ্য (১২ তারিখের পর প্রতি নামে ৫০৳ জরিমানা)
           </p>
         </div>
       </div>

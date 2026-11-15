@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useClubData } from '../hooks/useClubData';
-import { MONTH_NAMES, formatBDT } from '../utils/formatters';
-import { FINE_PER_SHARE, isAfterMonthDeadline } from '../utils/fineCalculator';
+import { MONTH_NAMES, formatBDT, getMonthName } from '../utils/formatters';
+import {
+  FINE_PER_SHARE,
+  getBillingPeriodFromPaymentDate,
+  getDueDeadline,
+  isAfterMonthDeadline,
+} from '../utils/fineCalculator';
 import { X, CheckCircle2, AlertCircle, CreditCard, Calendar, User, AlertTriangle } from 'lucide-react';
 
 interface RecordPaymentModalProps {
@@ -21,47 +26,82 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
 }) => {
   const { members, selectedYear, selectedMonth, recordNewPayment } = useClubData();
 
+  const todayStr = new Date().toISOString().substring(0, 10);
+  const initialPeriod = getBillingPeriodFromPaymentDate(todayStr);
+
   const [memberId, setMemberId] = useState<string>(initialMemberId || (members[0]?.id || ''));
-  const [month, setMonth] = useState<number>(initialMonth || selectedMonth || 6);
-  const [year, setYear] = useState<number>(initialYear || selectedYear || 2026);
+  const [paidDate, setPaidDate] = useState<string>(todayStr);
+  const [autoSyncMonth, setAutoSyncMonth] = useState<boolean>(!initialMemberId);
+  const [month, setMonth] = useState<number>(initialMonth || selectedMonth || initialPeriod.billingMonth);
+  const [year, setYear] = useState<number>(initialYear || selectedYear || initialPeriod.billingYear);
   const [amountPaid, setAmountPaid] = useState<number>(500);
   const [amountDue, setAmountDue] = useState<number>(500);
   const [fineDue, setFineDue] = useState<number>(0);
   const [finePaid, setFinePaid] = useState<number>(0);
-  const [paidDate, setPaidDate] = useState<string>(new Date().toISOString().substring(0, 10));
   const [paymentMethod, setPaymentMethod] = useState<string>('Cash (নগদ)');
   const [notes, setNotes] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // When selected member, month, or year changes, automatically calculate principal + late fee after 12th
+  // Sync when modal opens
+  useEffect(() => {
+    if (!isOpen) return;
+    const nowStr = new Date().toISOString().substring(0, 10);
+    setPaidDate(nowStr);
+    if (initialMemberId) {
+      setMemberId(initialMemberId);
+      setAutoSyncMonth(false);
+      if (initialMonth) setMonth(initialMonth);
+      if (initialYear) setYear(initialYear);
+    } else {
+      if (members.length > 0) {
+        setMemberId((prev) => prev || members[0].id);
+      }
+      const period = getBillingPeriodFromPaymentDate(nowStr);
+      setMonth(initialMonth || period.billingMonth);
+      setYear(initialYear || period.billingYear);
+      setAutoSyncMonth(true);
+    }
+  }, [isOpen, initialMemberId, initialMonth, initialYear, members]);
+
+  // If autoSyncMonth is enabled and paidDate changes, map payment month -> previous billing month
+  const handlePaidDateChange = (nextDate: string) => {
+    setPaidDate(nextDate);
+    if (autoSyncMonth && nextDate) {
+      const period = getBillingPeriodFromPaymentDate(nextDate);
+      setMonth(period.billingMonth);
+      setYear(period.billingYear);
+    }
+  };
+
+  const handleToggleAutoSync = (checked: boolean) => {
+    setAutoSyncMonth(checked);
+    if (checked && paidDate) {
+      const period = getBillingPeriodFromPaymentDate(paidDate);
+      setMonth(period.billingMonth);
+      setYear(period.billingYear);
+    }
+  };
+
+  // Automatically calculate principal + late fee based on payment date vs 12th of (billingMonth + 1)
   useEffect(() => {
     const sel = members.find((m) => m.id === memberId);
     if (sel) {
       setAmountDue(sel.monthly_contribution);
       setAmountPaid(sel.monthly_contribution);
-      const isLate = isAfterMonthDeadline(month, year);
+      const refDate = paidDate || new Date();
+      const isLate = isAfterMonthDeadline(month, year, refDate);
       const suggestedFine = isLate ? (sel.shares_count || 1) * FINE_PER_SHARE : 0;
       setFineDue(suggestedFine);
       setFinePaid(suggestedFine);
     }
-  }, [memberId, month, year, members]);
-
-  useEffect(() => {
-    if (isOpen) {
-      if (initialMemberId) {
-        setMemberId(initialMemberId);
-      } else if (!memberId && members.length > 0) {
-        setMemberId(members[0].id);
-      }
-      if (initialMonth) setMonth(initialMonth);
-      if (initialYear) setYear(initialYear);
-    }
-  }, [isOpen, initialMemberId, initialMonth, initialYear, members, memberId]);
+  }, [memberId, month, year, paidDate, members]);
 
   if (!isOpen) return null;
 
   const selectedMember = members.find((m) => m.id === memberId);
+  const { deadlineMonth, deadlineYear, deadlineDay } = getDueDeadline(month, year);
+  const isPaidDateLate = isAfterMonthDeadline(month, year, paidDate || new Date());
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,7 +142,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-lg w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-lg w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2.5">
@@ -172,38 +212,72 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
           </div>
 
           {/* Month & Year Selection */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-emerald-600" />
-                <span>মাসের নাম (Month)</span>
-              </label>
-              <select
-                value={month}
-                onChange={(e) => setMonth(Number(e.target.value))}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-medium"
-              >
-                {MONTH_NAMES.map((name, idx) => (
-                  <option key={idx + 1} value={idx + 1}>
-                    {idx + 1}. {name}
-                  </option>
-                ))}
-              </select>
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>কোন মাসের কিস্তি (Billing Month)</span>
+                </label>
+                <select
+                  value={month}
+                  onChange={(e) => {
+                    setAutoSyncMonth(false);
+                    setMonth(Number(e.target.value));
+                  }}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-medium"
+                >
+                  {MONTH_NAMES.map((name, idx) => (
+                    <option key={idx + 1} value={idx + 1}>
+                      {idx + 1}. {name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  সাল (Fiscal Year)
+                </label>
+                <select
+                  value={year}
+                  onChange={(e) => {
+                    setAutoSyncMonth(false);
+                    setYear(Number(e.target.value));
+                  }}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-medium font-mono"
+                >
+                  <option value={2026}>2026</option>
+                  <option value={2025}>2025</option>
+                  <option value={2024}>2024</option>
+                </select>
+              </div>
             </div>
 
-            <div>
-              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                সাল (Fiscal Year)
+            <div className="flex flex-col gap-1 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700 text-[11px]">
+              <label className="flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={autoSyncMonth}
+                  onChange={(e) => handleToggleAutoSync(e.target.checked)}
+                  className="rounded border-slate-300 text-emerald-600"
+                />
+                <span>পেমেন্টের তারিখ অনুযায়ী আগের মাসে যোগ করুন (যেমন: ফেব্রুয়ারির টাকা → জানুয়ারি)</span>
               </label>
-              <select
-                value={year}
-                onChange={(e) => setYear(Number(e.target.value))}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-medium font-mono"
-              >
-                <option value={2026}>2026</option>
-                <option value={2025}>2025</option>
-                <option value={2024}>2024</option>
-              </select>
+              <div className="flex flex-wrap items-center justify-between gap-1 text-[10px] pl-5">
+                <span className="text-slate-500">
+                  জরিমানা ছাড়া শেষ সময়: <strong className="text-slate-700 dark:text-slate-200">{deadlineDay} {getMonthName(deadlineMonth)} {deadlineYear}</strong>
+                </span>
+                {isPaidDateLate ? (
+                  <span className="font-bold text-amber-700 dark:text-amber-400">
+                    ১২ {getMonthName(deadlineMonth)} অতিক্রান্ত (জরিমানা প্রযোজ্য)
+                  </span>
+                ) : (
+                  <span className="font-bold text-emerald-700 dark:text-emerald-400">
+                    সময়মতো জমা (জরিমানা নেই)
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -263,12 +337,12 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
             </button>
           </div>
 
-          {/* Late Fine Section (12th deadline rule: 50 BDT per share) */}
+          {/* Late Fine Section (12th of next month rule: 50 BDT per share) */}
           <div className="p-3 rounded-xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-800/50 space-y-2">
             <div className="flex items-center justify-between text-[11px] font-semibold text-amber-900 dark:text-amber-300">
               <span className="flex items-center gap-1">
                 <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
-                <span>বিলম্ব জরিমানা (১২ তারিখের পর ৫০৳/নাম)</span>
+                <span>বিলম্ব জরিমানা ({deadlineDay} {getMonthName(deadlineMonth)}-এর পর ৫০৳/নাম)</span>
               </span>
               <span className="font-mono">মোট জমা: {formatBDT(Number(amountPaid) + Number(finePaid))}</span>
             </div>
@@ -304,13 +378,13 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                পরিশোধের তারিখ (Date)
+                পরিশোধের তারিখ (Payment Date)
               </label>
               <input
                 type="date"
                 required
                 value={paidDate}
-                onChange={(e) => setPaidDate(e.target.value)}
+                onChange={(e) => handlePaidDateChange(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono text-xs"
               />
             </div>

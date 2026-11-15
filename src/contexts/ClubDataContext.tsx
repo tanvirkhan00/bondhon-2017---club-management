@@ -18,7 +18,7 @@ import {
 } from '../lib/mockData';
 import { useAuth } from './AuthContext';
 import { MONTH_NAMES, SHORT_MONTH_NAMES } from '../utils/formatters';
-import { calculateDueBreakdown } from '../utils/fineCalculator';
+import { calculateDueBreakdown, getBillingPeriodFromPaymentDate } from '../utils/fineCalculator';
 
 interface LogActivityParams {
   actorUserId?: string | null;
@@ -133,8 +133,9 @@ const NOTIFICATIONS_STORAGE_KEY = 'bondhon_local_notifications_v1';
 export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAdmin, user, profile } = useAuth();
 
-  const [selectedYear, setSelectedYear] = useState<number>(2026);
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+  const defaultPeriod = getBillingPeriodFromPaymentDate(new Date());
+  const [selectedYear, setSelectedYear] = useState<number>(defaultPeriod.billingYear);
+  const [selectedMonth, setSelectedMonth] = useState<number>(defaultPeriod.billingMonth);
   const [defaultDueAmount, setDefaultDueAmount] = useState<number>(() => {
     const saved = localStorage.getItem('bondhon_default_due_amount');
     return saved ? Number(saved) : 500;

@@ -4,20 +4,75 @@ export const FINE_PER_SHARE = 50;
 export const MONTHLY_DEADLINE_DAY = 12;
 
 /**
- * Returns true if the 12th of (month, year) has passed relative to referenceDate.
+ * Parses a Date or YYYY-MM-DD string into local year/month/day without UTC timezone drift.
+ */
+export function parseLocalDate(dateInput: Date | string = new Date()): Date {
+  if (dateInput instanceof Date) {
+    return dateInput;
+  }
+  const datePart = String(dateInput).substring(0, 10);
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(datePart);
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  }
+  const parsed = new Date(dateInput);
+  return isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
+/**
+ * Club Collection Rule:
+ * Installments for a billing month (e.g. January) are paid during the following month
+ * (e.g. February), and the deadline without fine is the 12th of that following month (Feb 12).
+ */
+export function getDueDeadline(
+  billingMonth: number,
+  billingYear: number
+): { deadlineMonth: number; deadlineYear: number; deadlineDay: number } {
+  const deadlineMonth = billingMonth === 12 ? 1 : billingMonth + 1;
+  const deadlineYear = billingMonth === 12 ? billingYear + 1 : billingYear;
+  return {
+    deadlineMonth,
+    deadlineYear,
+    deadlineDay: MONTHLY_DEADLINE_DAY,
+  };
+}
+
+/**
+ * Given a payment date (e.g. in February 2026), returns the billing period it settles (January 2026).
+ */
+export function getBillingPeriodFromPaymentDate(
+  paymentDate: Date | string = new Date()
+): { billingMonth: number; billingYear: number } {
+  const d = parseLocalDate(paymentDate);
+  const payMonth = d.getMonth() + 1;
+  const payYear = d.getFullYear();
+  if (payMonth === 1) {
+    return { billingMonth: 12, billingYear: payYear - 1 };
+  }
+  return { billingMonth: payMonth - 1, billingYear: payYear };
+}
+
+/**
+ * Returns true if the 12th of the FOLLOWING month (e.g. Feb 12 for January's due)
+ * has passed relative to referenceDate.
  */
 export function isAfterMonthDeadline(
-  month: number,
-  year: number,
-  referenceDate: Date = new Date()
+  billingMonth: number,
+  billingYear: number,
+  referenceDate: Date | string = new Date()
 ): boolean {
-  const curYear = referenceDate.getFullYear();
-  const curMonth = referenceDate.getMonth() + 1;
-  const curDay = referenceDate.getDate();
+  const ref = parseLocalDate(referenceDate);
+  const curYear = ref.getFullYear();
+  const curMonth = ref.getMonth() + 1;
+  const curDay = ref.getDate();
 
-  if (year < curYear) return true;
-  if (year === curYear && month < curMonth) return true;
-  if (year === curYear && month === curMonth && curDay > MONTHLY_DEADLINE_DAY) return true;
+  const { deadlineMonth, deadlineYear } = getDueDeadline(billingMonth, billingYear);
+
+  if (deadlineYear < curYear) return true;
+  if (deadlineYear === curYear && deadlineMonth < curMonth) return true;
+  if (deadlineYear === curYear && deadlineMonth === curMonth && curDay > MONTHLY_DEADLINE_DAY) {
+    return true;
+  }
   return false;
 }
 
@@ -38,7 +93,7 @@ export interface DueBreakdown {
 
 /**
  * Calculates principal + late fine breakdown for a monthly due record.
- * Constitution Clause 4.1: ৳50 fine per share/name if unpaid after the 12th of the month.
+ * Rule: ৳50 fine per share/name if unpaid after the 12th of the following month (e.g. Jan due -> Feb 12).
  * Example: 1 name = 500 + 50 = 550৳; 2 names = 1000 + 100 = 1100৳; 3 names = 1500 + 150 = 1650৳.
  */
 export function calculateDueBreakdown(
