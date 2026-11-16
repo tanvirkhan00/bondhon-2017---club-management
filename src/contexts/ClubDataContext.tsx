@@ -10,6 +10,10 @@ import {
   ClubNotification,
   NotificationEventType,
   BankDeposit,
+  BankEntryType,
+  ClubExpense,
+  ExpenseCategory,
+  ExpensePaymentSource,
   TopFineContributor,
   PublicClubHighlights,
 } from '../types';
@@ -48,10 +52,20 @@ interface ClubDataContextType {
   notifications: ClubNotification[];
   unreadNotificationCount: number;
   bankDeposits: BankDeposit[];
+  clubExpenses: ClubExpense[];
   totalClubPrincipalCollected: number;
   totalClubFineCollected: number;
   totalClubCollected: number;
   totalBankDeposited: number;
+  totalBankInterest: number;
+  totalBankCharges: number;
+  totalBankWithdrawals: number;
+  totalClubExpenses: number;
+  totalCashExpenses: number;
+  totalBankExpenses: number;
+  netClubAvailableBalance: number;
+  currentBankBalance: number;
+  cashInHandBalance: number;
   pendingBankDeposit: number;
   bankDepositProgress: number;
   publicClubHighlights: PublicClubHighlights;
@@ -140,10 +154,11 @@ interface ClubDataContextType {
   ) => Promise<{ success: boolean; error?: string }>;
   deleteDueRecord: (dueId: string) => Promise<{ success: boolean; error?: string }>;
 
-  // Admin bank deposit operations (Sonali Bank PLC)
+  // Admin bank ledger operations (Sonali Bank PLC: deposits, interest, charges, withdrawals)
   addBankDeposit: (params: {
     amount: number;
     deposited_at: string;
+    entry_type?: BankEntryType;
     reference_no?: string;
     notes?: string;
   }) => Promise<{ success: boolean; error?: string }>;
@@ -152,11 +167,36 @@ interface ClubDataContextType {
     updates: {
       amount: number;
       deposited_at: string;
+      entry_type?: BankEntryType;
       reference_no?: string | null;
       notes?: string | null;
     }
   ) => Promise<{ success: boolean; error?: string }>;
   deleteBankDeposit: (id: string) => Promise<{ success: boolean; error?: string }>;
+
+  // Admin club expenses & fee deductions
+  addClubExpense: (params: {
+    title: string;
+    category: ExpenseCategory;
+    amount: number;
+    expense_date: string;
+    payment_source: ExpensePaymentSource;
+    reference_no?: string;
+    notes?: string;
+  }) => Promise<{ success: boolean; error?: string }>;
+  updateClubExpense: (
+    id: string,
+    updates: {
+      title: string;
+      category: ExpenseCategory;
+      amount: number;
+      expense_date: string;
+      payment_source: ExpensePaymentSource;
+      reference_no?: string | null;
+      notes?: string | null;
+    }
+  ) => Promise<{ success: boolean; error?: string }>;
+  deleteClubExpense: (id: string) => Promise<{ success: boolean; error?: string }>;
 
   resetDemoData: () => void;
 }
@@ -167,6 +207,8 @@ const MEMBERS_STORAGE_KEY = 'bondhon_local_members_v5';
 const DUES_STORAGE_KEY = 'bondhon_local_dues_v5';
 const NOTIFICATIONS_STORAGE_KEY = 'bondhon_local_notifications_v1';
 const BANK_DEPOSITS_STORAGE_KEY = 'bondhon_local_bank_deposits_v1';
+const BANK_LOCAL_EXTRAS_KEY = 'bondhon_local_bank_extras_v1';
+const CLUB_EXPENSES_STORAGE_KEY = 'bondhon_local_club_expenses_v1';
 const PUBLIC_HIGHLIGHTS_CACHE_KEY = 'bondhon_public_highlights_v1';
 
 const DEFAULT_PUBLIC_HIGHLIGHTS: PublicClubHighlights = {
@@ -174,6 +216,15 @@ const DEFAULT_PUBLIC_HIGHLIGHTS: PublicClubHighlights = {
   totalFineCollected: 0,
   totalCollected: 0,
   totalBankDeposited: 0,
+  totalBankInterest: 0,
+  totalBankCharges: 0,
+  totalBankWithdrawals: 0,
+  totalClubExpenses: 0,
+  totalCashExpenses: 0,
+  totalBankExpenses: 0,
+  netClubAvailableBalance: 0,
+  currentBankBalance: 0,
+  cashInHandBalance: 0,
   topFineContributors: [],
 };
 
@@ -240,12 +291,54 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return [];
   });
 
+  const [clubExpenses, setClubExpenses] = useState<ClubExpense[]>(() => {
+    const saved = localStorage.getItem(CLUB_EXPENSES_STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch { /* ignore */ }
+    }
+    return [];
+  });
+
   const [rpcPublicHighlights, setRpcPublicHighlights] = useState<PublicClubHighlights | null>(() => {
     const saved = localStorage.getItem(PUBLIC_HIGHLIGHTS_CACHE_KEY);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed && typeof parsed === 'object') return parsed as PublicClubHighlights;
+        if (parsed && typeof parsed === 'object') {
+          const totalCol = Number(parsed.totalCollected || 0);
+          const totalDep = Number(parsed.totalBankDeposited || 0);
+          const totalInt = Number(parsed.totalBankInterest || 0);
+          const totalChg = Number(parsed.totalBankCharges || 0);
+          const totalWd = Number(parsed.totalBankWithdrawals || 0);
+          const totalExp = Number(parsed.totalClubExpenses || 0);
+          const totalBankExp = Number(parsed.totalBankExpenses || 0);
+          const netAvail =
+            parsed.netClubAvailableBalance !== undefined
+              ? Number(parsed.netClubAvailableBalance)
+              : totalCol + totalInt - totalChg - totalExp;
+          const curBank =
+            parsed.currentBankBalance !== undefined
+              ? Number(parsed.currentBankBalance)
+              : totalDep + totalInt - totalChg - totalWd - totalBankExp;
+          return {
+            ...(parsed as PublicClubHighlights),
+            totalBankInterest: totalInt,
+            totalBankCharges: totalChg,
+            totalBankWithdrawals: totalWd,
+            totalClubExpenses: totalExp,
+            totalCashExpenses: Number(parsed.totalCashExpenses || 0),
+            totalBankExpenses: totalBankExp,
+            netClubAvailableBalance: netAvail,
+            currentBankBalance: curBank,
+            cashInHandBalance:
+              parsed.cashInHandBalance !== undefined
+                ? Number(parsed.cashInHandBalance)
+                : netAvail - curBank,
+          };
+        }
       } catch { /* ignore */ }
     }
     return null;
@@ -255,6 +348,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [supabaseSyncedMembers, setSupabaseSyncedMembers] = useState<boolean>(false);
   const [supabaseNotificationsAvailable, setSupabaseNotificationsAvailable] = useState<boolean>(false);
   const [supabaseBankAvailable, setSupabaseBankAvailable] = useState<boolean>(false);
+  const [supabaseExpensesAvailable, setSupabaseExpensesAvailable] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -284,6 +378,12 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       localStorage.setItem(BANK_DEPOSITS_STORAGE_KEY, JSON.stringify(bankDeposits));
     }
   }, [bankDeposits, supabaseBankAvailable]);
+
+  useEffect(() => {
+    if (!supabaseExpensesAvailable) {
+      localStorage.setItem(CLUB_EXPENSES_STORAGE_KEY, JSON.stringify(clubExpenses));
+    }
+  }, [clubExpenses, supabaseExpensesAvailable]);
 
   useEffect(() => {
     localStorage.setItem('bondhon_default_due_amount', String(defaultDueAmount));
@@ -409,11 +509,41 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const { data: pubStats, error: pubStatsErr } = await client.rpc('get_public_club_highlights');
         if (!pubStatsErr && pubStats && typeof pubStats === 'object') {
           const raw = pubStats as Record<string, unknown>;
+          const totalCollectedVal = Number(raw.totalCollected || 0);
+          const totalDepositedVal = Number(raw.totalBankDeposited || 0);
+          const totalInterestVal = Number(raw.totalBankInterest || 0);
+          const totalChargesVal = Number(raw.totalBankCharges || 0);
+          const totalWithdrawalsVal = Number(raw.totalBankWithdrawals || 0);
+          const totalExpensesVal = Number(raw.totalClubExpenses || 0);
+          const totalCashExpensesVal = Number(raw.totalCashExpenses || 0);
+          const totalBankExpensesVal = Number(raw.totalBankExpenses || 0);
+          const netClubAvailVal =
+            raw.netClubAvailableBalance !== undefined
+              ? Number(raw.netClubAvailableBalance)
+              : totalCollectedVal + totalInterestVal - totalChargesVal - totalExpensesVal;
+          const curBankVal =
+            raw.currentBankBalance !== undefined
+              ? Number(raw.currentBankBalance)
+              : totalDepositedVal + totalInterestVal - totalChargesVal - totalWithdrawalsVal - totalBankExpensesVal;
+          const cashInHandVal =
+            raw.cashInHandBalance !== undefined
+              ? Number(raw.cashInHandBalance)
+              : netClubAvailVal - curBankVal;
+
           const normalized: PublicClubHighlights = {
             totalPrincipalCollected: Number(raw.totalPrincipalCollected || 0),
             totalFineCollected: Number(raw.totalFineCollected || 0),
-            totalCollected: Number(raw.totalCollected || 0),
-            totalBankDeposited: Number(raw.totalBankDeposited || 0),
+            totalCollected: totalCollectedVal,
+            totalBankDeposited: totalDepositedVal,
+            totalBankInterest: totalInterestVal,
+            totalBankCharges: totalChargesVal,
+            totalBankWithdrawals: totalWithdrawalsVal,
+            totalClubExpenses: totalExpensesVal,
+            totalCashExpenses: totalCashExpensesVal,
+            totalBankExpenses: totalBankExpensesVal,
+            netClubAvailableBalance: netClubAvailVal,
+            currentBankBalance: curBankVal,
+            cashInHandBalance: cashInHandVal,
             topFineContributors: Array.isArray(raw.topFineContributors)
               ? (raw.topFineContributors as TopFineContributor[]).map((c) => ({
                   ...c,
@@ -430,7 +560,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         // RPC may not be deployed yet; fallback gracefully
       }
 
-      // 5. Fetch notifications & Sonali Bank deposits if admin
+      // 5. Fetch notifications, Sonali Bank ledger & Club Expenses if admin
       if (isAdmin) {
         await refreshNotifications();
 
@@ -443,15 +573,47 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
           if (!bankErr && Array.isArray(bankData)) {
             setSupabaseBankAvailable(true);
-            setBankDeposits(
-              bankData.map((row) => ({
-                ...(row as BankDeposit),
-                amount: Number((row as BankDeposit).amount || 0),
+            const remoteRows: BankDeposit[] = bankData.map((row) => ({
+              ...(row as BankDeposit),
+              entry_type: ((row as BankDeposit).entry_type || 'deposit') as BankEntryType,
+              amount: Number((row as BankDeposit).amount || 0),
+            }));
+            // Merge any local-only extras saved when Supabase entry_type column wasn't migrated yet
+            let localExtras: BankDeposit[] = [];
+            try {
+              const rawExtras = localStorage.getItem(BANK_LOCAL_EXTRAS_KEY);
+              if (rawExtras) {
+                const parsed = JSON.parse(rawExtras);
+                if (Array.isArray(parsed)) localExtras = parsed;
+              }
+            } catch { /* ignore */ }
+            const merged = [...localExtras, ...remoteRows].sort((a, b) =>
+              (b.deposited_at || '').localeCompare(a.deposited_at || '')
+            );
+            setBankDeposits(merged);
+          }
+        } catch {
+          // keep local bankDeposits fallback
+        }
+
+        try {
+          const { data: expData, error: expErr } = await client
+            .from('club_expenses')
+            .select('*')
+            .order('expense_date', { ascending: false })
+            .order('created_at', { ascending: false });
+
+          if (!expErr && Array.isArray(expData)) {
+            setSupabaseExpensesAvailable(true);
+            setClubExpenses(
+              expData.map((row) => ({
+                ...(row as ClubExpense),
+                amount: Number((row as ClubExpense).amount || 0),
               }))
             );
           }
         } catch {
-          // keep local bankDeposits fallback
+          // keep local clubExpenses fallback
         }
       }
     } catch (err: unknown) {
@@ -831,7 +993,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
   }, [selectedYear, enrichedDues, members, clubMonthlyTarget]);
 
-  // Full-club collection, fine, and Sonali Bank deposit metrics
+  // Full-club collection, fine, Sonali Bank ledger, and Club Expenses reconciliation
   const liveComputedHighlights = useMemo<PublicClubHighlights>(() => {
     let totalPrincipalCollected = 0;
     let totalFineCollected = 0;
@@ -881,26 +1043,65 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       )
       .slice(0, 5);
 
-    const totalBankDepositedLocal = bankDeposits.reduce(
-      (sum, b) => sum + Number(b.amount || 0),
-      0
-    );
+    let totalBankDepositedLocal = 0;
+    let totalBankInterestLocal = 0;
+    let totalBankChargesLocal = 0;
+    let totalBankWithdrawalsLocal = 0;
+
+    bankDeposits.forEach((b) => {
+      const amt = Number(b.amount || 0);
+      const type = b.entry_type || 'deposit';
+      if (type === 'interest') totalBankInterestLocal += amt;
+      else if (type === 'charge') totalBankChargesLocal += amt;
+      else if (type === 'withdrawal') totalBankWithdrawalsLocal += amt;
+      else totalBankDepositedLocal += amt;
+    });
+
+    let totalCashExpensesLocal = 0;
+    let totalBankExpensesLocal = 0;
+    clubExpenses.forEach((e) => {
+      const amt = Number(e.amount || 0);
+      if (e.payment_source === 'bank') totalBankExpensesLocal += amt;
+      else totalCashExpensesLocal += amt;
+    });
+    const totalClubExpensesLocal = totalCashExpensesLocal + totalBankExpensesLocal;
+
+    const totalCollected = totalPrincipalCollected + totalFineCollected;
+    const netClubAvailableBalance =
+      totalCollected + totalBankInterestLocal - totalBankChargesLocal - totalClubExpensesLocal;
+    const currentBankBalance =
+      totalBankDepositedLocal +
+      totalBankInterestLocal -
+      totalBankChargesLocal -
+      totalBankWithdrawalsLocal -
+      totalBankExpensesLocal;
+    const cashInHandBalance = netClubAvailableBalance - currentBankBalance;
 
     return {
       totalPrincipalCollected,
       totalFineCollected,
-      totalCollected: totalPrincipalCollected + totalFineCollected,
+      totalCollected,
       totalBankDeposited: totalBankDepositedLocal,
+      totalBankInterest: totalBankInterestLocal,
+      totalBankCharges: totalBankChargesLocal,
+      totalBankWithdrawals: totalBankWithdrawalsLocal,
+      totalClubExpenses: totalClubExpensesLocal,
+      totalCashExpenses: totalCashExpensesLocal,
+      totalBankExpenses: totalBankExpensesLocal,
+      netClubAvailableBalance,
+      currentBankBalance,
+      cashInHandBalance,
       topFineContributors,
     };
-  }, [enrichedDues, members, bankDeposits]);
+  }, [enrichedDues, members, bankDeposits, clubExpenses]);
 
   // Cache full highlights whenever Admin or local demo mode holds full club records
   useEffect(() => {
     if (isAdmin || !supabaseSyncedMembers) {
       if (
         liveComputedHighlights.totalCollected > 0 ||
-        liveComputedHighlights.totalBankDeposited > 0
+        liveComputedHighlights.totalBankDeposited > 0 ||
+        liveComputedHighlights.totalClubExpenses > 0
       ) {
         localStorage.setItem(
           PUBLIC_HIGHLIGHTS_CACHE_KEY,
@@ -923,14 +1124,25 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const totalClubPrincipalCollected = publicClubHighlights.totalPrincipalCollected;
   const totalClubFineCollected = publicClubHighlights.totalFineCollected;
   const totalClubCollected = publicClubHighlights.totalCollected;
-  const totalBankDeposited =
-    isAdmin || !supabaseSyncedMembers
-      ? bankDeposits.reduce((sum, b) => sum + Number(b.amount || 0), 0)
-      : publicClubHighlights.totalBankDeposited;
-  const pendingBankDeposit = Math.max(0, totalClubCollected - totalBankDeposited);
+  const totalBankDeposited = publicClubHighlights.totalBankDeposited;
+  const totalBankInterest = publicClubHighlights.totalBankInterest;
+  const totalBankCharges = publicClubHighlights.totalBankCharges;
+  const totalBankWithdrawals = publicClubHighlights.totalBankWithdrawals;
+  const totalClubExpenses = publicClubHighlights.totalClubExpenses;
+  const totalCashExpenses = publicClubHighlights.totalCashExpenses;
+  const totalBankExpenses = publicClubHighlights.totalBankExpenses;
+  const netClubAvailableBalance = publicClubHighlights.netClubAvailableBalance;
+  const currentBankBalance = publicClubHighlights.currentBankBalance;
+  const cashInHandBalance = publicClubHighlights.cashInHandBalance;
+
+  const depositableFunds = Math.max(
+    0,
+    totalClubCollected - totalCashExpenses + totalBankWithdrawals
+  );
+  const pendingBankDeposit = Math.max(0, cashInHandBalance);
   const bankDepositProgress =
-    totalClubCollected > 0
-      ? Math.min(100, Math.round((totalBankDeposited / totalClubCollected) * 100))
+    depositableFunds > 0
+      ? Math.min(100, Math.round((totalBankDeposited / depositableFunds) * 100))
       : 0;
   // ==========================================
   // ADMIN MEMBER ACTIONS
@@ -1623,7 +1835,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   // ==========================================
-  // ADMIN BANK DEPOSIT ACTIONS (Sonali Bank PLC)
+  // ADMIN BANK LEDGER ACTIONS (Sonali Bank PLC)
   // ==========================================
 
   const isMissingBankTableError = (err: { message?: string; code?: string } | null | undefined) => {
@@ -1637,25 +1849,50 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
   };
 
+  const isMissingEntryTypeColumnError = (err: { message?: string; code?: string } | null | undefined) => {
+    if (!err) return false;
+    const msg = (err.message || '').toLowerCase();
+    return err.code === '42703' || err.code === 'PGRST204' || msg.includes('entry_type');
+  };
+
+  const isMissingExpenseTableError = (err: { message?: string; code?: string } | null | undefined) => {
+    if (!err) return false;
+    const msg = (err.message || '').toLowerCase();
+    return (
+      err.code === '42P01' ||
+      err.code === 'PGRST205' ||
+      msg.includes('club_expenses') ||
+      msg.includes('schema cache')
+    );
+  };
+
+  const persistLocalBankExtras = (list: BankDeposit[]) => {
+    const extras = list.filter((item) => item.id.startsWith('bank-extra-'));
+    localStorage.setItem(BANK_LOCAL_EXTRAS_KEY, JSON.stringify(extras));
+  };
+
   const addBankDeposit = async (params: {
     amount: number;
     deposited_at: string;
+    entry_type?: BankEntryType;
     reference_no?: string;
     notes?: string;
   }) => {
     if (!isAdmin) {
-      return { success: false, error: 'Unauthorized: Only Admins can record bank deposits.' };
+      return { success: false, error: 'Unauthorized: Only Admins can record bank entries.' };
     }
     const cleanAmount = Number(params.amount);
     if (!cleanAmount || cleanAmount <= 0) {
-      return { success: false, error: 'Please enter a valid deposit amount greater than ৳0.' };
+      return { success: false, error: 'Please enter a valid amount greater than ৳0.' };
     }
 
+    const entryType: BankEntryType = params.entry_type || 'deposit';
     const basePayload = {
       bank_name: 'Sonali Bank PLC',
       branch_name: 'Bhedarganj Branch, Shariatpur',
       account_number: '2102201027292',
       account_name: 'jafor saikot dhali tanvir khan',
+      entry_type: entryType,
       amount: cleanAmount,
       deposited_at: params.deposited_at || new Date().toISOString().substring(0, 10),
       reference_no: params.reference_no?.trim() || null,
@@ -1682,6 +1919,42 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           insErr = retry.error;
         }
 
+        // Backward-compatibility if DB hasn't added entry_type column yet
+        if (insErr && isMissingEntryTypeColumnError(insErr)) {
+          if (entryType === 'deposit') {
+            const { entry_type: _omit, ...legacyPayload } = basePayload;
+            const legacyRetry = await client
+              .from('bank_deposits')
+              .insert([legacyPayload])
+              .select()
+              .single();
+            if (!legacyRetry.error && legacyRetry.data) {
+              setSupabaseBankAvailable(true);
+              const created: BankDeposit = {
+                ...(legacyRetry.data as BankDeposit),
+                entry_type: 'deposit',
+                amount: Number((legacyRetry.data as BankDeposit).amount || cleanAmount),
+              };
+              setBankDeposits((prev) => [created, ...prev]);
+              return { success: true };
+            }
+          } else {
+            // Save non-deposit bank adjustments (interest/charge/withdrawal) locally until migration runs
+            const localExtra: BankDeposit = {
+              ...basePayload,
+              id: `bank-extra-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+            setBankDeposits((prev) => {
+              const next = [localExtra, ...prev];
+              persistLocalBankExtras(next);
+              return next;
+            });
+            return { success: true };
+          }
+        }
+
         if (insErr) {
           if (isMissingBankTableError(insErr)) {
             setSupabaseBankAvailable(false);
@@ -1692,6 +1965,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           setSupabaseBankAvailable(true);
           const created: BankDeposit = {
             ...(data as BankDeposit),
+            entry_type: ((data as BankDeposit).entry_type || entryType) as BankEntryType,
             amount: Number((data as BankDeposit).amount || cleanAmount),
           };
           setBankDeposits((prev) => [created, ...prev]);
@@ -1718,19 +1992,24 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     updates: {
       amount: number;
       deposited_at: string;
+      entry_type?: BankEntryType;
       reference_no?: string | null;
       notes?: string | null;
     }
   ) => {
     if (!isAdmin) {
-      return { success: false, error: 'Unauthorized: Only Admins can edit bank deposits.' };
+      return { success: false, error: 'Unauthorized: Only Admins can edit bank ledger entries.' };
     }
     const cleanAmount = Number(updates.amount);
     if (!cleanAmount || cleanAmount <= 0) {
-      return { success: false, error: 'Deposit amount must be greater than ৳0.' };
+      return { success: false, error: 'Amount must be greater than ৳0.' };
     }
 
+    const existing = bankDeposits.find((d) => d.id === id);
+    const nextType: BankEntryType = updates.entry_type || existing?.entry_type || 'deposit';
+
     const payload = {
+      entry_type: nextType,
       amount: cleanAmount,
       deposited_at: updates.deposited_at,
       reference_no: updates.reference_no?.trim() || null,
@@ -1738,13 +2017,20 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       updated_at: new Date().toISOString(),
     };
 
+    const isLocalExtra = id.startsWith('bank-extra-');
     const client = getSupabaseClient();
-    if (supabaseSyncedMembers && supabaseBankAvailable && client) {
+    if (!isLocalExtra && supabaseSyncedMembers && supabaseBankAvailable && client) {
       try {
-        const { error: updErr } = await client
+        let { error: updErr } = await client
           .from('bank_deposits')
           .update(payload)
           .eq('id', id);
+
+        if (updErr && isMissingEntryTypeColumnError(updErr)) {
+          const { entry_type: _omit, ...legacyPayload } = payload;
+          const retry = await client.from('bank_deposits').update(legacyPayload).eq('id', id);
+          updErr = retry.error;
+        }
         if (updErr) throw updErr;
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -1752,19 +2038,22 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
     }
 
-    setBankDeposits((prev) =>
-      prev.map((d) => (d.id === id ? { ...d, ...payload } : d))
-    );
+    setBankDeposits((prev) => {
+      const next = prev.map((d) => (d.id === id ? { ...d, ...payload } : d));
+      if (isLocalExtra) persistLocalBankExtras(next);
+      return next;
+    });
     return { success: true };
   };
 
   const deleteBankDeposit = async (id: string) => {
     if (!isAdmin) {
-      return { success: false, error: 'Unauthorized: Only Admins can delete bank deposits.' };
+      return { success: false, error: 'Unauthorized: Only Admins can delete bank entries.' };
     }
 
+    const isLocalExtra = id.startsWith('bank-extra-');
     const client = getSupabaseClient();
-    if (supabaseSyncedMembers && supabaseBankAvailable && client) {
+    if (!isLocalExtra && supabaseSyncedMembers && supabaseBankAvailable && client) {
       try {
         const { error: delErr } = await client
           .from('bank_deposits')
@@ -1777,7 +2066,170 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
     }
 
-    setBankDeposits((prev) => prev.filter((d) => d.id !== id));
+    setBankDeposits((prev) => {
+      const next = prev.filter((d) => d.id !== id);
+      if (isLocalExtra) persistLocalBankExtras(next);
+      return next;
+    });
+    return { success: true };
+  };
+
+  // ==========================================
+  // ADMIN CLUB EXPENSES ACTIONS
+  // ==========================================
+
+  const addClubExpense = async (params: {
+    title: string;
+    category: ExpenseCategory;
+    amount: number;
+    expense_date: string;
+    payment_source: ExpensePaymentSource;
+    reference_no?: string;
+    notes?: string;
+  }) => {
+    if (!isAdmin) {
+      return { success: false, error: 'Unauthorized: Only Admins can record club expenses.' };
+    }
+    const cleanAmount = Number(params.amount);
+    if (!params.title.trim()) {
+      return { success: false, error: 'Please enter an expense title or description.' };
+    }
+    if (!cleanAmount || cleanAmount <= 0) {
+      return { success: false, error: 'Please enter a valid expense amount greater than ৳0.' };
+    }
+
+    const basePayload = {
+      title: params.title.trim(),
+      category: params.category || 'operational',
+      amount: cleanAmount,
+      expense_date: params.expense_date || new Date().toISOString().substring(0, 10),
+      payment_source: params.payment_source || 'cash',
+      reference_no: params.reference_no?.trim() || null,
+      notes: params.notes?.trim() || null,
+      recorded_by: user?.id || null,
+    };
+
+    const client = getSupabaseClient();
+    if (supabaseSyncedMembers && client) {
+      try {
+        let { data, error: insErr } = await client
+          .from('club_expenses')
+          .insert([basePayload])
+          .select()
+          .single();
+
+        if (insErr && insErr.message.toLowerCase().includes('recorded_by')) {
+          const retry = await client
+            .from('club_expenses')
+            .insert([{ ...basePayload, recorded_by: null }])
+            .select()
+            .single();
+          data = retry.data;
+          insErr = retry.error;
+        }
+
+        if (insErr) {
+          if (isMissingExpenseTableError(insErr)) {
+            setSupabaseExpensesAvailable(false);
+          } else {
+            throw insErr;
+          }
+        } else if (data) {
+          setSupabaseExpensesAvailable(true);
+          const created: ClubExpense = {
+            ...(data as ClubExpense),
+            amount: Number((data as ClubExpense).amount || cleanAmount),
+          };
+          setClubExpenses((prev) => [created, ...prev]);
+          return { success: true };
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { success: false, error: msg };
+      }
+    }
+
+    const localExpense: ClubExpense = {
+      ...basePayload,
+      id: `exp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    setClubExpenses((prev) => [localExpense, ...prev]);
+    return { success: true };
+  };
+
+  const updateClubExpense = async (
+    id: string,
+    updates: {
+      title: string;
+      category: ExpenseCategory;
+      amount: number;
+      expense_date: string;
+      payment_source: ExpensePaymentSource;
+      reference_no?: string | null;
+      notes?: string | null;
+    }
+  ) => {
+    if (!isAdmin) {
+      return { success: false, error: 'Unauthorized: Only Admins can edit club expenses.' };
+    }
+    const cleanAmount = Number(updates.amount);
+    if (!updates.title.trim() || !cleanAmount || cleanAmount <= 0) {
+      return { success: false, error: 'Valid expense title and positive amount are required.' };
+    }
+
+    const payload = {
+      title: updates.title.trim(),
+      category: updates.category,
+      amount: cleanAmount,
+      expense_date: updates.expense_date,
+      payment_source: updates.payment_source,
+      reference_no: updates.reference_no?.trim() || null,
+      notes: updates.notes?.trim() || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    const client = getSupabaseClient();
+    if (supabaseSyncedMembers && supabaseExpensesAvailable && client) {
+      try {
+        const { error: updErr } = await client
+          .from('club_expenses')
+          .update(payload)
+          .eq('id', id);
+        if (updErr) throw updErr;
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { success: false, error: msg };
+      }
+    }
+
+    setClubExpenses((prev) =>
+      prev.map((e) => (e.id === id ? { ...e, ...payload } : e))
+    );
+    return { success: true };
+  };
+
+  const deleteClubExpense = async (id: string) => {
+    if (!isAdmin) {
+      return { success: false, error: 'Unauthorized: Only Admins can delete club expenses.' };
+    }
+
+    const client = getSupabaseClient();
+    if (supabaseSyncedMembers && supabaseExpensesAvailable && client) {
+      try {
+        const { error: delErr } = await client
+          .from('club_expenses')
+          .delete()
+          .eq('id', id);
+        if (delErr) throw delErr;
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { success: false, error: msg };
+      }
+    }
+
+    setClubExpenses((prev) => prev.filter((e) => e.id !== id));
     return { success: true };
   };
 
@@ -1785,10 +2237,13 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.removeItem(MEMBERS_STORAGE_KEY);
     localStorage.removeItem(DUES_STORAGE_KEY);
     localStorage.removeItem(BANK_DEPOSITS_STORAGE_KEY);
+    localStorage.removeItem(BANK_LOCAL_EXTRAS_KEY);
+    localStorage.removeItem(CLUB_EXPENSES_STORAGE_KEY);
     setMembers(INITIAL_MEMBERS);
     setMonthlyDues(INITIAL_MONTHLY_DUES);
     setPublicMembers(INITIAL_PUBLIC_MEMBERS);
     setBankDeposits([]);
+    setClubExpenses([]);
   };
 
   const value = useMemo(
@@ -1802,10 +2257,20 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       notifications,
       unreadNotificationCount,
       bankDeposits,
+      clubExpenses,
       totalClubPrincipalCollected,
       totalClubFineCollected,
       totalClubCollected,
       totalBankDeposited,
+      totalBankInterest,
+      totalBankCharges,
+      totalBankWithdrawals,
+      totalClubExpenses,
+      totalCashExpenses,
+      totalBankExpenses,
+      netClubAvailableBalance,
+      currentBankBalance,
+      cashInHandBalance,
       pendingBankDeposit,
       bankDepositProgress,
       publicClubHighlights,
@@ -1843,6 +2308,9 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       addBankDeposit,
       updateBankDeposit,
       deleteBankDeposit,
+      addClubExpense,
+      updateClubExpense,
+      deleteClubExpense,
       resetDemoData,
     }),
     [
@@ -1855,10 +2323,20 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       notifications,
       unreadNotificationCount,
       bankDeposits,
+      clubExpenses,
       totalClubPrincipalCollected,
       totalClubFineCollected,
       totalClubCollected,
       totalBankDeposited,
+      totalBankInterest,
+      totalBankCharges,
+      totalBankWithdrawals,
+      totalClubExpenses,
+      totalCashExpenses,
+      totalBankExpenses,
+      netClubAvailableBalance,
+      currentBankBalance,
+      cashInHandBalance,
       pendingBankDeposit,
       bankDepositProgress,
       publicClubHighlights,

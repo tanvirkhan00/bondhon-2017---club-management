@@ -29,6 +29,7 @@ import {
   PanelLeftOpen,
   Sun,
   Moon,
+  Landmark,
 } from 'lucide-react';
 import crestImage from '../assets/images/bondhon_club_crest_1793703027252.jpg';
 
@@ -155,6 +156,7 @@ export const AdminLayout: React.FC = () => {
     { to: '/admin/payments', label: 'Monthly Dues', icon: CreditCard },
     { to: '/admin/fines', label: 'Fines Sheet', icon: AlertTriangle },
     { to: '/admin/payment-history', label: 'Payment Ledger', icon: History },
+    { to: '/admin/treasury', label: 'Bank & Expenses', icon: Landmark },
     { to: '/admin/reports', label: 'Financial Reports', icon: BarChart3 },
     { to: '/admin/settings', label: 'Settings', icon: Settings },
   ];
@@ -345,12 +347,12 @@ export const AdminLayout: React.FC = () => {
         {/* Main Column */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Top bar header */}
-          <header className="h-16 bg-white/95 dark:bg-[#0F1928]/95 backdrop-blur-md border-b border-[#E8EDF3] dark:border-[#1F2F46] px-4 sm:px-6 flex items-center justify-between gap-4 sticky top-0 z-30">
+          <header className="h-14 sm:h-16 bg-white/95 dark:bg-[#0F1928]/95 backdrop-blur-md border-b border-[#E8EDF3] dark:border-[#1F2F46] px-4 sm:px-6 flex items-center justify-between gap-4 sticky top-0 z-30">
             <div className="flex items-center gap-2.5 min-w-0">
               {/* Mobile Hamburger */}
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden p-2 rounded-lg text-[#172435] dark:text-slate-200 hover:bg-[#F5F6F3] dark:hover:bg-[#162438] cursor-pointer"
+                className="lg:hidden p-2 -ml-1 rounded-lg text-[#172435] dark:text-slate-200 hover:bg-[#F5F6F3] dark:hover:bg-[#162438] cursor-pointer"
                 aria-label="Open sidebar"
               >
                 <Menu className="w-5 h-5" />
@@ -380,14 +382,14 @@ export const AdminLayout: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               {/* Theme Switcher (Dark Color Scheme default) */}
               <button
                 type="button"
                 onClick={toggleTheme}
                 aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
                 title={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
-                className="p-2.5 rounded-xl text-[#64748B] dark:text-[#D6AC62] hover:bg-[#F5F6F3] dark:hover:bg-[#162438] border border-transparent hover:border-[#E8EDF3] dark:hover:border-[#1F2F46] transition-colors cursor-pointer"
+                className="p-2 rounded-xl text-[#64748B] dark:text-[#D6AC62] hover:bg-[#F5F6F3] dark:hover:bg-[#162438] border border-transparent hover:border-[#E8EDF3] dark:hover:border-[#1F2F46] transition-colors cursor-pointer"
               >
                 {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
@@ -400,13 +402,13 @@ export const AdminLayout: React.FC = () => {
                     setNotifOpen(!notifOpen);
                     if (!notifOpen) handleRefreshNotifs();
                   }}
-                  className="relative p-2.5 rounded-xl text-[#172435] dark:text-slate-200 hover:bg-[#F5F6F3] dark:hover:bg-[#162438] border border-transparent hover:border-[#E8EDF3] dark:hover:border-[#1F2F46] transition-colors cursor-pointer"
+                  className="relative p-2 rounded-xl text-[#172435] dark:text-slate-200 hover:bg-[#F5F6F3] dark:hover:bg-[#162438] border border-transparent hover:border-[#E8EDF3] dark:hover:border-[#1F2F46] transition-colors cursor-pointer"
                   aria-label="Member Notifications"
                   title="Member Activity & Notifications"
                 >
-                  <Bell className="w-5 h-5" />
+                  <Bell className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
                   {unreadNotificationCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[10px] font-bold flex items-center justify-center shadow-xs tabular-nums">
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[17px] h-[17px] px-1 rounded-full bg-rose-600 text-white text-[10px] font-bold flex items-center justify-center shadow-xs tabular-nums">
                       {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
                     </span>
                   )}
@@ -507,15 +509,14 @@ export const AdminLayout: React.FC = () => {
                 </AnimatePresence>
               </div>
 
-              {/* Admin verified indicator */}
-              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#087F70]/10 dark:bg-[#087F70]/20 text-[#087F70] dark:text-[#34D399] border border-[#087F70]/25 dark:border-[#087F70]/40 rounded-xl whitespace-nowrap">
+              <span className="hidden md:inline-flex items-center gap-1.5 text-xs font-medium text-[#087F70] dark:text-[#34D399] px-2 whitespace-nowrap">
                 <ShieldCheck className="w-3.5 h-3.5" />
                 <span>Admin Access</span>
-              </div>
+              </span>
 
               <Link
                 to="/member/profile"
-                className="hidden md:flex items-center gap-1.5 text-xs font-semibold py-1.5 px-3 bg-[#F5F6F3] hover:bg-slate-200/70 dark:bg-[#162438] dark:hover:bg-[#203650] text-[#172435] dark:text-slate-200 border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl transition-colors whitespace-nowrap"
+                className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold py-2 px-3 bg-[#F5F6F3] hover:bg-slate-200/70 dark:bg-[#162438] dark:hover:bg-[#203650] text-[#172435] dark:text-slate-200 border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl transition-colors whitespace-nowrap shrink-0"
               >
                 <ExternalLink className="w-3.5 h-3.5 text-[#087F70] dark:text-[#34D399]" />
                 <span>Member Portal</span>
@@ -525,7 +526,7 @@ export const AdminLayout: React.FC = () => {
 
           {/* Viewport content */}
           <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-            <div className="max-w-7xl mx-auto">
+            <div className="max-w-[1440px] mx-auto">
               <Outlet />
             </div>
           </main>

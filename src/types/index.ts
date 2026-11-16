@@ -126,14 +126,41 @@ export interface ClubNotification {
   created_at: string;
 }
 
+export type BankEntryType = 'deposit' | 'interest' | 'charge' | 'withdrawal';
+
 export interface BankDeposit {
   id: string;
   bank_name: string;
   branch_name: string;
   account_number: string;
   account_name: string;
+  entry_type?: BankEntryType;
   amount: number;
   deposited_at: string;
+  reference_no?: string | null;
+  notes?: string | null;
+  recorded_by?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type ExpenseCategory =
+  | 'bank_charge'
+  | 'account_opening'
+  | 'operational'
+  | 'event'
+  | 'welfare'
+  | 'other';
+
+export type ExpensePaymentSource = 'cash' | 'bank';
+
+export interface ClubExpense {
+  id: string;
+  title: string;
+  category: ExpenseCategory;
+  amount: number;
+  expense_date: string;
+  payment_source: ExpensePaymentSource;
   reference_no?: string | null;
   notes?: string | null;
   recorded_by?: string | null;
@@ -156,6 +183,15 @@ export interface PublicClubHighlights {
   totalFineCollected: number;
   totalCollected: number;
   totalBankDeposited: number;
+  totalBankInterest: number;
+  totalBankCharges: number;
+  totalBankWithdrawals: number;
+  totalClubExpenses: number;
+  totalCashExpenses: number;
+  totalBankExpenses: number;
+  netClubAvailableBalance: number;
+  currentBankBalance: number;
+  cashInHandBalance: number;
   topFineContributors: TopFineContributor[];
   updatedAt?: string;
 }

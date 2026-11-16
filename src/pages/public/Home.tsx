@@ -232,11 +232,11 @@ export const Home: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {/* Card 1: Total Collections */}
+          {/* Card 1: Net Club Available Balance */}
           <div className="surface-card surface-card-hover rounded-2xl p-6 flex flex-col justify-between gap-4">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B] dark:text-slate-400">
-                মোট তহবিল সংগ্রহ (Total Collections)
+                নিট বর্তমান তহবিল (Available Balance)
               </span>
               <div className="w-9 h-9 rounded-xl bg-[#087F70]/10 text-[#087F70] dark:text-[#34D399] flex items-center justify-center shrink-0">
                 <Banknote className="w-5 h-5" />
@@ -244,12 +244,38 @@ export const Home: React.FC = () => {
             </div>
             <div>
               <div className="text-3xl sm:text-4xl font-extrabold font-mono text-[#087F70] dark:text-[#34D399] tabular-nums">
-                {formatBDT(publicClubHighlights.totalCollected)}
+                {formatBDT(publicClubHighlights.netClubAvailableBalance)}
               </div>
               <p className="text-xs text-[#64748B] dark:text-slate-400 mt-2 font-mono tabular-nums">
-                মূল সঞ্চয়: {formatBDT(publicClubHighlights.totalPrincipalCollected)} · জরিমানা:{' '}
-                {formatBDT(publicClubHighlights.totalFineCollected)}
+                মোট সংগ্রহ: {formatBDT(publicClubHighlights.totalCollected)} (মূল:{' '}
+                {formatBDT(publicClubHighlights.totalPrincipalCollected)} · জরিমানা:{' '}
+                {formatBDT(publicClubHighlights.totalFineCollected)})
               </p>
+              {(publicClubHighlights.totalBankCharges > 0 ||
+                publicClubHighlights.totalClubExpenses > 0 ||
+                publicClubHighlights.totalBankInterest > 0) && (
+                <p className="text-[11px] text-[#64748B] dark:text-slate-400 mt-1 font-mono tabular-nums">
+                  {publicClubHighlights.totalBankInterest > 0 && (
+                    <span className="text-[#087F70] dark:text-[#34D399] font-semibold">
+                      +মুনাফা: {formatBDT(publicClubHighlights.totalBankInterest)}
+                    </span>
+                  )}
+                  {publicClubHighlights.totalBankInterest > 0 &&
+                    (publicClubHighlights.totalBankCharges > 0 ||
+                      publicClubHighlights.totalClubExpenses > 0) &&
+                    ' · '}
+                  {(publicClubHighlights.totalBankCharges > 0 ||
+                    publicClubHighlights.totalClubExpenses > 0) && (
+                    <span className="text-rose-600 dark:text-rose-400 font-semibold">
+                      -চার্জ ও খরচ:{' '}
+                      {formatBDT(
+                        publicClubHighlights.totalBankCharges +
+                          publicClubHighlights.totalClubExpenses
+                      )}
+                    </span>
+                  )}
+                </p>
+              )}
             </div>
           </div>
 
