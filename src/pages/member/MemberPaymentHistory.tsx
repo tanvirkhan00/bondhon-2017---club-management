@@ -3,10 +3,9 @@ import { useClubData } from '../../hooks/useClubData';
 import { FISCAL_YEARS, formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/formatters';
 import { calculateDueBreakdown } from '../../utils/fineCalculator';
 import { StatusBadge } from '../../components/StatusBadge';
-import {
-  History,
-  Search,
-} from 'lucide-react';
+import { MetricCard } from '../../components/MetricCard';
+import { PageTransition } from '../../components/ui/MotionPrimitives';
+import { History, Search, Receipt, CheckCircle2, Coins, AlertCircle } from 'lucide-react';
 
 export const MemberPaymentHistory: React.FC = () => {
   const { myDues, myMemberRecord } = useClubData();
@@ -17,7 +16,6 @@ export const MemberPaymentHistory: React.FC = () => {
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('all');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
 
-  // Extract unique years from personal dues
   const years = useMemo(() => {
     const set = new Set<number>(FISCAL_YEARS);
     myDues.forEach(d => {
@@ -30,7 +28,6 @@ export const MemberPaymentHistory: React.FC = () => {
     return Array.from(set).sort((a, b) => b - a);
   }, [myDues]);
 
-  // Filtered & Sorted Records
   const filteredRecords = useMemo(() => {
     return myDues
       .filter((d) => {
@@ -67,81 +64,75 @@ export const MemberPaymentHistory: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-150">
-      {/* Title & Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200 dark:border-slate-800">
+    <PageTransition className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E8EDF3] dark:border-[#1F2F46]">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
-            <History className="w-6 h-6 text-emerald-700 dark:text-emerald-400" />
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#14243A] dark:text-white flex items-center gap-2.5">
+            <History className="w-6 h-6 text-[#087F70] dark:text-[#34D399]" />
             <span>Payment Ledger</span>
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs sm:text-sm text-[#64748B] mt-0.5 font-mono">
             {myMemberRecord?.full_name} · {myMemberRecord?.member_code}
           </p>
         </div>
       </div>
 
       {/* Summary KPI Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
-          <span className="text-[11px] font-medium text-slate-500 uppercase">Total Billed</span>
-          <div className="text-xl font-bold font-mono text-slate-900 dark:text-slate-100 tabular-nums mt-1">
-            {formatBDT(filteredBreakdown.due)}
-          </div>
-          <span className="text-[11px] text-slate-500 mt-0.5 block">{filteredRecords.length} cycles</span>
-        </div>
-
-        <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
-          <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400 uppercase">Principal Paid</span>
-          <div className="text-xl font-bold font-mono text-emerald-700 dark:text-emerald-400 tabular-nums mt-1">
-            {formatBDT(filteredBreakdown.paid)}
-          </div>
-          <span className="text-[11px] text-emerald-600 mt-0.5 block">
-            {filteredBreakdown.due > 0 ? Math.round(((filteredBreakdown.paid + filteredBreakdown.finePaid) / filteredBreakdown.due) * 100) : 0}% settled
-          </span>
-        </div>
-
-        <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
-          <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400 uppercase">Fines Paid</span>
-          <div className="text-xl font-bold font-mono text-amber-700 dark:text-amber-400 tabular-nums mt-1">
-            {formatBDT(filteredBreakdown.finePaid)}
-          </div>
-          <span className="text-[11px] text-slate-500 mt-0.5 block">
-            Late fees settled
-          </span>
-        </div>
-
-        <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
-          <span className="text-[11px] font-medium text-rose-700 dark:text-rose-400 uppercase">Outstanding</span>
-          <div className="text-xl font-bold font-mono text-rose-700 dark:text-rose-400 tabular-nums mt-1">
-            {formatBDT(filteredBreakdown.outstanding)}
-          </div>
-          <span className="text-[11px] text-rose-600 mt-0.5 block">
-            {filteredBreakdown.outstanding === 0 ? 'Account settled' : 'Balance due'}
-          </span>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <MetricCard
+          label="Total Billed"
+          value={formatBDT(filteredBreakdown.due)}
+          subLabel={`${filteredRecords.length} cycles`}
+          icon={Receipt}
+          accent="navy"
+        />
+        <MetricCard
+          label="Principal Paid"
+          value={formatBDT(filteredBreakdown.paid)}
+          subLabel="Monthly contributions"
+          icon={CheckCircle2}
+          accent="emerald"
+          trend={{
+            positive: true,
+            text: `${filteredBreakdown.due > 0 ? Math.round(((filteredBreakdown.paid + filteredBreakdown.finePaid) / filteredBreakdown.due) * 100) : 0}% settled`,
+          }}
+        />
+        <MetricCard
+          label="Fines Paid"
+          value={formatBDT(filteredBreakdown.finePaid)}
+          subLabel="Late fees settled"
+          icon={Coins}
+          accent="gold"
+        />
+        <MetricCard
+          label="Outstanding"
+          value={formatBDT(filteredBreakdown.outstanding)}
+          subLabel={filteredBreakdown.outstanding === 0 ? 'Account settled' : 'Balance due'}
+          icon={AlertCircle}
+          accent={filteredBreakdown.outstanding > 0 ? 'rose' : 'emerald'}
+        />
       </div>
 
       {/* Filter Toolbar */}
-      <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs space-y-3">
+      <div className="surface-card p-4 rounded-2xl space-y-3">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+            <Search className="w-4 h-4 text-[#64748B] absolute left-3 top-2.5" />
             <input
               type="text"
               placeholder="Search by month or year (e.g. November or 2026)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
+              className="w-full pl-9 pr-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
             />
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {/* Year */}
             <select
               value={selectedYearFilter}
               onChange={(e) => setSelectedYearFilter(e.target.value)}
-              className="px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg"
+              className="px-2.5 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl cursor-pointer"
             >
               <option key="member-year-all" value="all">All Years</option>
               {years.map(y => (
@@ -149,11 +140,10 @@ export const MemberPaymentHistory: React.FC = () => {
               ))}
             </select>
 
-            {/* Month */}
             <select
               value={selectedMonthFilter}
               onChange={(e) => setSelectedMonthFilter(e.target.value)}
-              className="px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg"
+              className="px-2.5 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl cursor-pointer"
             >
               <option key="member-month-all" value="all">All Months</option>
               {MONTH_NAMES.map((name, idx) => (
@@ -161,11 +151,10 @@ export const MemberPaymentHistory: React.FC = () => {
               ))}
             </select>
 
-            {/* Status */}
             <select
               value={selectedStatusFilter}
               onChange={(e) => setSelectedStatusFilter(e.target.value)}
-              className="px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg"
+              className="px-2.5 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl cursor-pointer"
             >
               <option key="member-status-all" value="all">All Statuses</option>
               <option key="member-status-paid" value="paid">Paid Only</option>
@@ -173,11 +162,10 @@ export const MemberPaymentHistory: React.FC = () => {
               <option key="member-status-unpaid" value="unpaid">Unpaid Only</option>
             </select>
 
-            {/* Sort Order */}
             <select
               value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value as any)}
-              className="px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg"
+              onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
+              className="px-2.5 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl cursor-pointer"
             >
               <option key="sort-desc" value="desc">Newest First</option>
               <option key="sort-asc" value="asc">Oldest First</option>
@@ -187,10 +175,10 @@ export const MemberPaymentHistory: React.FC = () => {
       </div>
 
       {/* Payment History Table */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
+      <div className="surface-card rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
+            <thead className="bg-[#F5F6F3] dark:bg-[#162438] text-[#64748B] border-b border-[#E8EDF3] dark:border-[#1F2F46]">
               <tr>
                 <th className="py-3 px-4 font-semibold">Period</th>
                 <th className="py-3 px-4 font-semibold text-right">Due (৳)</th>
@@ -201,10 +189,10 @@ export const MemberPaymentHistory: React.FC = () => {
                 <th className="py-3 px-4 font-semibold">Payment Date</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            <tbody className="divide-y divide-[#E8EDF3] dark:divide-[#1F2F46]">
               {filteredRecords.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
+                  <td colSpan={7} className="py-12 text-center text-[#64748B]">
                     No payment records found matching your filters.
                   </td>
                 </tr>
@@ -213,21 +201,24 @@ export const MemberPaymentHistory: React.FC = () => {
                   const bd = calculateDueBreakdown(d, myMemberRecord?.shares_count);
 
                   return (
-                    <tr key={d.id || `my-due-${idx}-${d.year}-${d.month}`} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
-                      <td className="py-3 px-4 font-medium text-slate-900 dark:text-slate-100">
+                    <tr
+                      key={d.id || `my-due-${idx}-${d.year}-${d.month}`}
+                      className="hover:bg-[#F5F6F3]/60 dark:hover:bg-[#162438]/60 transition-colors"
+                    >
+                      <td className="py-3 px-4 font-semibold text-[#14243A] dark:text-white whitespace-nowrap">
                         {getMonthName(d.month)} {d.year}
                       </td>
 
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-600 dark:text-slate-400">
+                      <td className="py-3 px-4 text-right font-mono tabular-nums text-[#64748B]">
                         {formatBDT(bd.principalDue)}
                       </td>
 
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-amber-700 dark:text-amber-400">
+                      <td className="py-3 px-4 text-right font-mono tabular-nums text-[#9A7127] dark:text-[#D6AC62]">
                         {bd.fineDue > 0 ? (
                           <span>
                             {formatBDT(bd.fineDue)}
                             {bd.finePaid > 0 && (
-                              <span className="block text-[10px] text-emerald-600">
+                              <span className="block text-[10px] text-[#087F70] dark:text-[#34D399]">
                                 Paid: {formatBDT(bd.finePaid)}
                               </span>
                             )}
@@ -237,7 +228,7 @@ export const MemberPaymentHistory: React.FC = () => {
                         )}
                       </td>
 
-                      <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-emerald-700 dark:text-emerald-400">
+                      <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#087F70] dark:text-[#34D399]">
                         {formatBDT(bd.totalPaid)}
                       </td>
 
@@ -249,7 +240,7 @@ export const MemberPaymentHistory: React.FC = () => {
                         <StatusBadge status={d.status} size="sm" />
                       </td>
 
-                      <td className="py-3 px-4 font-mono text-slate-500 whitespace-nowrap">
+                      <td className="py-3 px-4 font-mono text-[#64748B] whitespace-nowrap">
                         {d.paid_at ? formatDate(d.paid_at) : 'Unpaid'}
                       </td>
                     </tr>
@@ -260,6 +251,6 @@ export const MemberPaymentHistory: React.FC = () => {
           </table>
         </div>
       </div>
-    </div>
+    </PageTransition>
   );
 };

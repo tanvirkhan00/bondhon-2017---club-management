@@ -4,10 +4,16 @@ import { useClubData } from '../../hooks/useClubData';
 import { FISCAL_YEARS, formatBDT } from '../../utils/formatters';
 import { computeMemberFinancialSummary } from '../../utils/fineCalculator';
 import { downloadCsv } from '../../utils/csvExport';
+import { MetricCard } from '../../components/MetricCard';
+import { PageTransition } from '../../components/ui/MotionPrimitives';
 import {
   BarChart3,
   Download,
   Calendar,
+  Target,
+  Banknote,
+  AlertCircle,
+  Users,
 } from 'lucide-react';
 
 export const AdminReports: React.FC = () => {
@@ -32,7 +38,7 @@ export const AdminReports: React.FC = () => {
     const now = new Date();
     return members
       .map((m) => {
-        const dues = monthlyDues.filter(d => d.member_id === m.id);
+        const dues = monthlyDues.filter((d) => d.member_id === m.id);
         const summary = computeMemberFinancialSummary(m, dues, now);
         const paidTotal = summary.totalPaid + summary.totalFinePaid;
 
@@ -62,7 +68,7 @@ export const AdminReports: React.FC = () => {
       'Collection Efficiency (%)',
     ];
 
-    const rows = monthSummaries.map(m => [
+    const rows = monthSummaries.map((m) => [
       m.label,
       m.target,
       m.collected,
@@ -102,7 +108,7 @@ export const AdminReports: React.FC = () => {
       'Settlement Rate (%)',
     ];
 
-    const rows = memberRankings.map(r => [
+    const rows = memberRankings.map((r) => [
       r.member.member_code,
       r.member.full_name,
       r.member.designation || 'Member',
@@ -119,26 +125,26 @@ export const AdminReports: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-150">
+    <PageTransition className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E8EDF3] dark:border-[#1F2F46]">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
-            <BarChart3 className="w-6 h-6 text-emerald-700 dark:text-emerald-400" />
-            <span>Financial Reports & Backups</span>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#172435] dark:text-slate-100 flex items-center gap-2.5">
+            <BarChart3 className="w-6 h-6 text-[#087F70]" />
+            <span>Financial Reports &amp; Backups</span>
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400 mt-0.5">
             Annual reconciliations, member-wise contribution rankings, and CSV export backups
           </p>
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 shadow-2xs">
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+          <div className="flex items-center gap-1.5 bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl px-3 py-2 shadow-2xs">
+            <Calendar className="w-3.5 h-3.5 text-[#087F70]" />
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-hidden cursor-pointer"
+              className="text-xs font-semibold font-mono tabular-nums text-[#172435] dark:text-slate-100 bg-transparent focus:outline-hidden cursor-pointer"
             >
               {FISCAL_YEARS.map((yr) => (
                 <option key={yr} value={yr}>Fiscal Year {yr}</option>
@@ -149,59 +155,56 @@ export const AdminReports: React.FC = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
-        <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
-          <span className="text-[11px] font-medium text-slate-500 uppercase">{selectedYear} Annual Target</span>
-          <div className="text-2xl font-bold font-mono text-slate-900 dark:text-slate-100 tabular-nums mt-1">
-            {formatBDT(totalYearTarget)}
-          </div>
-          <span className="text-[11px] text-slate-500 mt-1 block">Expected annual dues</span>
-        </div>
-
-        <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
-          <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400 uppercase">Annual Collection</span>
-          <div className="text-2xl font-bold font-mono text-emerald-700 dark:text-emerald-400 tabular-nums mt-1">
-            {formatBDT(totalYearCollected)}
-          </div>
-          <span className="text-[11px] text-emerald-600 mt-1 block">{yearCollectionRate}% collection rate</span>
-        </div>
-
-        <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
-          <span className="text-[11px] font-medium text-rose-700 dark:text-rose-400 uppercase">Outstanding Balance</span>
-          <div className="text-2xl font-bold font-mono text-rose-700 dark:text-rose-400 tabular-nums mt-1">
-            {formatBDT(totalYearOutstanding)}
-          </div>
-          <span className="text-[11px] text-rose-600 mt-1 block">Unsettled dues</span>
-        </div>
-
-        <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
-          <span className="text-[11px] font-medium text-slate-500 uppercase">Contributing Members</span>
-          <div className="text-2xl font-bold font-mono text-slate-900 dark:text-slate-100 tabular-nums mt-1">
-            {members.filter(m => m.status === 'active').length}
-          </div>
-          <span className="text-[11px] text-slate-500 mt-1 block">Active roster</span>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricCard
+          label={`${selectedYear} Annual Target`}
+          value={formatBDT(totalYearTarget)}
+          subLabel="Expected annual dues"
+          icon={Target}
+          accent="navy"
+        />
+        <MetricCard
+          label="Annual Collection"
+          value={formatBDT(totalYearCollected)}
+          subLabel={`${yearCollectionRate}% collection rate`}
+          icon={Banknote}
+          accent="emerald"
+        />
+        <MetricCard
+          label="Outstanding Balance"
+          value={formatBDT(totalYearOutstanding)}
+          subLabel="Unsettled dues"
+          icon={AlertCircle}
+          accent="rose"
+        />
+        <MetricCard
+          label="Contributing Members"
+          value={members.filter((m) => m.status === 'active').length}
+          subLabel="Active roster"
+          icon={Users}
+          accent="gold"
+        />
       </div>
 
       {/* Report Tabs & CSV Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-        <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
+      <div className="surface-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl">
+        <div className="flex items-center gap-1 p-1 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl self-start">
           <button
             onClick={() => setActiveTab('monthly')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === 'monthly'
-                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs'
-                : 'text-slate-500 hover:text-slate-900'
+                ? 'bg-[#14243A] dark:bg-[#087F70] text-white shadow-2xs'
+                : 'text-[#64748B] hover:text-[#172435] dark:hover:text-white'
             }`}
           >
             Monthly Reconciliation ({selectedYear})
           </button>
           <button
             onClick={() => setActiveTab('members')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === 'members'
-                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs'
-                : 'text-slate-500 hover:text-slate-900'
+                ? 'bg-[#14243A] dark:bg-[#087F70] text-white shadow-2xs'
+                : 'text-[#64748B] hover:text-[#172435] dark:hover:text-white'
             }`}
           >
             Member-Wise Rankings
@@ -212,7 +215,7 @@ export const AdminReports: React.FC = () => {
           {activeTab === 'monthly' ? (
             <button
               onClick={handleExportYearlyReport}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors shadow-2xs"
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#087F70] hover:bg-[#06675B] rounded-xl transition-colors shadow-2xs cursor-pointer whitespace-nowrap"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export Monthly Report CSV</span>
@@ -220,7 +223,7 @@ export const AdminReports: React.FC = () => {
           ) : (
             <button
               onClick={handleExportMembersReport}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors shadow-2xs"
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#087F70] hover:bg-[#06675B] rounded-xl transition-colors shadow-2xs cursor-pointer whitespace-nowrap"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export Members Ranking CSV</span>
@@ -231,10 +234,10 @@ export const AdminReports: React.FC = () => {
 
       {/* TAB 1: Monthly Breakdown */}
       {activeTab === 'monthly' && (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs">
+        <div className="surface-card rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
+              <thead className="bg-[#F5F6F3] dark:bg-[#162438] text-[#64748B] dark:text-slate-400 border-b border-[#E8EDF3] dark:border-[#1F2F46]">
                 <tr>
                   <th className="py-3 px-4 font-semibold">Month</th>
                   <th className="py-3 px-4 font-semibold text-right">Target (৳)</th>
@@ -245,41 +248,44 @@ export const AdminReports: React.FC = () => {
                   <th className="py-3 px-4 font-semibold text-right">Rate</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-[#E8EDF3] dark:divide-[#1F2F46]">
                 {monthSummaries.map((m) => (
-                  <tr key={m.month} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="py-3 px-4 font-medium text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                  <tr
+                    key={m.month}
+                    className="hover:bg-[#F5F6F3]/65 dark:hover:bg-[#162438]/65 transition-colors"
+                  >
+                    <td className="py-3 px-4 font-medium text-[#172435] dark:text-slate-100 whitespace-nowrap">
                       {m.label}
                     </td>
-                    <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-600">
+                    <td className="py-3 px-4 text-right font-mono tabular-nums text-[#64748B] dark:text-slate-300">
                       {formatBDT(m.target)}
                     </td>
-                    <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-emerald-700 dark:text-emerald-400">
+                    <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#087F70] dark:text-[#34D399]">
                       {formatBDT(m.collected)}
                     </td>
                     <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold text-rose-700 dark:text-rose-400">
                       {m.outstanding > 0 ? formatBDT(m.outstanding) : '—'}
                     </td>
-                    <td className="py-3 px-4 text-center font-mono tabular-nums text-slate-700">
+                    <td className="py-3 px-4 text-center font-mono tabular-nums text-[#172435] dark:text-slate-200">
                       {m.paidCount}
                     </td>
-                    <td className="py-3 px-4 text-center font-mono tabular-nums text-slate-700">
+                    <td className="py-3 px-4 text-center font-mono tabular-nums text-[#172435] dark:text-slate-200">
                       {m.unpaidCount}
                     </td>
-                    <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold text-slate-800 dark:text-slate-200">
+                    <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold text-[#172435] dark:text-slate-100">
                       {m.target > 0 ? `${m.collectionRate}%` : '—'}
                     </td>
                   </tr>
                 ))}
               </tbody>
-              <tfoot className="bg-slate-100/70 dark:bg-slate-800/90 font-bold text-slate-900 dark:text-slate-100 border-t border-slate-200 dark:border-slate-800">
+              <tfoot className="bg-[#14243A] dark:bg-[#162438] dark:border-t dark:border-[#2B4564] text-white font-bold">
                 <tr>
                   <td className="py-3 px-4">TOTAL {selectedYear}</td>
                   <td className="py-3 px-4 text-right font-mono tabular-nums">{formatBDT(totalYearTarget)}</td>
-                  <td className="py-3 px-4 text-right font-mono tabular-nums text-emerald-700 dark:text-emerald-400">{formatBDT(totalYearCollected)}</td>
-                  <td className="py-3 px-4 text-right font-mono tabular-nums text-rose-700 dark:text-rose-400">{formatBDT(totalYearOutstanding)}</td>
+                  <td className="py-3 px-4 text-right font-mono tabular-nums text-[#34D399]">{formatBDT(totalYearCollected)}</td>
+                  <td className="py-3 px-4 text-right font-mono tabular-nums text-rose-300">{formatBDT(totalYearOutstanding)}</td>
                   <td colSpan={2}></td>
-                  <td className="py-3 px-4 text-right font-mono tabular-nums">{yearCollectionRate}%</td>
+                  <td className="py-3 px-4 text-right font-mono tabular-nums text-[#D6AC62]">{yearCollectionRate}%</td>
                 </tr>
               </tfoot>
             </table>
@@ -289,10 +295,10 @@ export const AdminReports: React.FC = () => {
 
       {/* TAB 2: Member-Wise Ranking */}
       {activeTab === 'members' && (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs">
+        <div className="surface-card rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
+              <thead className="bg-[#F5F6F3] dark:bg-[#162438] text-[#64748B] dark:text-slate-400 border-b border-[#E8EDF3] dark:border-[#1F2F46]">
                 <tr>
                   <th className="py-3 px-4 font-semibold">Rank</th>
                   <th className="py-3 px-4 font-semibold">Member</th>
@@ -304,39 +310,42 @@ export const AdminReports: React.FC = () => {
                   <th className="py-3 px-4 font-semibold text-right">Efficiency</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-[#E8EDF3] dark:divide-[#1F2F46]">
                 {memberRankings.map((r, index) => (
-                  <tr key={r.member.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="py-3 px-4 font-mono font-bold text-slate-400">
+                  <tr
+                    key={r.member.id}
+                    className="hover:bg-[#F5F6F3]/65 dark:hover:bg-[#162438]/65 transition-colors"
+                  >
+                    <td className="py-3 px-4 font-mono font-bold text-[#9A7127] dark:text-[#D6AC62] tabular-nums">
                       #{index + 1}
                     </td>
-                    <td className="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100">
+                    <td className="py-3 px-4 font-semibold text-[#172435] dark:text-slate-100">
                       <Link
                         to={`/admin/members/${r.member.id}`}
-                        className="hover:text-emerald-700 dark:hover:text-emerald-400"
+                        className="hover:text-[#087F70] dark:hover:text-[#34D399]"
                       >
                         {r.member.full_name}
                       </Link>
-                      <span className="block text-[10px] text-emerald-700 font-normal">
+                      <span className="block text-[10px] text-[#087F70] dark:text-[#34D399] font-normal">
                         {r.member.designation || 'Member'}
                       </span>
                     </td>
-                    <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-slate-100">
+                    <td className="py-3 px-4 font-mono font-bold text-[#172435] dark:text-slate-100">
                       {r.member.member_code}
                     </td>
-                    <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-600">
+                    <td className="py-3 px-4 text-right font-mono tabular-nums text-[#64748B] dark:text-slate-300">
                       {formatBDT(r.billed)}
                     </td>
-                    <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-emerald-700 dark:text-emerald-400">
+                    <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#087F70] dark:text-[#34D399]">
                       {formatBDT(r.paid)}
                     </td>
                     <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold text-rose-700 dark:text-rose-400">
                       {r.outstanding > 0 ? formatBDT(r.outstanding) : '—'}
                     </td>
-                    <td className="py-3 px-4 text-center font-mono tabular-nums text-slate-700">
+                    <td className="py-3 px-4 text-center font-mono tabular-nums text-[#172435] dark:text-slate-200">
                       {r.paidMonths} mo
                     </td>
-                    <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold text-slate-800 dark:text-slate-200">
+                    <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold text-[#172435] dark:text-slate-100">
                       {r.settlementRate}%
                     </td>
                   </tr>
@@ -346,6 +355,6 @@ export const AdminReports: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </PageTransition>
   );
 };

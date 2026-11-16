@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'motion/react';
 import { useAuth } from '../hooks/useAuth';
-import { Menu, X, LogIn, ShieldCheck, User as UserIcon } from 'lucide-react';
+import { Menu, X, LogIn, ShieldCheck, User as UserIcon, LogOut, MapPin } from 'lucide-react';
 import crestImage from '../assets/images/bondhon_club_crest_1793703027252.jpg';
 
 export const PublicLayout: React.FC = () => {
   const { isAuthenticated, isAdmin, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
   const navLinks = [
     { to: '/', label: 'Home' },
@@ -16,14 +22,17 @@ export const PublicLayout: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      {/* Top Bar Contract (3 zones) */}
-      <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+    <div className="min-h-screen flex flex-col bg-[#F5F6F3] dark:bg-[#0B1320] text-[#172435] dark:text-slate-100">
+      {/* Top Bar Contract (3 cleanly separated zones) */}
+      <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#111C2D]/95 backdrop-blur-md border-b border-[#E8EDF3] dark:border-[#1F2F46] print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between gap-8 h-16">
-            {/* Zone 1: Brand Wordmark */}
-            <Link to="/" className="flex items-center gap-3 text-left focus:outline-hidden group">
-              <div className="w-10 h-10 rounded-full overflow-hidden border border-emerald-600/30 shrink-0 bg-emerald-900 shadow-xs">
+          <div className="flex items-center justify-between gap-6 h-16">
+            {/* Zone 1: Single-line Brand Wordmark */}
+            <Link
+              to="/"
+              className="flex items-center gap-2.5 text-left focus:outline-hidden group shrink-0"
+            >
+              <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-[#D6AC62]/50 shrink-0 bg-[#14243A] shadow-xs transition-transform duration-200 group-hover:scale-105">
                 <img
                   src={crestImage}
                   alt="Bondhon 2017 Official Logo"
@@ -31,28 +40,23 @@ export const PublicLayout: React.FC = () => {
                   referrerPolicy="no-referrer"
                 />
               </div>
-              <div className="flex flex-col">
-                <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100 whitespace-nowrap shrink-0 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
-                  Bondhon 2017
-                </span>
-                <span className="text-[10px] text-slate-500 font-medium tracking-wider uppercase -mt-1 hidden sm:block">
-                  বন্ধুত্ব সমবায় সমিতি · চরচান্দা
-                </span>
-              </div>
+              <span className="text-base sm:text-lg font-extrabold tracking-tight text-[#14243A] dark:text-white whitespace-nowrap shrink-0 group-hover:text-[#087F70] dark:group-hover:text-[#34D399] transition-colors">
+                Bondhon 2017
+              </span>
             </Link>
 
-            {/* Zone 2: Navigation Links (Single-line) */}
-            <nav className="hidden md:flex items-center gap-2 text-sm font-medium">
+            {/* Zone 2: Single-line Navigation Links */}
+            <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
               {navLinks.map((link) => (
                 <NavLink
                   key={link.to}
                   to={link.to}
                   end={link.to === '/'}
                   className={({ isActive }) =>
-                    `px-3 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors whitespace-nowrap shrink-0 ${
+                    `relative px-3.5 py-2 rounded-lg text-xs lg:text-sm font-semibold transition-colors whitespace-nowrap shrink-0 ${
                       isActive
-                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                        ? 'text-[#087F70] dark:text-[#34D399] bg-[#087F70]/8 dark:bg-[#087F70]/15'
+                        : 'text-[#64748B] dark:text-slate-300 hover:text-[#14243A] dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-[#203650]/50'
                     }`
                   }
                 >
@@ -61,13 +65,13 @@ export const PublicLayout: React.FC = () => {
               ))}
             </nav>
 
-            {/* Zone 3: Primary Action / Auth */}
-            <div className="flex items-center gap-3 shrink-0">
+            {/* Zone 3: Auth Primary Action & Mobile Drawer Trigger */}
+            <div className="flex items-center gap-2.5 shrink-0">
               {isAuthenticated ? (
-                <div className="flex items-center gap-2">
+                <div className="hidden sm:flex items-center gap-2">
                   <Link
                     to={isAdmin ? '/admin/dashboard' : '/member/profile'}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white transition-colors shadow-2xs whitespace-nowrap"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-[#087F70] hover:bg-[#06675B] text-white transition-colors shadow-xs whitespace-nowrap"
                   >
                     {isAdmin ? (
                       <>
@@ -83,16 +87,19 @@ export const PublicLayout: React.FC = () => {
                   </Link>
 
                   <button
+                    type="button"
                     onClick={() => signOut()}
-                    className="text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 px-2 py-1"
+                    title="Logout"
+                    aria-label="Logout"
+                    className="p-2 rounded-xl text-[#64748B] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
                   >
-                    Logout
+                    <LogOut className="w-4 h-4" />
                   </button>
                 </div>
               ) : (
                 <Link
                   to="/login"
-                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg shadow-2xs transition-colors whitespace-nowrap shrink-0"
+                  className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-[#087F70] hover:bg-[#06675B] rounded-xl shadow-xs transition-all hover:shadow-sm whitespace-nowrap shrink-0"
                 >
                   <LogIn className="w-3.5 h-3.5" />
                   <span>Member Login</span>
@@ -101,107 +108,163 @@ export const PublicLayout: React.FC = () => {
 
               {/* Mobile hamburger */}
               <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                type="button"
+                onClick={() => setMobileMenuOpen((prev) => !prev)}
+                className="md:hidden min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-[#14243A] dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#203650] transition-colors cursor-pointer"
                 aria-label="Toggle navigation menu"
+                aria-expanded={mobileMenuOpen}
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
             </div>
           </div>
-
-          {/* Mobile drawer */}
-          {mobileMenuOpen && (
-            <div className="md:hidden border-t border-slate-200 dark:border-slate-800 py-3 space-y-1">
-              {navLinks.map((link) => (
-                <NavLink
-                  key={link.to}
-                  to={link.to}
-                  end={link.to === '/'}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={({ isActive }) =>
-                    `block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50'
-                    }`
-                  }
-                >
-                  {link.label}
-                </NavLink>
-              ))}
-
-              <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
-                <Link
-                  to="/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block w-full text-center px-4 py-2 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg"
-                >
-                  {isAuthenticated ? 'Go to Account Portal' : 'Member Login'}
-                </Link>
-              </div>
-            </div>
-          )}
         </div>
+
+        {/* Mobile Drawer */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              className="md:hidden overflow-hidden border-t border-[#E8EDF3] dark:border-[#1F2F46] bg-white dark:bg-[#111C2D]"
+            >
+              <div className="px-4 py-3 space-y-1">
+                {navLinks.map((link) => (
+                  <NavLink
+                    key={link.to}
+                    to={link.to}
+                    end={link.to === '/'}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={({ isActive }) =>
+                      `flex items-center min-h-[44px] px-3.5 rounded-xl text-sm font-semibold transition-colors ${
+                        isActive
+                          ? 'bg-[#087F70]/10 text-[#087F70] dark:text-[#34D399]'
+                          : 'text-[#64748B] dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#203650]/50'
+                      }`
+                    }
+                  >
+                    {link.label}
+                  </NavLink>
+                ))}
+
+                <div className="pt-2.5 mt-2 border-t border-[#E8EDF3] dark:border-[#1F2F46] flex flex-col gap-2">
+                  {isAuthenticated ? (
+                    <>
+                      <Link
+                        to={isAdmin ? '/admin/dashboard' : '/member/profile'}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center justify-center gap-2 min-h-[44px] px-4 text-xs font-semibold text-white bg-[#087F70] hover:bg-[#06675B] rounded-xl"
+                      >
+                        {isAdmin ? <ShieldCheck className="w-4 h-4" /> : <UserIcon className="w-4 h-4" />}
+                        <span>{isAdmin ? 'Admin Dashboard' : 'My Member Portal'}</span>
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          signOut();
+                        }}
+                        className="min-h-[44px] px-4 text-xs font-semibold text-rose-600 bg-rose-50 dark:bg-rose-950/30 rounded-xl"
+                      >
+                        Sign Out
+                      </button>
+                    </>
+                  ) : (
+                    <Link
+                      to="/login"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center justify-center gap-2 min-h-[44px] px-4 text-xs font-semibold text-white bg-[#087F70] hover:bg-[#06675B] rounded-xl"
+                    >
+                      <LogIn className="w-4 h-4" />
+                      <span>Member Login</span>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       {/* Main Public Viewport */}
-      <main className="flex-1">
+      <main className="flex-1 min-w-0">
         <Outlet />
       </main>
 
-      {/* Public Footer */}
-      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 py-10">
+      {/* Institutional Navy Footer */}
+      <footer className="bg-[#14243A] text-slate-300 border-t border-[#203650] py-12 print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-            <div className="md:col-span-2 space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-8 border-b border-[#203650]">
+            <div className="md:col-span-5 space-y-3.5">
               <div className="flex items-center gap-3">
                 <img
                   src={crestImage}
                   alt="Bondhon 2017 Crest"
-                  className="w-8 h-8 rounded-full object-cover"
+                  className="w-10 h-10 rounded-full object-cover ring-2 ring-[#D6AC62]/60"
                 />
-                <span className="text-base font-bold text-slate-900 dark:text-slate-100">
-                  Bondhon 2017
+                <div>
+                  <span className="text-base font-bold text-white block leading-tight">
+                    Bondhon 2017
+                  </span>
+                  <span className="text-xs text-[#D6AC62] font-medium">
+                    বন্ধুত্ব সমবায় সমিতি · এস.এস.সি ব্যাচ ২০১৭
+                  </span>
+                </div>
+              </div>
+              <p className="text-xs text-slate-300/85 max-w-md leading-relaxed">
+                চরচান্দা খাসমহল বাজার ভিত্তিক একটি নিবন্ধিত যৌথ সঞ্চয় ও সামাজিক কল্যাণমূলক সমবায় সংগঠন। স্থাপিত: ০১/০৪/২০২৪ ইং।
+              </p>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-mono text-slate-400">
+                <span>মাসিক কিস্তি: <strong className="text-white">৳৫০০ / শেয়ার</strong></span>
+                <span>·</span>
+                <span className="inline-flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-[#D6AC62]" />
+                  চরচান্দা খাসমহল বাজার
                 </span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md leading-relaxed">
-                <strong>বন্ধুত্ব সমবায় সমিতি</strong> (Bondhon 2017) · এস.এস.সি ব্যাচ ২০১৭ · চরচান্দা খাসমহল বাজার। স্থাপিত: ০১/০৪/২০২৪ ইং।
-              </p>
-              <div className="text-xs text-slate-400">
-                মাসিক কিস্তি: <span className="font-semibold text-emerald-700 dark:text-emerald-400">৳৫০০ / শেয়ার</span>
-              </div>
             </div>
 
-            <div>
-              <h3 className="text-xs font-semibold text-slate-900 dark:text-slate-100 uppercase tracking-wider mb-3">
+            <div className="md:col-span-2 sm:col-span-6">
+              <h3 className="text-[11px] font-bold text-[#D6AC62] uppercase tracking-wider mb-3">
                 Navigation
               </h3>
-              <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
-                <li><Link to="/" className="hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors">Home</Link></li>
-                <li><Link to="/about" className="hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors">About Club</Link></li>
-                <li><Link to="/members" className="hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors">Member Directory</Link></li>
-                <li><Link to="/constitution" className="hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors font-medium text-emerald-600">Constitution</Link></li>
+              <ul className="space-y-2 text-xs">
+                <li><Link to="/" className="hover:text-white transition-colors">Home</Link></li>
+                <li><Link to="/about" className="hover:text-white transition-colors">About Club</Link></li>
+                <li><Link to="/members" className="hover:text-white transition-colors">Member Directory</Link></li>
+                <li><Link to="/constitution" className="hover:text-white transition-colors">Constitution</Link></li>
               </ul>
             </div>
 
-            <div>
-              <h3 className="text-xs font-semibold text-slate-900 dark:text-slate-100 uppercase tracking-wider mb-3">
-                Member Access
+            <div className="md:col-span-2 sm:col-span-6">
+              <h3 className="text-[11px] font-bold text-[#D6AC62] uppercase tracking-wider mb-3">
+                Portals
               </h3>
-              <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
-                <li><Link to="/login" className="hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors">Member Sign In</Link></li>
-                <li><Link to="/member/profile" className="hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors">Personal Profile</Link></li>
-                <li><Link to="/member/payment-history" className="hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors">Payment Ledger</Link></li>
-                <li><Link to="/admin/dashboard" className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">Admin Console</Link></li>
+              <ul className="space-y-2 text-xs">
+                <li><Link to="/login" className="hover:text-white transition-colors">Member Sign In</Link></li>
+                <li><Link to="/member/profile" className="hover:text-white transition-colors">Personal Profile</Link></li>
+                <li><Link to="/member/payment-history" className="hover:text-white transition-colors">Payment Ledger</Link></li>
+                <li><Link to="/admin/dashboard" className="text-slate-400 hover:text-white transition-colors">Admin Console</Link></li>
               </ul>
+            </div>
+
+            <div className="md:col-span-3 space-y-2 text-xs">
+              <h3 className="text-[11px] font-bold text-[#D6AC62] uppercase tracking-wider mb-3">
+                Treasury &amp; Bank
+              </h3>
+              <p className="text-slate-300 font-semibold">Sonali Bank PLC</p>
+              <p className="font-mono text-white">A/C: 2102201027292</p>
+              <p className="text-slate-400">Bhedarganj Branch, Shariatpur</p>
+              <p className="text-slate-400 font-mono pt-1">Treasurer: 01959948542</p>
             </div>
           </div>
 
-          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
             <p>© {new Date().getFullYear()} Bondhon 2017 · বন্ধুত্ব সমবায় সমিতি। সর্বস্বত্ব সংরক্ষিত।</p>
-            <p className="flex items-center gap-1">
-              চরচান্দা খাসমহল বাজার · এস.এস.সি ব্যাচ ২০১৭
+            <p className="font-mono text-[11px] text-slate-400">
+              Batch SSC 2017 · Cooperative Ledger Platform
             </p>
           </div>
         </div>

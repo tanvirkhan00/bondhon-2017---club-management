@@ -7,7 +7,11 @@ import {
   getDueDeadline,
   isAfterMonthDeadline,
 } from '../utils/fineCalculator';
-import { X, CheckCircle2, AlertCircle, CreditCard, Calendar, User, AlertTriangle } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { Modal } from './ui/Modal';
+import { ModalLottie } from './ui/ModalLottie';
+import { usePrefersReducedMotion } from './LoginLottieStage';
+import { CheckCircle2, AlertCircle, CreditCard, Calendar, User, AlertTriangle, Loader2 } from 'lucide-react';
 
 interface RecordPaymentModalProps {
   isOpen: boolean;
@@ -43,11 +47,14 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  const prefersReducedMotion = usePrefersReducedMotion();
+
   // Sync when modal opens
   useEffect(() => {
     if (!isOpen) return;
     const nowStr = new Date().toISOString().substring(0, 10);
     setPaidDate(nowStr);
+    setMessage(null);
     if (initialMemberId) {
       setMemberId(initialMemberId);
       setAutoSyncMonth(false);
@@ -97,8 +104,6 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
     }
   }, [memberId, month, year, paidDate, members]);
 
-  if (!isOpen) return null;
-
   const selectedMember = members.find((m) => m.id === memberId);
   const { deadlineMonth, deadlineYear, deadlineDay } = getDueDeadline(month, year);
   const isPaidDateLate = isAfterMonthDeadline(month, year, paidDate || new Date());
@@ -131,7 +136,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
       setTimeout(() => {
         onClose();
         setMessage(null);
-      }, 1400);
+      }, 1200);
     } else {
       setMessage({
         type: 'error',
@@ -141,61 +146,87 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-lg w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-bold">
-              <CreditCard className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                Record Payment
-              </h2>
-              <span className="text-[11px] text-slate-500">
-                Treasurer &amp; Admin Ledger Entry
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Record Payment"
+      subtitle="Treasurer & Admin Ledger Entry"
+      icon={<CreditCard className="w-4 h-4" />}
+      lottieSrc="/lottie/payment-record.json"
+      lottieSuccess={message?.type === 'success'}
+      lottieSpeed={loading ? 1.35 : 1}
+      maxWidthClass="max-w-lg"
+    >
+      <div className="space-y-4">
+        {/* Live LottieFiles Payment Summary Banner */}
+        <div className="flex items-center gap-3.5 p-3 rounded-xl bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46]">
+          <div className="w-14 h-14 rounded-xl bg-white dark:bg-slate-100/95 border border-[#E8EDF3] dark:border-[#2B4564] flex items-center justify-center p-1 shrink-0 overflow-hidden shadow-2xs">
+            <ModalLottie
+              src="/lottie/payment-record.json"
+              isSuccess={message?.type === 'success'}
+              speed={loading ? 1.4 : 0.95}
+              fallbackIcon={<CreditCard className="w-6 h-6 text-[#087F70]" />}
+              className="w-full h-full"
+            />
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-bold text-[#172435] dark:text-slate-100 truncate">
+                {selectedMember ? `${selectedMember.full_name} (${selectedMember.member_code})` : 'Select Member'}
+              </span>
+              <span className="text-sm font-extrabold font-mono tabular-nums text-[#087F70] dark:text-[#34D399] shrink-0">
+                {formatBDT(Number(amountPaid) + Number(finePaid))}
               </span>
             </div>
+            <p className="text-[11px] text-[#64748B] dark:text-slate-400 mt-0.5 truncate">
+              {getMonthName(month)} {year} · {paymentMethod}
+              {Number(finePaid) > 0 ? ` · Incl. ${formatBDT(finePaid)} fine` : ''}
+            </p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
 
-        {/* Feedback Alert */}
-        {message && (
-          <div
-            className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
-              message.type === 'success'
-                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300'
-                : 'bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300'
-            }`}
-          >
-            {message.type === 'success' ? (
-              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
-            ) : (
-              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-            )}
-            <span>{message.text}</span>
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+          {message && (
+            <motion.div
+              key={message.type}
+              initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.18 }}
+              className={`p-3 rounded-xl text-xs flex items-center gap-2.5 border ${
+                message.type === 'success'
+                  ? 'bg-[#087F70]/10 text-[#087F70] dark:text-[#34D399] border-[#087F70]/25'
+                  : 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/40'
+              }`}
+            >
+              {message.type === 'success' ? (
+                <ModalLottie
+                  src="/lottie/payment-success.json"
+                  isSuccess={true}
+                  fallbackIcon={<CheckCircle2 className="w-4 h-4 shrink-0" />}
+                  className="w-7 h-7 shrink-0"
+                />
+              ) : (
+                <AlertCircle className="w-4 h-4 shrink-0" />
+              )}
+              <span className="font-semibold">{message.text}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           {/* Member Selection */}
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 text-emerald-600" />
+            <label className="font-semibold text-[#172435] dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5 text-[#087F70]" />
               <span>Member</span>
             </label>
             <select
               required
               value={memberId}
               onChange={(e) => setMemberId(e.target.value)}
-              className="w-full px-3 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-600 text-slate-900 dark:text-slate-100 cursor-pointer"
+              className="w-full px-3 py-2.5 text-xs sm:text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl focus:outline-hidden focus:ring-2 focus:ring-[#087F70] text-[#172435] dark:text-slate-100 cursor-pointer"
             >
               {members.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -204,9 +235,13 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
               ))}
             </select>
             {selectedMember && (
-              <div className="mt-1.5 p-2 bg-slate-50 dark:bg-slate-800/60 rounded-lg text-[11px] text-slate-500 flex justify-between">
-                <span>Father: <strong>{selectedMember.father_name || '—'}</strong></span>
-                <span>Shares: <strong>{selectedMember.shares_count} ({formatBDT(selectedMember.monthly_contribution)}/mo)</strong></span>
+              <div className="mt-1.5 px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[11px] text-[#64748B] dark:text-slate-400 flex flex-wrap justify-between gap-2">
+                <span>
+                  Father: <strong className="text-[#172435] dark:text-slate-200">{selectedMember.father_name || '—'}</strong>
+                </span>
+                <span className="tabular-nums">
+                  Shares: <strong className="text-[#172435] dark:text-slate-200">{selectedMember.shares_count} ({formatBDT(selectedMember.monthly_contribution)}/mo)</strong>
+                </span>
               </div>
             )}
           </div>
@@ -215,8 +250,8 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                <label className="font-semibold text-[#172435] dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-[#087F70]" />
                   <span>Billing Month</span>
                 </label>
                 <select
@@ -225,7 +260,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                     setAutoSyncMonth(false);
                     setMonth(Number(e.target.value));
                   }}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-medium"
+                  className="w-full px-3 py-2.5 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-xs sm:text-sm font-medium text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
                 >
                   {MONTH_NAMES.map((name, idx) => (
                     <option key={idx + 1} value={idx + 1}>
@@ -236,7 +271,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
                   Fiscal Year
                 </label>
                 <select
@@ -245,7 +280,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                     setAutoSyncMonth(false);
                     setYear(Number(e.target.value));
                   }}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-medium font-mono"
+                  className="w-full px-3 py-2.5 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-xs sm:text-sm font-medium font-mono tabular-nums text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
                 >
                   {FISCAL_YEARS.map((yr) => (
                     <option key={yr} value={yr}>{yr}</option>
@@ -254,26 +289,26 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
               </div>
             </div>
 
-            <div className="flex flex-col gap-1 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700 text-[11px]">
-              <label className="flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+            <div className="flex flex-col gap-1 p-3 rounded-xl bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] text-[11px]">
+              <label className="flex items-center gap-2 font-medium text-[#172435] dark:text-slate-200 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={autoSyncMonth}
                   onChange={(e) => handleToggleAutoSync(e.target.checked)}
-                  className="rounded border-slate-300 text-emerald-600"
+                  className="rounded border-[#E8EDF3] text-[#087F70] focus:ring-[#087F70]"
                 />
                 <span>Auto-map payment date to prior billing month</span>
               </label>
               <div className="flex flex-wrap items-center justify-between gap-1 text-[10px] pl-5">
-                <span className="text-slate-500">
-                  Due deadline: <strong className="text-slate-700 dark:text-slate-200">{deadlineDay} {getMonthName(deadlineMonth)} {deadlineYear}</strong>
+                <span className="text-[#64748B] dark:text-slate-400">
+                  Due deadline: <strong className="text-[#172435] dark:text-slate-200">{deadlineDay} {getMonthName(deadlineMonth)} {deadlineYear}</strong>
                 </span>
                 {isPaidDateLate ? (
-                  <span className="font-bold text-amber-700 dark:text-amber-400">
+                  <span className="font-bold text-[#9A7127] dark:text-[#D6AC62]">
                     Past deadline (Late fine applies)
                   </span>
                 ) : (
-                  <span className="font-bold text-emerald-700 dark:text-emerald-400">
+                  <span className="font-bold text-[#087F70] dark:text-[#34D399]">
                     On time (No fine)
                   </span>
                 )}
@@ -284,7 +319,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
           {/* Amounts: Due & Paid */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
                 Principal Due (৳)
               </label>
               <input
@@ -293,13 +328,13 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                 required
                 value={amountDue}
                 onChange={(e) => setAmountDue(Number(e.target.value))}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono text-sm"
+                className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono tabular-nums text-sm text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
-                <span>Principal Paid (৳)</span>
+              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+                Principal Paid (৳)
               </label>
               <input
                 type="number"
@@ -307,7 +342,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                 required
                 value={amountPaid}
                 onChange={(e) => setAmountPaid(Number(e.target.value))}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono text-sm font-bold text-emerald-700 dark:text-emerald-400"
+                className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono tabular-nums text-sm font-bold text-[#087F70] dark:text-[#34D399] focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
               />
             </div>
           </div>
@@ -317,38 +352,40 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
             <button
               type="button"
               onClick={() => setAmountPaid(amountDue)}
-              className="flex-1 py-1 px-2 text-xs font-semibold rounded-lg bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300"
+              className="flex-1 py-1.5 px-2.5 text-xs font-semibold rounded-lg bg-[#087F70]/10 text-[#087F70] dark:text-[#34D399] hover:bg-[#087F70]/15 border border-[#087F70]/25 transition-colors cursor-pointer whitespace-nowrap"
             >
               Full Principal (৳{amountDue})
             </button>
             <button
               type="button"
               onClick={() => setAmountPaid(500)}
-              className="py-1 px-3 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
+              className="py-1.5 px-3 text-xs font-semibold rounded-lg bg-[#F5F6F3] dark:bg-[#162438] text-[#172435] dark:text-slate-200 border border-[#E8EDF3] dark:border-[#1F2F46] hover:bg-slate-200/70 dark:hover:bg-[#203650] transition-colors cursor-pointer"
             >
               ৳500
             </button>
             <button
               type="button"
               onClick={() => setAmountPaid(0)}
-              className="py-1 px-3 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
+              className="py-1.5 px-3 text-xs font-semibold rounded-lg bg-[#F5F6F3] dark:bg-[#162438] text-[#64748B] dark:text-slate-400 border border-[#E8EDF3] dark:border-[#1F2F46] hover:bg-slate-200/70 dark:hover:bg-[#203650] transition-colors cursor-pointer whitespace-nowrap"
             >
               ৳0 (Unpaid)
             </button>
           </div>
 
           {/* Late Fine Section (12th of next month rule: 50 BDT per share) */}
-          <div className="p-3 rounded-xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-800/50 space-y-2">
-            <div className="flex items-center justify-between text-[11px] font-semibold text-amber-900 dark:text-amber-300">
-              <span className="flex items-center gap-1">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+          <div className="p-3.5 rounded-xl bg-[#D6AC62]/10 dark:bg-[#D6AC62]/10 border border-[#D6AC62]/30 space-y-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-semibold text-[#9A7127] dark:text-[#D6AC62]">
+              <span className="flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5" />
                 <span>Late Fine (৳50/share after {deadlineDay} {getMonthName(deadlineMonth)})</span>
               </span>
-              <span className="font-mono">Total: {formatBDT(Number(amountPaid) + Number(finePaid))}</span>
+              <span className="font-mono tabular-nums font-bold text-[#172435] dark:text-slate-100">
+                Total: {formatBDT(Number(amountPaid) + Number(finePaid))}
+              </span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                <label className="block text-[11px] font-medium text-[#64748B] dark:text-slate-400 mb-1">
                   Fine Due (৳)
                 </label>
                 <input
@@ -356,11 +393,11 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                   min={0}
                   value={fineDue}
                   onChange={(e) => setFineDue(Number(e.target.value))}
-                  className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg font-mono text-xs"
+                  className="w-full px-2.5 py-1.5 bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-lg font-mono tabular-nums text-xs text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#D6AC62]"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                <label className="block text-[11px] font-medium text-[#64748B] dark:text-slate-400 mb-1">
                   Fine Paid (৳)
                 </label>
                 <input
@@ -368,7 +405,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                   min={0}
                   value={finePaid}
                   onChange={(e) => setFinePaid(Number(e.target.value))}
-                  className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg font-mono text-xs font-bold text-emerald-700 dark:text-emerald-400"
+                  className="w-full px-2.5 py-1.5 bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-lg font-mono tabular-nums text-xs font-bold text-[#087F70] dark:text-[#34D399] focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
                 />
               </div>
             </div>
@@ -377,7 +414,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
           {/* Payment Date & Method */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
                 Payment Date
               </label>
               <input
@@ -385,18 +422,18 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                 required
                 value={paidDate}
                 onChange={(e) => handlePaidDateChange(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono text-xs"
+                className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono text-xs text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
                 Method
               </label>
               <select
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs"
+                className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-xs text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
               >
                 <option value="Cash">Cash</option>
                 <option value="bKash">bKash</option>
@@ -408,7 +445,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
 
           {/* Note */}
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
               Notes / Reference
             </label>
             <input
@@ -416,30 +453,40 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
               placeholder="Receipt or TrxID (optional)"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs"
+              className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-xs text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
             />
           </div>
 
           {/* Action buttons */}
-          <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex justify-end gap-2.5 pt-3 border-t border-[#E8EDF3] dark:border-[#1F2F46]">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 rounded-xl"
+              className="px-4 py-2 text-xs font-semibold text-[#64748B] dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#162438] rounded-xl transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={loading}
-              className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+              disabled={loading || message?.type === 'success'}
+              className="px-5 py-2 text-xs font-bold text-white bg-[#087F70] hover:bg-[#06675B] rounded-xl shadow-xs disabled:opacity-60 flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
             >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>{loading ? 'Saving...' : 'Save Payment'}</span>
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4" />
+              )}
+              <span>
+                {loading
+                  ? 'Saving...'
+                  : message?.type === 'success'
+                  ? 'Payment Saved!'
+                  : 'Save Payment'}
+              </span>
             </button>
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 };

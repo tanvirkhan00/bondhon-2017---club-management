@@ -5,8 +5,179 @@
 @theme {
   --font-sans: "Plus Jakarta Sans", "Hind Siliguri", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --color-navy-950: #0B1320;
+  --color-navy-900: #14243A;
+  --color-navy-800: #203650;
+  --color-navy-700: #2B4564;
+
+  --color-brand-emerald: #087F70;
+  --color-brand-emerald-hover: #06675B;
+  --color-brand-gold: #D6AC62;
+  --color-brand-canvas: #F5F6F3;
+  --color-brand-border: #E8EDF3;
+  --color-brand-ink: #172435;
+  --color-brand-muted: #64748B;
+}
+
+:root {
+  --bg-canvas: #F5F6F3;
+  --bg-surface: #FFFFFF;
+  --bg-surface-muted: #F8FAFC;
+  --border-subtle: #E8EDF3;
+  --text-primary: #172435;
+  --text-secondary: #64748B;
+  --navy-primary: #14243A;
+  --navy-secondary: #203650;
+  --emerald-primary: #087F70;
+  --gold-accent: #D6AC62;
+}
+
+.dark {
+  color-scheme: dark;
+  --bg-canvas: #0B1320;
+  --bg-surface: #111C2D;
+  --bg-surface-muted: #162438;
+  --border-subtle: #1F2F46;
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   font-family: var(--font-sans);
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  overflow-x: hidden;
+}
+
+/* Custom subtle scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.28);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.48);
+}
+
+/* Reusable semantic surfaces & shadows */
+.surface-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 1px 2px rgba(20, 36, 58, 0.04), 0 8px 24px -14px rgba(20, 36, 58, 0.08);
+}
+
+.dark .surface-card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 14px 32px -14px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.surface-card-hover {
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms ease;
+}
+
+.surface-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(20, 36, 58, 0.06), 0 14px 28px -12px rgba(20, 36, 58, 0.12);
+}
+
+.dark .surface-card-hover:hover {
+  border-color: #2B4564;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4), 0 18px 34px -12px rgba(0, 0, 0, 0.55);
+}
+
+/* Global Tactile Button & Action Link Animations across the whole website */
+@media (prefers-reduced-motion: no-preference) {
+  button:not(:disabled),
+  a[class*="rounded-xl"][class*="bg-"],
+  a[class*="rounded-lg"][class*="bg-"] {
+    transition:
+      transform 170ms cubic-bezier(0.16, 1, 0.3, 1),
+      scale 160ms cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 200ms ease,
+      background-color 160ms ease,
+      border-color 160ms ease,
+      color 160ms ease,
+      opacity 160ms ease;
+    will-change: transform;
+  }
+
+  button:not(:disabled):not(.absolute):hover,
+  a[class*="rounded-xl"][class*="bg-"]:hover,
+  a[class*="rounded-lg"][class*="bg-"]:hover {
+    transform: translateY(-1.5px);
+  }
+
+  button:not(:disabled):not(.absolute):active,
+  a[class*="rounded-xl"][class*="bg-"]:active,
+  a[class*="rounded-lg"][class*="bg-"]:active {
+    transform: translateY(0) scale(0.97);
+  }
+
+  button.absolute:not(:disabled):active {
+    scale: 0.92;
+  }
+
+  button[class*="bg-[#087F70]"]:not(:disabled):hover,
+  a[class*="bg-[#087F70]"]:hover {
+    box-shadow: 0 10px 22px -8px rgba(8, 127, 112, 0.48);
+  }
+
+  button[class*="bg-[#14243A]"]:not(:disabled):hover,
+  a[class*="bg-[#14243A]"]:hover {
+    box-shadow: 0 10px 22px -8px rgba(20, 36, 58, 0.42);
+  }
+
+  button[class*="bg-[#D6AC62]"]:not(:disabled):hover,
+  a[class*="bg-[#D6AC62]"]:hover {
+    box-shadow: 0 10px 22px -8px rgba(214, 172, 98, 0.45);
+  }
+
+  button svg,
+  a[class*="rounded-xl"][class*="bg-"] svg {
+    transition: scale 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  button:not(:disabled):hover svg,
+  a[class*="rounded-xl"][class*="bg-"]:hover svg {
+    scale: 1.08;
+  }
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media print {
+  body {
+    background: #FFFFFF !important;
+    color: #172435 !important;
+  }
 }

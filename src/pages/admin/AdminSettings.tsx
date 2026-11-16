@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useClubData } from '../../hooks/useClubData';
 import { useAuth } from '../../hooks/useAuth';
+import { PageTransition } from '../../components/ui/MotionPrimitives';
 import {
   getSupabaseCredentials,
   saveCustomSupabaseCredentials,
@@ -95,25 +96,25 @@ export const AdminSettings: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-150 max-w-4xl">
+    <PageTransition className="space-y-6 max-w-4xl">
       {/* Header */}
-      <div className="pb-2 border-b border-slate-200 dark:border-slate-800">
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
-          <SettingsIcon className="w-6 h-6 text-emerald-700 dark:text-emerald-400" />
+      <div className="pb-4 border-b border-[#E8EDF3] dark:border-[#1F2F46]">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#172435] dark:text-slate-100 flex items-center gap-2.5">
+          <SettingsIcon className="w-6 h-6 text-[#087F70]" />
           <span>Club Administration Settings</span>
         </h1>
-        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+        <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400 mt-0.5">
           Configure monthly contribution rates, contact details, and data backups
         </p>
       </div>
 
       {/* SECTION 1: Club Contact & Default Contribution */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-4">
+      <div className="surface-card rounded-2xl p-6 space-y-4">
         <div>
-          <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+          <h2 className="text-sm font-bold text-[#172435] dark:text-slate-100">
             Club Details &amp; Monthly Fee
           </h2>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-[#64748B] dark:text-slate-400">
             Standard monthly contribution per share (BDT ৳)
           </p>
         </div>
@@ -121,30 +122,30 @@ export const AdminSettings: React.FC = () => {
         <form onSubmit={handleSaveClubSettings} className="space-y-4 text-xs">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
                 Club Name
               </label>
               <input
                 type="text"
                 disabled
                 value="বন্ধুত্ব সমবায় সমিতি (Bondhon 2017)"
-                className="w-full px-3 py-2 text-sm bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-800 dark:text-slate-200 cursor-not-allowed"
+                className="w-full px-3 py-2 text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-bold text-[#172435] dark:text-slate-200 cursor-not-allowed"
               />
             </div>
 
             <div>
-              <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
                 Monthly Fee Per Share / Name (BDT ৳)
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-2 text-sm font-bold text-slate-400">৳</span>
+                <span className="absolute left-3.5 top-2 text-sm font-bold text-[#64748B]">৳</span>
                 <input
                   type="number"
                   min={100}
                   step={50}
                   value={amountInput}
                   onChange={(e) => setAmountInput(Number(e.target.value))}
-                  className="w-full pl-8 pr-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg font-mono font-bold"
+                  className="w-full pl-8 pr-3 py-2 text-sm bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono tabular-nums font-bold focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
                 />
               </div>
             </div>
@@ -152,52 +153,54 @@ export const AdminSettings: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
                 Official Contact Email
               </label>
               <input
                 type="email"
                 value={clubEmail}
                 onChange={(e) => setClubEmail(e.target.value)}
-                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg"
+                className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
               />
             </div>
 
             <div>
-              <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
                 Treasurer Contact Number
               </label>
               <input
                 type="text"
                 value={clubPhone}
                 onChange={(e) => setClubPhone(e.target.value)}
-                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-mono"
+                className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
               />
             </div>
 
             <div>
-              <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
                 Office Location
               </label>
               <input
                 type="text"
                 value={clubAddress}
                 onChange={(e) => setClubAddress(e.target.value)}
-                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg"
+                className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
               />
             </div>
           </div>
 
           <div className="flex items-center justify-between pt-2">
             {saveSuccess ? (
-              <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
+              <span className="text-xs text-[#087F70] dark:text-[#34D399] font-semibold flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4" /> Settings saved successfully
               </span>
-            ) : <span />}
+            ) : (
+              <span />
+            )}
 
             <button
               type="submit"
-              className="px-4 py-2 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg shadow-2xs cursor-pointer"
+              className="px-4 py-2 text-xs font-bold text-white bg-[#087F70] hover:bg-[#06675B] rounded-xl shadow-2xs cursor-pointer transition-colors whitespace-nowrap"
             >
               Save Club Settings
             </button>
@@ -206,27 +209,27 @@ export const AdminSettings: React.FC = () => {
       </div>
 
       {/* SECTION 2: Data Backups */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-3">
-        <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-          <Download className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
+      <div className="surface-card rounded-2xl p-6 space-y-3">
+        <h2 className="text-sm font-bold text-[#172435] dark:text-slate-100 flex items-center gap-2">
+          <Download className="w-4 h-4 text-[#087F70]" />
           <span>Financial Records Backup &amp; Reset</span>
         </h2>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-[#64748B] dark:text-slate-400">
           Export full JSON backup of member profiles and payment records.
         </p>
 
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button
             onClick={handleDownloadJsonBackup}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-[#172435] dark:text-slate-200 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] hover:bg-slate-200/70 dark:hover:bg-[#203650] rounded-xl transition-colors cursor-pointer whitespace-nowrap"
           >
-            <Download className="w-3.5 h-3.5" />
+            <Download className="w-3.5 h-3.5 text-[#087F70]" />
             <span>Download Full Backup ({members.length} members · {monthlyDues.length} entries)</span>
           </button>
 
           <button
             onClick={resetDemoData}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg border border-rose-200 dark:border-rose-800 cursor-pointer"
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl border border-rose-200 dark:border-rose-800/60 cursor-pointer transition-colors whitespace-nowrap"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>Clear Payment History &amp; Reset Roster</span>
@@ -235,44 +238,52 @@ export const AdminSettings: React.FC = () => {
       </div>
 
       {/* SECTION 3: Collapsible Advanced Cloud Sync */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs">
+      <div className="surface-card rounded-2xl overflow-hidden">
         <button
           type="button"
           onClick={() => setShowAdvancedDb(!showAdvancedDb)}
-          className="w-full p-5 flex items-center justify-between text-left hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors cursor-pointer"
+          className="w-full p-5 flex items-center justify-between text-left hover:bg-[#F5F6F3]/70 dark:hover:bg-[#162438]/60 transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-2.5">
-            <Database className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
+            <Database className="w-4 h-4 text-[#087F70]" />
             <div>
-              <span className="text-sm font-bold text-slate-900 dark:text-slate-100 block">
+              <span className="text-sm font-bold text-[#172435] dark:text-slate-100 block">
                 Cloud Storage &amp; Sync Configuration
               </span>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-[11px] text-[#64748B] dark:text-slate-400">
                 {isConfigured ? 'Connected to Cloud Server' : 'Configured via environment'}
               </span>
             </div>
           </div>
-          {showAdvancedDb ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+          {showAdvancedDb ? (
+            <ChevronUp className="w-4 h-4 text-[#64748B]" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-[#64748B]" />
+          )}
         </button>
 
         {showAdvancedDb && (
-          <div className="p-6 pt-0 border-t border-slate-100 dark:border-slate-800 space-y-4">
+          <div className="p-6 pt-0 border-t border-[#E8EDF3] dark:border-[#1F2F46] space-y-4">
             {testResult && (
               <div
-                className={`mt-4 p-3.5 rounded-xl text-xs flex items-center gap-2 ${
+                className={`mt-4 p-3.5 rounded-xl text-xs flex items-center gap-2 border ${
                   testResult.success
-                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                    : 'bg-rose-50 text-rose-800 border border-rose-200'
+                    ? 'bg-[#087F70]/10 text-[#087F70] dark:text-[#34D399] border-[#087F70]/25'
+                    : 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300'
                 }`}
               >
-                {testResult.success ? <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" /> : <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />}
+                {testResult.success ? (
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                )}
                 <span>{testResult.message}</span>
               </div>
             )}
 
             <form onSubmit={handleSaveCredentials} className="space-y-4 text-xs mt-4">
               <div>
-                <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
                   Project Endpoint URL
                 </label>
                 <input
@@ -280,12 +291,12 @@ export const AdminSettings: React.FC = () => {
                   placeholder="https://xyzcompany.supabase.co"
                   value={supabaseUrl}
                   onChange={(e) => setSupabaseUrl(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-mono"
+                  className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
                 />
               </div>
 
               <div>
-                <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
                   Publishable / Anon Key
                 </label>
                 <input
@@ -293,7 +304,7 @@ export const AdminSettings: React.FC = () => {
                   placeholder="sb_publishable_..."
                   value={supabaseAnonKey}
                   onChange={(e) => setSupabaseAnonKey(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-mono"
+                  className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
                 />
               </div>
 
@@ -302,7 +313,7 @@ export const AdminSettings: React.FC = () => {
                   <button
                     type="submit"
                     disabled={savingCreds}
-                    className="px-4 py-2 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg shadow-2xs"
+                    className="px-4 py-2 text-xs font-bold text-white bg-[#087F70] hover:bg-[#06675B] rounded-xl shadow-2xs cursor-pointer whitespace-nowrap"
                   >
                     {savingCreds ? 'Testing...' : 'Save & Test Connection'}
                   </button>
@@ -311,7 +322,7 @@ export const AdminSettings: React.FC = () => {
                     type="button"
                     onClick={handleTestConnection}
                     disabled={savingCreds || !supabaseUrl}
-                    className="px-3 py-2 text-xs font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg"
+                    className="px-3.5 py-2 text-xs font-semibold bg-[#F5F6F3] hover:bg-slate-200/70 dark:bg-[#162438] dark:hover:bg-[#203650] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl cursor-pointer whitespace-nowrap"
                   >
                     Verify Status
                   </button>
@@ -321,7 +332,7 @@ export const AdminSettings: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleClearCredentials}
-                    className="text-xs text-rose-600 hover:underline"
+                    className="text-xs text-rose-600 hover:underline cursor-pointer"
                   >
                     Reset to Default
                   </button>
@@ -331,6 +342,6 @@ export const AdminSettings: React.FC = () => {
           </div>
         )}
       </div>
-    </div>
+    </PageTransition>
   );
 };

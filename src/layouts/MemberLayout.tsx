@@ -27,54 +27,53 @@ export const MemberLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+    <div className="min-h-screen flex flex-col bg-[#F5F6F3] dark:bg-[#0B1320] text-[#172435] dark:text-slate-100">
       {/* Top Banner & Header */}
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
+      <header className="bg-white/95 dark:bg-[#111C2D]/95 backdrop-blur-md border-b border-[#E8EDF3] dark:border-[#1F2F46] sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 gap-4">
-            {/* Left: Brand & Return */}
-            <div className="flex items-center gap-4">
-              <Link to="/" className="flex items-center gap-2.5 group">
-                <img
-                  src={crestImage}
-                  alt="Bondhon 2017"
-                  className="w-9 h-9 rounded-full object-cover border border-emerald-600/30"
-                />
-                <div className="hidden sm:block">
-                  <span className="font-bold text-slate-900 dark:text-slate-100 text-sm block leading-tight">
-                    Bondhon 2017
-                  </span>
-                  <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold uppercase tracking-wider">
-                    Member Portal
-                  </span>
-                </div>
-              </Link>
-            </div>
+          <div className="flex items-center justify-between h-16 gap-3">
+            {/* Left: Brand */}
+            <Link to="/" className="flex items-center gap-2.5 group shrink-0">
+              <img
+                src={crestImage}
+                alt="Bondhon 2017"
+                className="w-9 h-9 rounded-full object-cover ring-2 ring-[#D6AC62]/50"
+              />
+              <div className="hidden sm:block">
+                <span className="font-extrabold text-[#14243A] dark:text-white text-sm block leading-tight">
+                  Bondhon 2017
+                </span>
+                <span className="text-[10px] font-mono text-[#087F70] dark:text-[#34D399] font-bold uppercase tracking-wider">
+                  Member Portal
+                </span>
+              </div>
+            </Link>
 
-            {/* Middle: Member Context */}
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 block">
+            {/* Right: Member Context & Actions */}
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <div className="text-right min-w-0">
+                <span className="text-xs font-bold text-[#14243A] dark:text-white block truncate max-w-[140px] sm:max-w-[220px]">
                   {myMemberRecord?.full_name || profile?.full_name || 'Member'}
                 </span>
-                <span className="text-[11px] font-mono text-emerald-700 dark:text-emerald-400">
-                  {myMemberRecord?.member_code || 'ID: Active'} · {myMemberRecord?.designation || 'Member'}
+                <span className="text-[11px] font-mono text-[#087F70] dark:text-[#34D399] block truncate">
+                  {myMemberRecord?.member_code || 'Active'} · {myMemberRecord?.designation || 'Member'}
                 </span>
               </div>
 
               {isAdmin && (
                 <Link
                   to="/admin/dashboard"
-                  className="hidden md:flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-md hover:bg-emerald-100 transition-colors"
+                  className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#14243A] text-white rounded-xl hover:bg-[#203650] transition-colors whitespace-nowrap"
                 >
-                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#D6AC62]" />
                   <span>Admin Dashboard</span>
                 </Link>
               )}
 
               <button
+                type="button"
                 onClick={handleLogout}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-colors border border-rose-200/60 dark:border-rose-900/40"
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-colors border border-rose-200/70 dark:border-rose-900/40 cursor-pointer shrink-0"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Logout</span>
@@ -83,15 +82,15 @@ export const MemberLayout: React.FC = () => {
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex items-center gap-1 pt-1 -mb-px">
+          <div className="flex items-center gap-1 -mb-px overflow-x-auto">
             <NavLink
               to="/member/profile"
               end
               className={({ isActive }) =>
                 `flex items-center gap-2 px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
                   isActive
-                    ? 'border-emerald-600 text-emerald-700 dark:text-emerald-400'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                    ? 'border-[#087F70] text-[#087F70] dark:text-[#34D399]'
+                    : 'border-transparent text-[#64748B] hover:text-[#14243A] dark:hover:text-white'
                 }`
               }
             >
@@ -104,8 +103,8 @@ export const MemberLayout: React.FC = () => {
               className={({ isActive }) =>
                 `flex items-center gap-2 px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
                   isActive
-                    ? 'border-emerald-600 text-emerald-700 dark:text-emerald-400'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                    ? 'border-[#087F70] text-[#087F70] dark:text-[#34D399]'
+                    : 'border-transparent text-[#64748B] hover:text-[#14243A] dark:hover:text-white'
                 }`
               }
             >
@@ -115,22 +114,22 @@ export const MemberLayout: React.FC = () => {
 
             <Link
               to="/"
-              className="ml-auto text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 py-3 px-2 flex items-center gap-1"
+              className="ml-auto text-xs font-medium text-[#64748B] hover:text-[#14243A] dark:hover:text-white py-3 px-2 flex items-center gap-1 whitespace-nowrap shrink-0"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Public Site</span>
+              <span className="hidden sm:inline">Public Site</span>
             </Link>
           </div>
         </div>
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 min-w-0">
         <Outlet />
       </main>
 
       {/* Quiet Member Portal Footer */}
-      <footer className="border-t border-slate-200 dark:border-slate-800 py-4 text-center text-xs text-slate-400">
+      <footer className="border-t border-[#E8EDF3] dark:border-[#1F2F46] bg-white/60 dark:bg-[#111C2D]/60 py-4 text-center text-xs text-[#64748B]">
         <p>Bondhon 2017 Member Portal · Verified Financial Ledger · BDT (৳)</p>
       </footer>
     </div>
