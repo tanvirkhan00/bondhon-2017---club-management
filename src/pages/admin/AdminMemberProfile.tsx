@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useClubData } from '../../hooks/useClubData';
 import { MonthlyDue } from '../../types';
-import { formatBDT, formatDate, getMonthName } from '../../utils/formatters';
+import { FISCAL_YEARS, formatBDT, formatDate, getMonthName } from '../../utils/formatters';
 import {
   buildMemberCompleteLedger,
   calculateDueBreakdown,
@@ -58,7 +58,7 @@ export const AdminMemberProfile: React.FC = () => {
   }, [member, memberRealDues]);
 
   const years = useMemo(() => {
-    const set = new Set<number>([2026, 2025, 2024]);
+    const set = new Set<number>(FISCAL_YEARS);
     completeLedger.forEach((d) => set.add(d.year));
     return Array.from(set).sort((a, b) => b - a);
   }, [completeLedger]);

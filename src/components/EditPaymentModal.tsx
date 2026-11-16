@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MonthlyDue } from '../types';
 import { useClubData } from '../hooks/useClubData';
-import { MONTH_NAMES, formatBDT, getMonthName } from '../utils/formatters';
+import { FISCAL_YEARS, MONTH_NAMES, formatBDT, getMonthName } from '../utils/formatters';
 import {
   calculateDueBreakdown,
   FINE_PER_SHARE,
@@ -224,9 +224,9 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
                   onChange={(e) => setYear(Number(e.target.value))}
                   className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono text-xs sm:text-sm"
                 >
-                  <option value={2026}>2026</option>
-                  <option value={2025}>2025</option>
-                  <option value={2024}>2024</option>
+                  {FISCAL_YEARS.map((yr) => (
+                    <option key={yr} value={yr}>{yr}</option>
+                  ))}
                 </select>
               </div>
             </div>

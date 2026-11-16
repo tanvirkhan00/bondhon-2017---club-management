@@ -9,6 +9,9 @@ import {
   DueStatus,
   ClubNotification,
   NotificationEventType,
+  BankDeposit,
+  TopFineContributor,
+  PublicClubHighlights,
 } from '../types';
 import { getSupabaseClient, isSupabaseConfigured } from '../services/supabase/client';
 import {
@@ -44,6 +47,14 @@ interface ClubDataContextType {
   monthlyDues: MonthlyDue[];
   notifications: ClubNotification[];
   unreadNotificationCount: number;
+  bankDeposits: BankDeposit[];
+  totalClubPrincipalCollected: number;
+  totalClubFineCollected: number;
+  totalClubCollected: number;
+  totalBankDeposited: number;
+  pendingBankDeposit: number;
+  bankDepositProgress: number;
+  publicClubHighlights: PublicClubHighlights;
   isLiveSupabaseSynced: boolean;
   isLoading: boolean;
   error: string | null;
@@ -129,6 +140,24 @@ interface ClubDataContextType {
   ) => Promise<{ success: boolean; error?: string }>;
   deleteDueRecord: (dueId: string) => Promise<{ success: boolean; error?: string }>;
 
+  // Admin bank deposit operations (Sonali Bank PLC)
+  addBankDeposit: (params: {
+    amount: number;
+    deposited_at: string;
+    reference_no?: string;
+    notes?: string;
+  }) => Promise<{ success: boolean; error?: string }>;
+  updateBankDeposit: (
+    id: string,
+    updates: {
+      amount: number;
+      deposited_at: string;
+      reference_no?: string | null;
+      notes?: string | null;
+    }
+  ) => Promise<{ success: boolean; error?: string }>;
+  deleteBankDeposit: (id: string) => Promise<{ success: boolean; error?: string }>;
+
   resetDemoData: () => void;
 }
 
@@ -137,6 +166,16 @@ const ClubDataContext = createContext<ClubDataContextType | undefined>(undefined
 const MEMBERS_STORAGE_KEY = 'bondhon_local_members_v5';
 const DUES_STORAGE_KEY = 'bondhon_local_dues_v5';
 const NOTIFICATIONS_STORAGE_KEY = 'bondhon_local_notifications_v1';
+const BANK_DEPOSITS_STORAGE_KEY = 'bondhon_local_bank_deposits_v1';
+const PUBLIC_HIGHLIGHTS_CACHE_KEY = 'bondhon_public_highlights_v1';
+
+const DEFAULT_PUBLIC_HIGHLIGHTS: PublicClubHighlights = {
+  totalPrincipalCollected: 0,
+  totalFineCollected: 0,
+  totalCollected: 0,
+  totalBankDeposited: 0,
+  topFineContributors: [],
+};
 
 export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAdmin, user, profile } = useAuth();
@@ -190,9 +229,32 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return [];
   });
 
+  const [bankDeposits, setBankDeposits] = useState<BankDeposit[]>(() => {
+    const saved = localStorage.getItem(BANK_DEPOSITS_STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch { /* ignore */ }
+    }
+    return [];
+  });
+
+  const [rpcPublicHighlights, setRpcPublicHighlights] = useState<PublicClubHighlights | null>(() => {
+    const saved = localStorage.getItem(PUBLIC_HIGHLIGHTS_CACHE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') return parsed as PublicClubHighlights;
+      } catch { /* ignore */ }
+    }
+    return null;
+  });
+
   // Tracks whether Supabase actually has seeded rows in `members`
   const [supabaseSyncedMembers, setSupabaseSyncedMembers] = useState<boolean>(false);
   const [supabaseNotificationsAvailable, setSupabaseNotificationsAvailable] = useState<boolean>(false);
+  const [supabaseBankAvailable, setSupabaseBankAvailable] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -216,6 +278,12 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(notifications));
     }
   }, [notifications, supabaseNotificationsAvailable]);
+
+  useEffect(() => {
+    if (!supabaseBankAvailable) {
+      localStorage.setItem(BANK_DEPOSITS_STORAGE_KEY, JSON.stringify(bankDeposits));
+    }
+  }, [bankDeposits, supabaseBankAvailable]);
 
   useEffect(() => {
     localStorage.setItem('bondhon_default_due_amount', String(defaultDueAmount));
@@ -336,9 +404,55 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setSupabaseSyncedMembers(false);
       }
 
-      // 4. Fetch notifications if admin
+      // 4. Fetch aggregated public club highlights (safe RPC accessible to anon & authenticated)
+      try {
+        const { data: pubStats, error: pubStatsErr } = await client.rpc('get_public_club_highlights');
+        if (!pubStatsErr && pubStats && typeof pubStats === 'object') {
+          const raw = pubStats as Record<string, unknown>;
+          const normalized: PublicClubHighlights = {
+            totalPrincipalCollected: Number(raw.totalPrincipalCollected || 0),
+            totalFineCollected: Number(raw.totalFineCollected || 0),
+            totalCollected: Number(raw.totalCollected || 0),
+            totalBankDeposited: Number(raw.totalBankDeposited || 0),
+            topFineContributors: Array.isArray(raw.topFineContributors)
+              ? (raw.topFineContributors as TopFineContributor[]).map((c) => ({
+                  ...c,
+                  total_fine_paid: Number(c.total_fine_paid || 0),
+                  fined_months: Number(c.fined_months || 0),
+                }))
+              : [],
+            updatedAt: new Date().toISOString(),
+          };
+          setRpcPublicHighlights(normalized);
+          localStorage.setItem(PUBLIC_HIGHLIGHTS_CACHE_KEY, JSON.stringify(normalized));
+        }
+      } catch {
+        // RPC may not be deployed yet; fallback gracefully
+      }
+
+      // 5. Fetch notifications & Sonali Bank deposits if admin
       if (isAdmin) {
         await refreshNotifications();
+
+        try {
+          const { data: bankData, error: bankErr } = await client
+            .from('bank_deposits')
+            .select('*')
+            .order('deposited_at', { ascending: false })
+            .order('created_at', { ascending: false });
+
+          if (!bankErr && Array.isArray(bankData)) {
+            setSupabaseBankAvailable(true);
+            setBankDeposits(
+              bankData.map((row) => ({
+                ...(row as BankDeposit),
+                amount: Number((row as BankDeposit).amount || 0),
+              }))
+            );
+          }
+        } catch {
+          // keep local bankDeposits fallback
+        }
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -717,6 +831,107 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
   }, [selectedYear, enrichedDues, members, clubMonthlyTarget]);
 
+  // Full-club collection, fine, and Sonali Bank deposit metrics
+  const liveComputedHighlights = useMemo<PublicClubHighlights>(() => {
+    let totalPrincipalCollected = 0;
+    let totalFineCollected = 0;
+
+    const fineByMember = new Map<
+      string,
+      { totalFine: number; finedMonths: Set<string>; member?: Member }
+    >();
+
+    enrichedDues.forEach((d) => {
+      const paid = Number(d.amount_paid || 0);
+      const finePaid = Number(d.fine_paid || 0);
+      totalPrincipalCollected += paid;
+      totalFineCollected += finePaid;
+
+      if (finePaid > 0) {
+        const entry = fineByMember.get(d.member_id) || {
+          totalFine: 0,
+          finedMonths: new Set<string>(),
+          member: d.member || members.find((m) => m.id === d.member_id),
+        };
+        entry.totalFine += finePaid;
+        entry.finedMonths.add(`${d.year}-${d.month}`);
+        fineByMember.set(d.member_id, entry);
+      }
+    });
+
+    const topFineContributors: TopFineContributor[] = Array.from(fineByMember.entries())
+      .map(([memberId, info]) => {
+        const mem = info.member || members.find((m) => m.id === memberId);
+        return {
+          member_id: memberId,
+          member_code: mem?.member_code || '—',
+          full_name: mem?.full_name || 'Member',
+          profile_image_url: mem?.profile_image_url || null,
+          designation: mem?.designation || 'Member',
+          total_fine_paid: info.totalFine,
+          fined_months: info.finedMonths.size,
+        };
+      })
+      .filter((c) => c.total_fine_paid > 0)
+      .sort(
+        (a, b) =>
+          b.total_fine_paid - a.total_fine_paid ||
+          b.fined_months - a.fined_months ||
+          a.member_code.localeCompare(b.member_code)
+      )
+      .slice(0, 5);
+
+    const totalBankDepositedLocal = bankDeposits.reduce(
+      (sum, b) => sum + Number(b.amount || 0),
+      0
+    );
+
+    return {
+      totalPrincipalCollected,
+      totalFineCollected,
+      totalCollected: totalPrincipalCollected + totalFineCollected,
+      totalBankDeposited: totalBankDepositedLocal,
+      topFineContributors,
+    };
+  }, [enrichedDues, members, bankDeposits]);
+
+  // Cache full highlights whenever Admin or local demo mode holds full club records
+  useEffect(() => {
+    if (isAdmin || !supabaseSyncedMembers) {
+      if (
+        liveComputedHighlights.totalCollected > 0 ||
+        liveComputedHighlights.totalBankDeposited > 0
+      ) {
+        localStorage.setItem(
+          PUBLIC_HIGHLIGHTS_CACHE_KEY,
+          JSON.stringify({
+            ...liveComputedHighlights,
+            updatedAt: new Date().toISOString(),
+          })
+        );
+      }
+    }
+  }, [isAdmin, supabaseSyncedMembers, liveComputedHighlights]);
+
+  const publicClubHighlights = useMemo<PublicClubHighlights>(() => {
+    if (isAdmin || !supabaseSyncedMembers) {
+      return liveComputedHighlights;
+    }
+    return rpcPublicHighlights || DEFAULT_PUBLIC_HIGHLIGHTS;
+  }, [isAdmin, supabaseSyncedMembers, liveComputedHighlights, rpcPublicHighlights]);
+
+  const totalClubPrincipalCollected = publicClubHighlights.totalPrincipalCollected;
+  const totalClubFineCollected = publicClubHighlights.totalFineCollected;
+  const totalClubCollected = publicClubHighlights.totalCollected;
+  const totalBankDeposited =
+    isAdmin || !supabaseSyncedMembers
+      ? bankDeposits.reduce((sum, b) => sum + Number(b.amount || 0), 0)
+      : publicClubHighlights.totalBankDeposited;
+  const pendingBankDeposit = Math.max(0, totalClubCollected - totalBankDeposited);
+  const bankDepositProgress =
+    totalClubCollected > 0
+      ? Math.min(100, Math.round((totalBankDeposited / totalClubCollected) * 100))
+      : 0;
   // ==========================================
   // ADMIN MEMBER ACTIONS
   // ==========================================
@@ -1407,12 +1622,173 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return { success: true };
   };
 
+  // ==========================================
+  // ADMIN BANK DEPOSIT ACTIONS (Sonali Bank PLC)
+  // ==========================================
+
+  const isMissingBankTableError = (err: { message?: string; code?: string } | null | undefined) => {
+    if (!err) return false;
+    const msg = (err.message || '').toLowerCase();
+    return (
+      err.code === '42P01' ||
+      err.code === 'PGRST205' ||
+      msg.includes('bank_deposits') ||
+      msg.includes('schema cache')
+    );
+  };
+
+  const addBankDeposit = async (params: {
+    amount: number;
+    deposited_at: string;
+    reference_no?: string;
+    notes?: string;
+  }) => {
+    if (!isAdmin) {
+      return { success: false, error: 'Unauthorized: Only Admins can record bank deposits.' };
+    }
+    const cleanAmount = Number(params.amount);
+    if (!cleanAmount || cleanAmount <= 0) {
+      return { success: false, error: 'Please enter a valid deposit amount greater than ৳0.' };
+    }
+
+    const basePayload = {
+      bank_name: 'Sonali Bank PLC',
+      branch_name: 'Bhedarganj Branch, Shariatpur',
+      account_number: '2102201027292',
+      account_name: 'jafor saikot dhali tanvir khan',
+      amount: cleanAmount,
+      deposited_at: params.deposited_at || new Date().toISOString().substring(0, 10),
+      reference_no: params.reference_no?.trim() || null,
+      notes: params.notes?.trim() || null,
+      recorded_by: user?.id || null,
+    };
+
+    const client = getSupabaseClient();
+    if (supabaseSyncedMembers && client) {
+      try {
+        let { data, error: insErr } = await client
+          .from('bank_deposits')
+          .insert([basePayload])
+          .select()
+          .single();
+
+        if (insErr && insErr.message.toLowerCase().includes('recorded_by')) {
+          const retry = await client
+            .from('bank_deposits')
+            .insert([{ ...basePayload, recorded_by: null }])
+            .select()
+            .single();
+          data = retry.data;
+          insErr = retry.error;
+        }
+
+        if (insErr) {
+          if (isMissingBankTableError(insErr)) {
+            setSupabaseBankAvailable(false);
+          } else {
+            throw insErr;
+          }
+        } else if (data) {
+          setSupabaseBankAvailable(true);
+          const created: BankDeposit = {
+            ...(data as BankDeposit),
+            amount: Number((data as BankDeposit).amount || cleanAmount),
+          };
+          setBankDeposits((prev) => [created, ...prev]);
+          return { success: true };
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { success: false, error: msg };
+      }
+    }
+
+    const localDeposit: BankDeposit = {
+      ...basePayload,
+      id: `bank-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    setBankDeposits((prev) => [localDeposit, ...prev]);
+    return { success: true };
+  };
+
+  const updateBankDeposit = async (
+    id: string,
+    updates: {
+      amount: number;
+      deposited_at: string;
+      reference_no?: string | null;
+      notes?: string | null;
+    }
+  ) => {
+    if (!isAdmin) {
+      return { success: false, error: 'Unauthorized: Only Admins can edit bank deposits.' };
+    }
+    const cleanAmount = Number(updates.amount);
+    if (!cleanAmount || cleanAmount <= 0) {
+      return { success: false, error: 'Deposit amount must be greater than ৳0.' };
+    }
+
+    const payload = {
+      amount: cleanAmount,
+      deposited_at: updates.deposited_at,
+      reference_no: updates.reference_no?.trim() || null,
+      notes: updates.notes?.trim() || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    const client = getSupabaseClient();
+    if (supabaseSyncedMembers && supabaseBankAvailable && client) {
+      try {
+        const { error: updErr } = await client
+          .from('bank_deposits')
+          .update(payload)
+          .eq('id', id);
+        if (updErr) throw updErr;
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { success: false, error: msg };
+      }
+    }
+
+    setBankDeposits((prev) =>
+      prev.map((d) => (d.id === id ? { ...d, ...payload } : d))
+    );
+    return { success: true };
+  };
+
+  const deleteBankDeposit = async (id: string) => {
+    if (!isAdmin) {
+      return { success: false, error: 'Unauthorized: Only Admins can delete bank deposits.' };
+    }
+
+    const client = getSupabaseClient();
+    if (supabaseSyncedMembers && supabaseBankAvailable && client) {
+      try {
+        const { error: delErr } = await client
+          .from('bank_deposits')
+          .delete()
+          .eq('id', id);
+        if (delErr) throw delErr;
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { success: false, error: msg };
+      }
+    }
+
+    setBankDeposits((prev) => prev.filter((d) => d.id !== id));
+    return { success: true };
+  };
+
   const resetDemoData = () => {
     localStorage.removeItem(MEMBERS_STORAGE_KEY);
     localStorage.removeItem(DUES_STORAGE_KEY);
+    localStorage.removeItem(BANK_DEPOSITS_STORAGE_KEY);
     setMembers(INITIAL_MEMBERS);
     setMonthlyDues(INITIAL_MONTHLY_DUES);
     setPublicMembers(INITIAL_PUBLIC_MEMBERS);
+    setBankDeposits([]);
   };
 
   const value = useMemo(
@@ -1425,6 +1801,14 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       monthlyDues: enrichedDues,
       notifications,
       unreadNotificationCount,
+      bankDeposits,
+      totalClubPrincipalCollected,
+      totalClubFineCollected,
+      totalClubCollected,
+      totalBankDeposited,
+      pendingBankDeposit,
+      bankDepositProgress,
+      publicClubHighlights,
       isLiveSupabaseSynced: supabaseSyncedMembers,
       isLoading,
       error,
@@ -1456,6 +1840,9 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       recordFinePayment,
       waiveMemberFine,
       deleteDueRecord,
+      addBankDeposit,
+      updateBankDeposit,
+      deleteBankDeposit,
       resetDemoData,
     }),
     [
@@ -1467,6 +1854,14 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       enrichedDues,
       notifications,
       unreadNotificationCount,
+      bankDeposits,
+      totalClubPrincipalCollected,
+      totalClubFineCollected,
+      totalClubCollected,
+      totalBankDeposited,
+      pendingBankDeposit,
+      bankDepositProgress,
+      publicClubHighlights,
       supabaseSyncedMembers,
       isLoading,
       error,

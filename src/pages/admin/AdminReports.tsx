@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useClubData } from '../../hooks/useClubData';
-import { formatBDT } from '../../utils/formatters';
+import { FISCAL_YEARS, formatBDT } from '../../utils/formatters';
 import { computeMemberFinancialSummary } from '../../utils/fineCalculator';
 import { downloadCsv } from '../../utils/csvExport';
 import {
@@ -140,9 +140,9 @@ export const AdminReports: React.FC = () => {
               onChange={(e) => setSelectedYear(Number(e.target.value))}
               className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-hidden cursor-pointer"
             >
-              <option value={2026}>Fiscal Year 2026</option>
-              <option value={2025}>Fiscal Year 2025</option>
-              <option value={2024}>Fiscal Year 2024</option>
+              {FISCAL_YEARS.map((yr) => (
+                <option key={yr} value={yr}>Fiscal Year {yr}</option>
+              ))}
             </select>
           </div>
         </div>

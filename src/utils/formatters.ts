@@ -3,6 +3,8 @@
  * Enforces BDT (৳) currency and clean date/status labels
  */
 
+export const FISCAL_YEARS = [2028, 2027, 2026, 2025, 2024];
+
 export const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'

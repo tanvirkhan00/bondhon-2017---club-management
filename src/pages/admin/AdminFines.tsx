@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useClubData } from '../../hooks/useClubData';
 import { MonthlyDue } from '../../types';
-import { formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/formatters';
+import { FISCAL_YEARS, formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/formatters';
 import {
   buildMemberCompleteLedger,
   calculateDueBreakdown,
@@ -201,7 +201,7 @@ export const AdminFines: React.FC = () => {
   }, [fineRows, searchQuery, yearFilter, monthFilter, fineStatusFilter]);
 
   const years = useMemo(() => {
-    const set = new Set<number>([2026, 2025, 2024, new Date().getFullYear()]);
+    const set = new Set<number>([...FISCAL_YEARS, new Date().getFullYear()]);
     monthlyDues.forEach((d) => {
       if (d.year > 2000) set.add(d.year);
     });
@@ -744,9 +744,9 @@ export const AdminFines: React.FC = () => {
                     onChange={(e) => setFormYear(Number(e.target.value))}
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono"
                   >
-                    <option value={2026}>2026</option>
-                    <option value={2025}>2025</option>
-                    <option value={2024}>2024</option>
+                    {FISCAL_YEARS.map((yr) => (
+                      <option key={yr} value={yr}>{yr}</option>
+                    ))}
                   </select>
                 </div>
               </div>

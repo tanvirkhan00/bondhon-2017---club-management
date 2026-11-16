@@ -17,12 +17,30 @@ import {
   ChevronRight,
   Calculator,
   Lock,
+  Banknote,
+  Landmark,
+  Smartphone,
+  Trophy,
+  Copy,
+  Check,
+  Info,
 } from 'lucide-react';
 import crestImage from '../../assets/images/bondhon_club_crest_1793703027252.jpg';
 
 export const Home: React.FC = () => {
-  const { publicMembers } = useClubData();
+  const { publicMembers, publicClubHighlights } = useClubData();
   const { isAuthenticated, isAdmin } = useAuth();
+  const [copiedField, setCopiedField] = useState<'mobile' | 'bank' | null>(null);
+
+  const handleCopyText = async (text: string, field: 'mobile' | 'bank') => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(field);
+      setTimeout(() => setCopiedField((prev) => (prev === field ? null : prev)), 2000);
+    } catch {
+      // ignore clipboard denial in restricted iframe
+    }
+  };
 
   // Joint savings calculator duration state (in months)
   const [calcMonths, setCalcMonths] = useState<number>(12);
@@ -183,6 +201,143 @@ export const Home: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 1.5 LIVE FINANCIAL HIGHLIGHTS & TOP FINE CONTRIBUTOR */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block mb-1">
+              স্বচ্ছ তহবিল বিবরণী · লাইভ পরিসংখ্যান
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              সমিতির মোট সংগ্রহ ও জরিমানা হিসাব
+            </h2>
+          </div>
+          <Link
+            to={isAuthenticated ? (isAdmin ? '/admin/fines' : '/member/payment-history') : '/login'}
+            className="text-xs sm:text-sm font-semibold text-emerald-700 dark:text-emerald-400 hover:underline inline-flex items-center gap-1 self-start sm:self-auto"
+          >
+            <span>বিস্তারিত লেজার দেখুন</span>
+            <ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* Card 1: Total Collections */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs flex flex-col justify-between gap-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                মোট তহবিল সংগ্রহ (Total Collections)
+              </span>
+              <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                <Banknote className="w-5 h-5" />
+              </div>
+            </div>
+            <div>
+              <div className="text-3xl sm:text-4xl font-extrabold font-mono text-emerald-700 dark:text-emerald-400 tabular-nums">
+                {formatBDT(publicClubHighlights.totalCollected)}
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 font-mono tabular-nums">
+                মূল সঞ্চয়: {formatBDT(publicClubHighlights.totalPrincipalCollected)} · জরিমানা: {formatBDT(publicClubHighlights.totalFineCollected)}
+              </p>
+            </div>
+          </div>
+
+          {/* Card 2: Total Fine Collections */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs flex flex-col justify-between gap-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                মোট জরিমানা আদায় (Fine Collections)
+              </span>
+              <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0">
+                <Coins className="w-5 h-5" />
+              </div>
+            </div>
+            <div>
+              <div className="text-3xl sm:text-4xl font-extrabold font-mono text-amber-700 dark:text-amber-400 tabular-nums">
+                {formatBDT(publicClubHighlights.totalFineCollected)}
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                ১২ তারিখের পর বিলম্ব পরিশোধের জরিমানা (৳৫০/নাম) থেকে সংগৃহীত
+              </p>
+            </div>
+          </div>
+
+          {/* Card 3: Top Fine Contributor */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs flex flex-col justify-between gap-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                সর্বোচ্চ জরিমানা প্রদানকারী (Top Contributor)
+              </span>
+              <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 flex items-center justify-center shrink-0">
+                <Trophy className="w-5 h-5" />
+              </div>
+            </div>
+
+            {publicClubHighlights.topFineContributors.length > 0 ? (
+              <div className="space-y-3">
+                {(() => {
+                  const top = publicClubHighlights.topFineContributors[0];
+                  return (
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-11 h-11 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shrink-0 flex items-center justify-center">
+                          {top.profile_image_url ? (
+                            <img
+                              src={top.profile_image_url}
+                              alt={top.full_name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                              {top.full_name.substring(0, 2).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+                            {top.full_name}
+                          </h3>
+                          <span className="text-[11px] font-mono text-slate-500 block">
+                            {top.member_code} · {top.fined_months} মাস
+                          </span>
+                        </div>
+                      </div>
+                      <span className="font-mono font-extrabold text-lg text-rose-700 dark:text-rose-400 tabular-nums shrink-0">
+                        {formatBDT(top.total_fine_paid)}
+                      </span>
+                    </div>
+                  );
+                })()}
+
+                {publicClubHighlights.topFineContributors.length > 1 && (
+                  <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 space-y-1 text-[11px] text-slate-600 dark:text-slate-400">
+                    {publicClubHighlights.topFineContributors.slice(1, 3).map((runner, idx) => (
+                      <div key={runner.member_id} className="flex items-center justify-between">
+                        <span className="truncate">
+                          {idx + 2}. {runner.full_name} ({runner.member_code})
+                        </span>
+                        <span className="font-mono font-semibold text-slate-800 dark:text-slate-200 tabular-nums shrink-0">
+                          {formatBDT(runner.total_fine_paid)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div>
+                <div className="text-base font-bold text-slate-800 dark:text-slate-200">
+                  এখনো কোনো জরিমানা রেকর্ড নেই
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  সকল সদস্য সময়মতো মাসিক সঞ্চয় কিস্তি পরিশোধ করেছেন।
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -503,6 +658,146 @@ export const Home: React.FC = () => {
                 সকল জমার হিসাব ক্লাবের সুরক্ষিত পোর্টালে রিয়েলটাইমে সংরক্ষিত থাকে, যা প্রত্যেক সদস্য ব্যক্তিগত আইডি দিয়ে লগইন করে যাচাই করতে পারেন।
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 5.5 HOW TO SUBMIT CLUB CONTRIBUTIONS (টাকা জমাদানের নিয়মাবলি ও অ্যাকাউন্ট তথ্য) */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block mb-1">
+              অফিসিয়াল পেমেন্ট নির্দেশিকা · কোষাধ্যক্ষ ও ব্যাংক
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              সমিতির টাকা জমাদানের মাধ্যম ও নিয়মাবলি
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
+              মাসিক কিস্তি ও জরিমানার টাকা নিচের নির্ধারিত মোবাইল ব্যাংকিং বা সোনালী ব্যাংক অ্যাকাউন্টে জমা দিন
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Mobile Banking Card */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs flex flex-col justify-between gap-5">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 flex items-center justify-center shrink-0">
+                  <Smartphone className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400 block">
+                    bKash · Nagad · Rocket (Personal)
+                  </span>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                    Tanvir Khan (Treasurer)
+                  </h3>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
+              <div>
+                <span className="text-[11px] text-slate-500 block">মোবাইল ব্যাংকিং নম্বর</span>
+                <span className="text-xl sm:text-2xl font-extrabold font-mono text-slate-900 dark:text-white tracking-wide tabular-nums">
+                  01959948542
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleCopyText('01959948542', 'mobile')}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+              >
+                {copiedField === 'mobile' ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="text-emerald-700 dark:text-emerald-400">Copied</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Copy</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              <strong>bKash / Nagad / Rocket</strong>-এ Send Money বা Cash In করার সময় অবশ্যই উত্তোলন খরচসহ পাঠাবেন।
+            </p>
+          </div>
+
+          {/* Sonali Bank PLC Card */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs flex flex-col justify-between gap-5">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <Landmark className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block">
+                    Official Bank Deposit Account
+                  </span>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                    Sonali Bank PLC
+                  </h3>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <span className="text-[11px] text-slate-500 block">ব্যাংক অ্যাকাউন্ট নম্বর</span>
+                <span className="text-xl sm:text-2xl font-extrabold font-mono text-emerald-700 dark:text-emerald-400 tracking-wide tabular-nums block truncate">
+                  2102201027292
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleCopyText('2102201027292', 'bank')}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+              >
+                {copiedField === 'bank' ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="text-emerald-700 dark:text-emerald-400">Copied</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Copy</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400">
+              <div>
+                <span className="text-slate-400 block text-[11px]">শাখা (Branch)</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">Bhedarganj Branch, Shariatpur</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[11px]">অ্যাকাউন্ট নাম (Account Name)</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">jafor saikot dhali tanvir khan</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Mandatory Payment Notes */}
+        <div className="rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/70 p-5 flex items-start gap-3.5">
+          <Info className="w-5 h-5 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5" />
+          <div className="space-y-1.5 text-xs sm:text-sm text-amber-950 dark:text-amber-200">
+            <p className="font-bold">গুরুত্বপূর্ণ নির্দেশনা (Note):</p>
+            <ul className="space-y-1 list-disc list-inside text-amber-900 dark:text-amber-200/90">
+              <li>
+                টাকা পাঠানোর (Send) পর অবশ্যই <strong>Treasurer (কোষাধ্যক্ষ)-এর সাথে inbox-এ confirm</strong> করতে হবে।
+              </li>
+              <li>
+                <strong>bKash / Nagad / Rocket</strong>-এ টাকা পাঠালে অবশ্যই <strong>খরচসহ (Send Charge সহ)</strong> পাঠাতে হবে, অন্যথায় তা বকেয়া হিসেবে consider করা হবে।
+              </li>
+            </ul>
           </div>
         </div>
       </section>

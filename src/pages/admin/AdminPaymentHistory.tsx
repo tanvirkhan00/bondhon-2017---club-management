@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useClubData } from '../../hooks/useClubData';
-import { formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/formatters';
+import { FISCAL_YEARS, formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/formatters';
 import { calculateDueBreakdown } from '../../utils/fineCalculator';
 import { StatusBadge } from '../../components/StatusBadge';
 import { downloadCsv } from '../../utils/csvExport';
@@ -35,7 +35,7 @@ export const AdminPaymentHistory: React.FC = () => {
 
   // Extract unique years
   const years = useMemo(() => {
-    const set = new Set<number>();
+    const set = new Set<number>(FISCAL_YEARS);
     monthlyDues.forEach(d => {
       const yr = Number(d.year);
       if (yr && !isNaN(yr) && yr > 2000) {
@@ -43,8 +43,6 @@ export const AdminPaymentHistory: React.FC = () => {
       }
     });
     set.add(new Date().getFullYear());
-    set.add(2026);
-    set.add(2025);
     return Array.from(set).sort((a, b) => b - a);
   }, [monthlyDues]);
 

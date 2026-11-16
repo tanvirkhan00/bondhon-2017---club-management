@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useClubData } from '../../hooks/useClubData';
-import { formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/formatters';
+import { FISCAL_YEARS, formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/formatters';
 import { calculateDueBreakdown } from '../../utils/fineCalculator';
 import { StatusBadge } from '../../components/StatusBadge';
 import {
@@ -19,7 +19,7 @@ export const MemberPaymentHistory: React.FC = () => {
 
   // Extract unique years from personal dues
   const years = useMemo(() => {
-    const set = new Set<number>();
+    const set = new Set<number>(FISCAL_YEARS);
     myDues.forEach(d => {
       const yr = Number(d.year);
       if (yr && !isNaN(yr) && yr > 2000) {
@@ -27,8 +27,6 @@ export const MemberPaymentHistory: React.FC = () => {
       }
     });
     set.add(new Date().getFullYear());
-    set.add(2026);
-    set.add(2025);
     return Array.from(set).sort((a, b) => b - a);
   }, [myDues]);
 

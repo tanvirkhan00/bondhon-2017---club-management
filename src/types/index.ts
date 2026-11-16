@@ -126,3 +126,36 @@ export interface ClubNotification {
   created_at: string;
 }
 
+export interface BankDeposit {
+  id: string;
+  bank_name: string;
+  branch_name: string;
+  account_number: string;
+  account_name: string;
+  amount: number;
+  deposited_at: string;
+  reference_no?: string | null;
+  notes?: string | null;
+  recorded_by?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface TopFineContributor {
+  member_id: string;
+  member_code: string;
+  full_name: string;
+  profile_image_url?: string | null;
+  designation?: string | null;
+  total_fine_paid: number;
+  fined_months: number;
+}
+
+export interface PublicClubHighlights {
+  totalPrincipalCollected: number;
+  totalFineCollected: number;
+  totalCollected: number;
+  totalBankDeposited: number;
+  topFineContributors: TopFineContributor[];
+  updatedAt?: string;
+}

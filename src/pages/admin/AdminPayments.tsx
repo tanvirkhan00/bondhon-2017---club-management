@@ -2,8 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useClubData } from '../../hooks/useClubData';
 import { MonthlyDue } from '../../types';
-import { formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/formatters';
-import { calculateDueBreakdown } from '../../utils/fineCalculator';
+import { FISCAL_YEARS, formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/formatters';
+import { calculateDueBreakdown, MonthlyDueWithMeta, parseLocalDate } from '../../utils/fineCalculator';
 import { StatusBadge } from '../../components/StatusBadge';
 import {
   CreditCard,
@@ -29,6 +29,7 @@ export const AdminPayments: React.FC = () => {
     setSelectedYear,
     generateMonthlyDues,
     markAsPaid,
+    recordNewPayment,
     deleteDueRecord,
     members,
     clubMonthlyTarget,
@@ -49,11 +50,55 @@ export const AdminPayments: React.FC = () => {
 
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  // Active dues for current month and year
-  const currentMonthDues = useMemo(
-    () => monthlyDues.filter(d => d.month === selectedMonth && d.year === selectedYear),
-    [monthlyDues, selectedMonth, selectedYear]
-  );
+  // Active dues for current month and year (evaluates all eligible active members so unentered months still list unpaid members)
+  const currentMonthDues = useMemo<MonthlyDueWithMeta[]>(() => {
+    const existingByMember = new Map<string, MonthlyDue>();
+    monthlyDues.forEach(d => {
+      if (d.month === selectedMonth && d.year === selectedYear) {
+        existingByMember.set(d.member_id, d);
+      }
+    });
+
+    const selectedPeriodKey = selectedYear * 100 + selectedMonth;
+    const list: MonthlyDueWithMeta[] = [];
+
+    members
+      .filter(m => m.status === 'active')
+      .forEach(m => {
+        const existing = existingByMember.get(m.id);
+        if (existing) {
+          list.push({ ...existing, isVirtual: false });
+          return;
+        }
+        const joinParsed = parseLocalDate(m.join_date || '2024-04-01');
+        const joinPeriodKey = joinParsed.getFullYear() * 100 + (joinParsed.getMonth() + 1);
+        if (joinPeriodKey <= selectedPeriodKey) {
+          list.push({
+            id: `virtual-${selectedYear}-${selectedMonth}-${m.id}`,
+            member_id: m.id,
+            member: m,
+            month: selectedMonth,
+            year: selectedYear,
+            amount_due: m.monthly_contribution || (m.shares_count || 1) * 500,
+            amount_paid: 0,
+            fine_due: 0,
+            fine_paid: 0,
+            status: 'unpaid',
+            paid_at: null,
+            isVirtual: true,
+          });
+        }
+      });
+
+    // Include any historical records for inactive members if present in that month
+    monthlyDues.forEach(d => {
+      if (d.month === selectedMonth && d.year === selectedYear && !list.some(x => x.member_id === d.member_id)) {
+        list.push({ ...d, isVirtual: false });
+      }
+    });
+
+    return list;
+  }, [monthlyDues, members, selectedMonth, selectedYear]);
 
   const filteredDues = useMemo(() => {
     return currentMonthDues.filter(due => {
@@ -81,7 +126,12 @@ export const AdminPayments: React.FC = () => {
   const partialCount = currentMonthDues.filter(d => d.status === 'partial').length;
   const unpaidCount = Math.max(0, activeMembersCount - paidCount - partialCount);
 
-  const handleOpenEdit = (due: MonthlyDue) => {
+  const handleOpenEdit = (due: MonthlyDueWithMeta) => {
+    if (due.isVirtual) {
+      setTargetMemberForRecord(due.member_id);
+      setRecordModalOpen(true);
+      return;
+    }
     setEditDue(due);
   };
 
@@ -147,9 +197,9 @@ export const AdminPayments: React.FC = () => {
             onChange={(e) => setSelectedYear(Number(e.target.value))}
             className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 shadow-2xs focus:outline-hidden cursor-pointer"
           >
-            <option value={2026}>2026</option>
-            <option value={2025}>2025</option>
-            <option value={2024}>2024</option>
+            {FISCAL_YEARS.map(yr => (
+              <option key={yr} value={yr}>{yr}</option>
+            ))}
           </select>
 
           <button
@@ -371,14 +421,27 @@ export const AdminPayments: React.FC = () => {
                         <div className="flex items-center justify-end gap-1.5">
                           {(due.status !== 'paid' || bd.fineOutstanding > 0) && (
                             <button
-                              onClick={() =>
-                                markAsPaid(due.id, due.amount_due, undefined, {
-                                  fineDue: bd.fineDue,
-                                  finePaid: bd.fineDue,
-                                  fineWaived: Boolean(due.fine_waived),
-                                })
-                              }
-                              className="px-2 py-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 rounded border border-emerald-200 transition-colors flex items-center gap-1"
+                              onClick={() => {
+                                if (due.isVirtual) {
+                                  recordNewPayment({
+                                    memberId: due.member_id,
+                                    month: due.month,
+                                    year: due.year,
+                                    amountDue: due.amount_due,
+                                    amountPaid: due.amount_due,
+                                    fineDue: bd.fineDue,
+                                    finePaid: bd.fineDue,
+                                    fineWaived: Boolean(due.fine_waived),
+                                  });
+                                } else {
+                                  markAsPaid(due.id, due.amount_due, undefined, {
+                                    fineDue: bd.fineDue,
+                                    finePaid: bd.fineDue,
+                                    fineWaived: Boolean(due.fine_waived),
+                                  });
+                                }
+                              }}
+                              className="px-2 py-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 rounded border border-emerald-200 transition-colors flex items-center gap-1 cursor-pointer"
                               title={`Settle total (${formatBDT(due.amount_due + bd.fineDue)})`}
                             >
                               <CheckCircle2 className="w-3 h-3" />
@@ -388,38 +451,40 @@ export const AdminPayments: React.FC = () => {
 
                           <button
                             onClick={() => handleOpenEdit(due)}
-                            className="p-1.5 text-slate-500 hover:text-emerald-700 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
-                            title="Edit Payment Amount or Date"
+                            className="p-1.5 text-slate-500 hover:text-emerald-700 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                            title={due.isVirtual ? 'Record Payment Details' : 'Edit Payment Amount or Date'}
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
 
-                          {isDeleting ? (
-                            <div className="flex items-center gap-1">
+                          {!due.isVirtual && (
+                            isDeleting ? (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => {
+                                    deleteDueRecord(due.id);
+                                    setDeleteConfirmId(null);
+                                  }}
+                                  className="px-2 py-0.5 bg-rose-600 text-white rounded text-[11px] font-semibold"
+                                >
+                                  Confirm
+                                </button>
+                                <button
+                                  onClick={() => setDeleteConfirmId(null)}
+                                  className="px-1.5 py-0.5 text-slate-500 text-[11px]"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
                               <button
-                                onClick={() => {
-                                  deleteDueRecord(due.id);
-                                  setDeleteConfirmId(null);
-                                }}
-                                className="px-2 py-0.5 bg-rose-600 text-white rounded text-[11px] font-semibold"
+                                onClick={() => setDeleteConfirmId(due.id)}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
+                                title="Delete Record"
                               >
-                                Confirm
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
-                              <button
-                                onClick={() => setDeleteConfirmId(null)}
-                                className="px-1.5 py-0.5 text-slate-500 text-[11px]"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => setDeleteConfirmId(due.id)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
-                              title="Delete Record"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            )
                           )}
                         </div>
                       </td>
@@ -482,9 +547,9 @@ export const AdminPayments: React.FC = () => {
                     onChange={(e) => setTargetGenYear(Number(e.target.value))}
                     className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg"
                   >
-                    <option value={2026}>2026</option>
-                    <option value={2025}>2025</option>
-                    <option value={2024}>2024</option>
+                    {FISCAL_YEARS.map(yr => (
+                      <option key={yr} value={yr}>{yr}</option>
+                    ))}
                   </select>
                 </div>
               </div>
