@@ -144,7 +144,11 @@ export const AdminMemberProfile: React.FC = () => {
             className="px-3 py-2 text-xs font-semibold bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
           >
             {members.map((m) => (
-              <option key={m.id} value={m.id}>
+              <option
+                key={m.id}
+                value={m.id}
+                className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+              >
                 {m.member_code} — {m.full_name}
               </option>
             ))}
@@ -295,11 +299,11 @@ export const AdminMemberProfile: React.FC = () => {
             <select
               value={yearFilter}
               onChange={(e) => setYearFilter(e.target.value)}
-              className="px-3 py-1.5 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono text-[#172435] dark:text-slate-100 focus:outline-hidden"
+              className="px-3 py-1.5 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
             >
-              <option value="all">All Years</option>
+              <option value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">All Years</option>
               {years.map((y) => (
-                <option key={y} value={String(y)}>
+                <option key={y} value={String(y)} className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">
                   {y}
                 </option>
               ))}
@@ -308,12 +312,12 @@ export const AdminMemberProfile: React.FC = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-1.5 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden"
+              className="px-3 py-1.5 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
             >
-              <option value="all">All Status</option>
-              <option value="paid">Paid</option>
-              <option value="partial">Partial</option>
-              <option value="unpaid">Unpaid</option>
+              <option value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">All Status</option>
+              <option value="paid" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Paid</option>
+              <option value="partial" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Partial</option>
+              <option value="unpaid" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Unpaid</option>
             </select>
           </div>
         </div>

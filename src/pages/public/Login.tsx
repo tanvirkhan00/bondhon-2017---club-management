@@ -418,9 +418,15 @@ export const Login: React.FC = () => {
                           }}
                           className={`${inputBaseClass} pr-9 appearance-none cursor-pointer`}
                         >
-                          <option value="">Select your name...</option>
+                          <option value="" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">
+                            Select your name...
+                          </option>
                           {publicMembers.map((m) => (
-                            <option key={m.id} value={m.id}>
+                            <option
+                              key={m.id}
+                              value={m.id}
+                              className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                            >
                               {m.full_name} ({m.member_code})
                             </option>
                           ))}

@@ -254,7 +254,11 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
               className="w-full px-3 py-2.5 text-xs sm:text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl focus:outline-hidden focus:ring-2 focus:ring-[#087F70] text-[#172435] dark:text-slate-100 cursor-pointer"
             >
               {members.map((m) => (
-                <option key={m.id} value={m.id}>
+                <option
+                  key={m.id}
+                  value={m.id}
+                  className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                >
                   {m.member_code} - {m.full_name} ({m.shares_count > 1 ? `${m.shares_count} shares · ` : ''}৳{m.monthly_contribution}/mo)
                 </option>
               ))}
@@ -285,10 +289,14 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                     setAutoSyncMonth(false);
                     setMonth(Number(e.target.value));
                   }}
-                  className="w-full px-3 py-2.5 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-xs sm:text-sm font-medium text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2.5 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-xs sm:text-sm font-medium text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70] cursor-pointer"
                 >
                   {MONTH_NAMES.map((name, idx) => (
-                    <option key={idx + 1} value={idx + 1}>
+                    <option
+                      key={idx + 1}
+                      value={idx + 1}
+                      className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                    >
                       {idx + 1}. {name}
                     </option>
                   ))}
@@ -305,10 +313,16 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                     setAutoSyncMonth(false);
                     setYear(Number(e.target.value));
                   }}
-                  className="w-full px-3 py-2.5 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-xs sm:text-sm font-medium font-mono tabular-nums text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2.5 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-xs sm:text-sm font-medium font-mono tabular-nums text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70] cursor-pointer"
                 >
                   {FISCAL_YEARS.map((yr) => (
-                    <option key={yr} value={yr}>{yr}</option>
+                    <option
+                      key={yr}
+                      value={yr}
+                      className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                    >
+                      {yr}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -458,12 +472,12 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
               <select
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value)}
-                className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-xs text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-xs text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70] cursor-pointer"
               >
-                <option value="Cash">Cash</option>
-                <option value="bKash">bKash</option>
-                <option value="Nagad">Nagad</option>
-                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Cash" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Cash</option>
+                <option value="bKash" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">bKash</option>
+                <option value="Nagad" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Nagad</option>
+                <option value="Bank Transfer" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Bank Transfer</option>
               </select>
             </div>
           </div>

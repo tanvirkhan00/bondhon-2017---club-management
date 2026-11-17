@@ -138,11 +138,11 @@ export const PublicMembers: React.FC = () => {
               <select
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value as 'code-asc' | 'alpha-asc' | 'alpha-desc')}
-                className="w-full sm:w-auto text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl px-3 py-2 text-[#172435] dark:text-slate-200 focus:outline-hidden cursor-pointer"
+                className="w-full sm:w-auto text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl px-3 py-2 text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
               >
-                <option value="code-asc">সিরিয়াল কোড (BND-001)</option>
-                <option value="alpha-asc">নাম (A → Z)</option>
-                <option value="alpha-desc">নাম (Z → A)</option>
+                <option value="code-asc" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">সিরিয়াল কোড (BND-001)</option>
+                <option value="alpha-asc" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">নাম (A → Z)</option>
+                <option value="alpha-desc" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">নাম (Z → A)</option>
               </select>
             </div>
           </div>

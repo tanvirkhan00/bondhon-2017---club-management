@@ -21,6 +21,7 @@
 }
 
 :root {
+  color-scheme: light;
   --bg-canvas: #F5F6F3;
   --bg-surface: #FFFFFF;
   --bg-surface-muted: #F8FAFC;
@@ -54,6 +55,42 @@ body {
   background-color: var(--bg-canvas);
   color: var(--text-primary);
   overflow-x: hidden;
+}
+
+/* Native Dropdown Contrast Consistency (Light & Night Mode) */
+select {
+  color-scheme: light;
+}
+
+select option,
+select optgroup {
+  background-color: #FFFFFF;
+  color: #172435;
+}
+
+select option:checked,
+select option:hover,
+select option:focus {
+  background-color: #E6F4F1;
+  color: #06675B;
+}
+
+.dark select {
+  color-scheme: dark;
+  color: #F1F5F9;
+}
+
+.dark select option,
+.dark select optgroup {
+  background-color: #111C2D;
+  color: #F1F5F9;
+}
+
+.dark select option:checked,
+.dark select option:hover,
+.dark select option:focus {
+  background-color: #203650;
+  color: #FFFFFF;
 }
 
 /* Custom subtle scrollbars */

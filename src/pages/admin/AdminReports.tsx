@@ -140,14 +140,20 @@ export const AdminReports: React.FC = () => {
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
           <div className="flex items-center gap-1.5 bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl px-3 py-2 shadow-2xs">
-            <Calendar className="w-3.5 h-3.5 text-[#087F70]" />
+            <Calendar className="w-3.5 h-3.5 text-[#087F70] shrink-0" />
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="text-xs font-semibold font-mono tabular-nums text-[#172435] dark:text-slate-100 bg-transparent focus:outline-hidden cursor-pointer"
+              className="text-xs font-semibold font-mono tabular-nums text-[#172435] dark:text-slate-100 bg-white dark:bg-[#111C2D] focus:outline-hidden cursor-pointer"
             >
               {FISCAL_YEARS.map((yr) => (
-                <option key={yr} value={yr}>Fiscal Year {yr}</option>
+                <option
+                  key={yr}
+                  value={yr}
+                  className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                >
+                  Fiscal Year {yr}
+                </option>
               ))}
             </select>
           </div>

@@ -95,6 +95,14 @@ export const AdminLayout: React.FC = () => {
   };
 
   useEffect(() => {
+    const prevScheme = document.documentElement.style.colorScheme;
+    document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+    return () => {
+      document.documentElement.style.colorScheme = prevScheme || 'light';
+    };
+  }, [isDark]);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
         setNotifOpen(false);

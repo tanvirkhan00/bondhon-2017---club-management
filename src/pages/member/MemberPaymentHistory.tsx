@@ -132,43 +132,43 @@ export const MemberPaymentHistory: React.FC = () => {
             <select
               value={selectedYearFilter}
               onChange={(e) => setSelectedYearFilter(e.target.value)}
-              className="px-2.5 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl cursor-pointer"
+              className="px-2.5 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
             >
-              <option key="member-year-all" value="all">All Years</option>
+              <option key="member-year-all" value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">All Years</option>
               {years.map(y => (
-                <option key={`member-year-${y}`} value={String(y)}>{y}</option>
+                <option key={`member-year-${y}`} value={String(y)} className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">{y}</option>
               ))}
             </select>
 
             <select
               value={selectedMonthFilter}
               onChange={(e) => setSelectedMonthFilter(e.target.value)}
-              className="px-2.5 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl cursor-pointer"
+              className="px-2.5 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
             >
-              <option key="member-month-all" value="all">All Months</option>
+              <option key="member-month-all" value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">All Months</option>
               {MONTH_NAMES.map((name, idx) => (
-                <option key={`member-month-${idx + 1}`} value={String(idx + 1)}>{name}</option>
+                <option key={`member-month-${idx + 1}`} value={String(idx + 1)} className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">{name}</option>
               ))}
             </select>
 
             <select
               value={selectedStatusFilter}
               onChange={(e) => setSelectedStatusFilter(e.target.value)}
-              className="px-2.5 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl cursor-pointer"
+              className="px-2.5 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
             >
-              <option key="member-status-all" value="all">All Statuses</option>
-              <option key="member-status-paid" value="paid">Paid Only</option>
-              <option key="member-status-partial" value="partial">Partial Only</option>
-              <option key="member-status-unpaid" value="unpaid">Unpaid Only</option>
+              <option key="member-status-all" value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">All Statuses</option>
+              <option key="member-status-paid" value="paid" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Paid Only</option>
+              <option key="member-status-partial" value="partial" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Partial Only</option>
+              <option key="member-status-unpaid" value="unpaid" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Unpaid Only</option>
             </select>
 
             <select
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
-              className="px-2.5 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl cursor-pointer"
+              className="px-2.5 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
             >
-              <option key="sort-desc" value="desc">Newest First</option>
-              <option key="sort-asc" value="asc">Oldest First</option>
+              <option key="sort-desc" value="desc" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Newest First</option>
+              <option key="sort-asc" value="asc" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Oldest First</option>
             </select>
           </div>
         </div>

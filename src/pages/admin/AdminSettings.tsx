@@ -145,7 +145,7 @@ export const AdminSettings: React.FC = () => {
                   step={50}
                   value={amountInput}
                   onChange={(e) => setAmountInput(Number(e.target.value))}
-                  className="w-full pl-8 pr-3 py-2 text-sm bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono tabular-nums font-bold focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full pl-8 pr-3 py-2 text-sm bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono tabular-nums font-bold text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
                 />
               </div>
             </div>
@@ -160,7 +160,7 @@ export const AdminSettings: React.FC = () => {
                 type="email"
                 value={clubEmail}
                 onChange={(e) => setClubEmail(e.target.value)}
-                className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
               />
             </div>
 
@@ -172,7 +172,7 @@ export const AdminSettings: React.FC = () => {
                 type="text"
                 value={clubPhone}
                 onChange={(e) => setClubPhone(e.target.value)}
-                className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
               />
             </div>
 
@@ -184,7 +184,7 @@ export const AdminSettings: React.FC = () => {
                 type="text"
                 value={clubAddress}
                 onChange={(e) => setClubAddress(e.target.value)}
-                className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
               />
             </div>
           </div>
@@ -291,7 +291,7 @@ export const AdminSettings: React.FC = () => {
                   placeholder="https://xyzcompany.supabase.co"
                   value={supabaseUrl}
                   onChange={(e) => setSupabaseUrl(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
                 />
               </div>
 
@@ -304,7 +304,7 @@ export const AdminSettings: React.FC = () => {
                   placeholder="sb_publishable_..."
                   value={supabaseAnonKey}
                   onChange={(e) => setSupabaseAnonKey(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
                 />
               </div>
 
@@ -322,7 +322,7 @@ export const AdminSettings: React.FC = () => {
                     type="button"
                     onClick={handleTestConnection}
                     disabled={savingCreds || !supabaseUrl}
-                    className="px-3.5 py-2 text-xs font-semibold bg-[#F5F6F3] hover:bg-slate-200/70 dark:bg-[#162438] dark:hover:bg-[#203650] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl cursor-pointer whitespace-nowrap"
+                    className="px-3.5 py-2 text-xs font-semibold text-[#172435] dark:text-slate-200 bg-[#F5F6F3] hover:bg-slate-200/70 dark:bg-[#162438] dark:hover:bg-[#203650] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl cursor-pointer whitespace-nowrap"
                   >
                     Verify Status
                   </button>

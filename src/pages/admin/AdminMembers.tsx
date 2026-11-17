@@ -497,7 +497,7 @@ export const AdminMembers: React.FC = () => {
                   required
                   value={memberCode}
                   onChange={(e) => setMemberCode(e.target.value.toUpperCase())}
-                  className="w-full px-3 py-2 text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono uppercase focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2 text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono uppercase text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
                 />
               </div>
 
@@ -510,7 +510,7 @@ export const AdminMembers: React.FC = () => {
                   placeholder="e.g. Member, Executive Member"
                   value={designation}
                   onChange={(e) => setDesignation(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2 text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
                 />
               </div>
             </div>
@@ -526,7 +526,7 @@ export const AdminMembers: React.FC = () => {
                   placeholder="e.g. Shaikot Dhali"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2 text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
                 />
               </div>
 
@@ -539,7 +539,7 @@ export const AdminMembers: React.FC = () => {
                   placeholder="e.g. Mr. Yusuf Dhali"
                   value={fatherName}
                   onChange={(e) => setFatherName(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2 text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
                 />
               </div>
             </div>
@@ -554,7 +554,7 @@ export const AdminMembers: React.FC = () => {
                   placeholder="+880 1711-223344"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2 text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
                 />
               </div>
 
@@ -569,12 +569,12 @@ export const AdminMembers: React.FC = () => {
                     setSharesCount(count);
                     setMonthlyContribution(count * defaultDueAmount);
                   }}
-                  className="w-full px-3 py-2 text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-medium focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2 text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-medium text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70] cursor-pointer"
                 >
-                  <option value={1}>1 Share (৳{defaultDueAmount})</option>
-                  <option value={2}>2 Shares (৳{defaultDueAmount * 2})</option>
-                  <option value={3}>3 Shares (৳{defaultDueAmount * 3})</option>
-                  <option value={4}>4 Shares (৳{defaultDueAmount * 4})</option>
+                  <option value={1} className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">1 Share (৳{defaultDueAmount})</option>
+                  <option value={2} className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">2 Shares (৳{defaultDueAmount * 2})</option>
+                  <option value={3} className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">3 Shares (৳{defaultDueAmount * 3})</option>
+                  <option value={4} className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">4 Shares (৳{defaultDueAmount * 4})</option>
                 </select>
               </div>
 
@@ -589,7 +589,7 @@ export const AdminMembers: React.FC = () => {
                   required
                   value={monthlyContribution}
                   onChange={(e) => setMonthlyContribution(Number(e.target.value))}
-                  className="w-full px-3 py-2 text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono tabular-nums focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2 text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono tabular-nums text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
                 />
               </div>
             </div>
@@ -604,7 +604,7 @@ export const AdminMembers: React.FC = () => {
                   required
                   value={joinDate}
                   onChange={(e) => setJoinDate(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2 text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
                 />
               </div>
 
@@ -615,10 +615,10 @@ export const AdminMembers: React.FC = () => {
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as MemberStatus)}
-                  className="w-full px-3 py-2 text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-medium focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2 text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-medium text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70] cursor-pointer"
                 >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
+                  <option value="active" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Active</option>
+                  <option value="inactive" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Inactive</option>
                 </select>
               </div>
             </div>
@@ -633,7 +633,7 @@ export const AdminMembers: React.FC = () => {
                   placeholder="member@gmail.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
                 />
               </div>
 
@@ -646,7 +646,7 @@ export const AdminMembers: React.FC = () => {
                   placeholder="Auto-linked on login"
                   value={authUserId}
                   onChange={(e) => setAuthUserId(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
                 />
               </div>
             </div>

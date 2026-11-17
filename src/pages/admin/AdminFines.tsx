@@ -407,11 +407,15 @@ export const AdminFines: React.FC = () => {
                 <select
                   value={monthFilter}
                   onChange={(e) => setMonthFilter(e.target.value)}
-                  className="px-2.5 py-1.5 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden"
+                  className="px-2.5 py-1.5 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
                 >
-                  <option value="all">সকল মাস</option>
+                  <option value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">সকল মাস</option>
                   {MONTH_NAMES.map((name, idx) => (
-                    <option key={`fine-m-${idx + 1}`} value={String(idx + 1)}>
+                    <option
+                      key={`fine-m-${idx + 1}`}
+                      value={String(idx + 1)}
+                      className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                    >
                       {name}
                     </option>
                   ))}
@@ -420,11 +424,15 @@ export const AdminFines: React.FC = () => {
                 <select
                   value={yearFilter}
                   onChange={(e) => setYearFilter(e.target.value)}
-                  className="px-2.5 py-1.5 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono text-[#172435] dark:text-slate-100 focus:outline-hidden"
+                  className="px-2.5 py-1.5 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
                 >
-                  <option value="all">সকল সাল</option>
+                  <option value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">সকল সাল</option>
                   {years.map((y) => (
-                    <option key={`fine-y-${y}`} value={String(y)}>
+                    <option
+                      key={`fine-y-${y}`}
+                      value={String(y)}
+                      className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                    >
                       {y}
                     </option>
                   ))}
@@ -433,12 +441,12 @@ export const AdminFines: React.FC = () => {
                 <select
                   value={fineStatusFilter}
                   onChange={(e) => setFineStatusFilter(e.target.value as FineFilterStatus)}
-                  className="px-2.5 py-1.5 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden"
+                  className="px-2.5 py-1.5 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
                 >
-                  <option value="all">সকল অবস্থা</option>
-                  <option value="pending">বকেয়া আছে (Pending)</option>
-                  <option value="paid">পরিশোধিত (Cleared)</option>
-                  <option value="waived">মওকুফকৃত (Waived)</option>
+                  <option value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">সকল অবস্থা</option>
+                  <option value="pending" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">বকেয়া আছে (Pending)</option>
+                  <option value="paid" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">পরিশোধিত (Cleared)</option>
+                  <option value="waived" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">মওকুফকৃত (Waived)</option>
                 </select>
               </>
             )}
@@ -682,10 +690,14 @@ export const AdminFines: React.FC = () => {
                 required
                 value={formMemberId}
                 onChange={(e) => setFormMemberId(e.target.value)}
-                className="w-full px-3 py-2.5 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-xs sm:text-sm text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                className="w-full px-3 py-2.5 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-xs sm:text-sm text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70] cursor-pointer"
               >
                 {members.map((m) => (
-                  <option key={m.id} value={m.id}>
+                  <option
+                    key={m.id}
+                    value={m.id}
+                    className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                  >
                     {m.member_code} - {m.full_name} ({m.shares_count} share{m.shares_count > 1 ? 's' : ''} · ৳
                     {m.shares_count * FINE_PER_SHARE} fine)
                   </option>
@@ -701,10 +713,14 @@ export const AdminFines: React.FC = () => {
                 <select
                   value={formMonth}
                   onChange={(e) => setFormMonth(Number(e.target.value))}
-                  className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70] cursor-pointer"
                 >
                   {MONTH_NAMES.map((name, idx) => (
-                    <option key={idx + 1} value={idx + 1}>
+                    <option
+                      key={idx + 1}
+                      value={idx + 1}
+                      className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                    >
                       {name}
                     </option>
                   ))}
@@ -718,10 +734,16 @@ export const AdminFines: React.FC = () => {
                 <select
                   value={formYear}
                   onChange={(e) => setFormYear(Number(e.target.value))}
-                  className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono tabular-nums text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono tabular-nums text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70] cursor-pointer"
                 >
                   {FISCAL_YEARS.map((yr) => (
-                    <option key={yr} value={yr}>{yr}</option>
+                    <option
+                      key={yr}
+                      value={yr}
+                      className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                    >
+                      {yr}
+                    </option>
                   ))}
                 </select>
               </div>

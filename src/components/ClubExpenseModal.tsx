@@ -292,10 +292,14 @@ export const ClubExpenseModal: React.FC<ClubExpenseModalProps> = ({
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
-                className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-xs text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-xs text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70] cursor-pointer"
               >
                 {EXPENSE_CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>
+                  <option
+                    key={c.value}
+                    value={c.value}
+                    className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                  >
                     {c.label}
                   </option>
                 ))}

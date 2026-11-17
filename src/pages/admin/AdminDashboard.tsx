@@ -305,17 +305,21 @@ export const AdminDashboard: React.FC = () => {
         {/* Responsive Action Toolbar */}
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Joined Period Selector */}
-          <div className="inline-flex items-center bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl divide-x divide-[#E8EDF3] dark:divide-[#1F2F46] shadow-2xs">
-            <label className="flex items-center gap-1.5 px-3 py-2 cursor-pointer">
+          <div className="inline-flex items-center bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl divide-x divide-[#E8EDF3] dark:divide-[#1F2F46] shadow-2xs overflow-hidden">
+            <label className="flex items-center gap-1.5 pl-3 pr-2 py-2 bg-white dark:bg-[#111C2D] cursor-pointer">
               <Calendar className="w-3.5 h-3.5 text-[#087F70] shrink-0" />
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(Number(e.target.value))}
                 aria-label="Select month"
-                className="text-xs font-semibold text-[#172435] dark:text-slate-100 bg-transparent focus:outline-hidden cursor-pointer"
+                className="text-xs font-semibold text-[#172435] dark:text-slate-100 bg-white dark:bg-[#111C2D] focus:outline-hidden cursor-pointer pr-1"
               >
                 {MONTH_NAMES.map((name, idx) => (
-                  <option key={idx + 1} value={idx + 1} className="dark:bg-[#111C2D]">
+                  <option
+                    key={idx + 1}
+                    value={idx + 1}
+                    className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                  >
                     {name}
                   </option>
                 ))}
@@ -326,10 +330,14 @@ export const AdminDashboard: React.FC = () => {
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
               aria-label="Select year"
-              className="px-3 py-2 text-xs font-semibold font-mono tabular-nums text-[#172435] dark:text-slate-100 bg-transparent focus:outline-hidden cursor-pointer"
+              className="px-3 py-2 text-xs font-semibold font-mono tabular-nums text-[#172435] dark:text-slate-100 bg-white dark:bg-[#111C2D] focus:outline-hidden cursor-pointer"
             >
               {FISCAL_YEARS.map((yr) => (
-                <option key={yr} value={yr} className="dark:bg-[#111C2D]">
+                <option
+                  key={yr}
+                  value={yr}
+                  className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                >
                   {yr}
                 </option>
               ))}

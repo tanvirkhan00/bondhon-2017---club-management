@@ -251,11 +251,11 @@ export const AdminPaymentHistory: React.FC = () => {
                 setSelectedYearFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden"
+              className="px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
             >
-              <option key="year-all" value="all">All Fiscal Years</option>
+              <option key="year-all" value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">All Fiscal Years</option>
               {years.map((y) => (
-                <option key={`year-${y}`} value={String(y)}>{y}</option>
+                <option key={`year-${y}`} value={String(y)} className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">{y}</option>
               ))}
             </select>
 
@@ -265,11 +265,11 @@ export const AdminPaymentHistory: React.FC = () => {
                 setSelectedMonthFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden"
+              className="px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
             >
-              <option key="month-all" value="all">All Months</option>
+              <option key="month-all" value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">All Months</option>
               {MONTH_NAMES.map((name, idx) => (
-                <option key={`month-${idx + 1}`} value={String(idx + 1)}>{name}</option>
+                <option key={`month-${idx + 1}`} value={String(idx + 1)} className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">{name}</option>
               ))}
             </select>
 
@@ -279,12 +279,12 @@ export const AdminPaymentHistory: React.FC = () => {
                 setSelectedStatusFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden"
+              className="px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
             >
-              <option key="status-all" value="all">All Statuses</option>
-              <option key="status-paid" value="paid">Paid Only</option>
-              <option key="status-partial" value="partial">Partial Only</option>
-              <option key="status-unpaid" value="unpaid">Unpaid Only</option>
+              <option key="status-all" value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">All Statuses</option>
+              <option key="status-paid" value="paid" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Paid Only</option>
+              <option key="status-partial" value="partial" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Partial Only</option>
+              <option key="status-unpaid" value="unpaid" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Unpaid Only</option>
             </select>
 
             <select
@@ -293,11 +293,11 @@ export const AdminPaymentHistory: React.FC = () => {
                 setSelectedMemberFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 truncate focus:outline-hidden"
+              className="px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 truncate focus:outline-hidden cursor-pointer"
             >
-              <option key="member-all" value="all">All Members ({members.length})</option>
+              <option key="member-all" value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">All Members ({members.length})</option>
               {members.map((m, idx) => (
-                <option key={`member-${m.id || idx}`} value={m.id}>{m.member_code} - {m.full_name}</option>
+                <option key={`member-${m.id || idx}`} value={m.id} className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">{m.member_code} - {m.full_name}</option>
               ))}
             </select>
           </div>

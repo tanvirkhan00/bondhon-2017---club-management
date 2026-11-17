@@ -179,14 +179,18 @@ export const AdminPayments: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1.5 bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl px-3 py-2 shadow-2xs">
-            <Calendar className="w-3.5 h-3.5 text-[#087F70]" />
+            <Calendar className="w-3.5 h-3.5 text-[#087F70] shrink-0" />
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className="text-xs font-semibold text-[#172435] dark:text-slate-100 bg-transparent focus:outline-hidden cursor-pointer"
+              className="text-xs font-semibold text-[#172435] dark:text-slate-100 bg-white dark:bg-[#111C2D] focus:outline-hidden cursor-pointer"
             >
               {MONTH_NAMES.map((name, idx) => (
-                <option key={idx + 1} value={idx + 1}>
+                <option
+                  key={idx + 1}
+                  value={idx + 1}
+                  className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                >
                   {name}
                 </option>
               ))}
@@ -199,7 +203,13 @@ export const AdminPayments: React.FC = () => {
             className="text-xs font-semibold font-mono tabular-nums text-[#172435] dark:text-slate-100 bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl px-3 py-2 shadow-2xs focus:outline-hidden cursor-pointer"
           >
             {FISCAL_YEARS.map((yr) => (
-              <option key={yr} value={yr}>{yr}</option>
+              <option
+                key={yr}
+                value={yr}
+                className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+              >
+                {yr}
+              </option>
             ))}
           </select>
 
@@ -540,10 +550,16 @@ export const AdminPayments: React.FC = () => {
                 <select
                   value={targetGenMonth}
                   onChange={(e) => setTargetGenMonth(Number(e.target.value))}
-                  className="w-full px-3 py-2 text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2 text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70] cursor-pointer"
                 >
                   {MONTH_NAMES.map((name, idx) => (
-                    <option key={idx + 1} value={idx + 1}>{name}</option>
+                    <option
+                      key={idx + 1}
+                      value={idx + 1}
+                      className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                    >
+                      {name}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -555,10 +571,16 @@ export const AdminPayments: React.FC = () => {
                 <select
                   value={targetGenYear}
                   onChange={(e) => setTargetGenYear(Number(e.target.value))}
-                  className="w-full px-3 py-2 text-sm font-mono tabular-nums bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2 text-sm font-mono tabular-nums bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70] cursor-pointer"
                 >
                   {FISCAL_YEARS.map((yr) => (
-                    <option key={yr} value={yr}>{yr}</option>
+                    <option
+                      key={yr}
+                      value={yr}
+                      className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                    >
+                      {yr}
+                    </option>
                   ))}
                 </select>
               </div>

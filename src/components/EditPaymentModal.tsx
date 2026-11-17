@@ -195,10 +195,14 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
               required
               value={memberId}
               onChange={(e) => handleMemberChange(e.target.value)}
-              className="w-full px-3 py-2.5 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-xs sm:text-sm text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+              className="w-full px-3 py-2.5 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-xs sm:text-sm text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70] cursor-pointer"
             >
               {members.map((m) => (
-                <option key={m.id} value={m.id}>
+                <option
+                  key={m.id}
+                  value={m.id}
+                  className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                >
                   {m.member_code} - {m.full_name} ({m.shares_count} share{m.shares_count > 1 ? 's' : ''} · ৳{m.monthly_contribution})
                 </option>
               ))}
@@ -216,10 +220,14 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
                 <select
                   value={month}
                   onChange={(e) => setMonth(Number(e.target.value))}
-                  className="w-full px-3 py-2.5 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-xs sm:text-sm text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2.5 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-xs sm:text-sm text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70] cursor-pointer"
                 >
                   {MONTH_NAMES.map((name, idx) => (
-                    <option key={idx + 1} value={idx + 1}>
+                    <option
+                      key={idx + 1}
+                      value={idx + 1}
+                      className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                    >
                       {idx + 1}. {name}
                     </option>
                   ))}
@@ -233,10 +241,16 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
                 <select
                   value={year}
                   onChange={(e) => setYear(Number(e.target.value))}
-                  className="w-full px-3 py-2.5 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono tabular-nums text-xs sm:text-sm text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2.5 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono tabular-nums text-xs sm:text-sm text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70] cursor-pointer"
                 >
                   {FISCAL_YEARS.map((yr) => (
-                    <option key={yr} value={yr}>{yr}</option>
+                    <option
+                      key={yr}
+                      value={yr}
+                      className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                    >
+                      {yr}
+                    </option>
                   ))}
                 </select>
               </div>

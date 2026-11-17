@@ -417,12 +417,12 @@ export const AdminTreasury: React.FC = () => {
               onChange={(e) => setBankFilter(e.target.value as typeof bankFilter)}
               className="px-3 py-2 text-xs font-semibold bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
             >
-              <option value="all">All Bank Entries</option>
-              <option value="deposit">Deposits Only (+)</option>
-              <option value="interest">Bank Interest Only (+)</option>
-              <option value="charge">Bank Charges / VAT / TDS (-)</option>
-              <option value="withdrawal">Withdrawals (-)</option>
-              <option value="bank_expense">Expenses Paid via Bank (-)</option>
+              <option value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">All Bank Entries</option>
+              <option value="deposit" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Deposits Only (+)</option>
+              <option value="interest" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Bank Interest Only (+)</option>
+              <option value="charge" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Bank Charges / VAT / TDS (-)</option>
+              <option value="withdrawal" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Withdrawals (-)</option>
+              <option value="bank_expense" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Expenses Paid via Bank (-)</option>
             </select>
           )}
 

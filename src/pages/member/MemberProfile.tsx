@@ -189,11 +189,17 @@ export const MemberProfile: React.FC = () => {
               required
               value={selectedCode}
               onChange={(e) => setSelectedCode(e.target.value)}
-              className="w-full px-3 py-2.5 text-xs sm:text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl"
+              className="w-full px-3 py-2.5 text-xs sm:text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70] cursor-pointer"
             >
-              <option value="">Select member...</option>
+              <option value="" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">
+                Select member...
+              </option>
               {publicMembers.map((m) => (
-                <option key={m.id} value={m.member_code}>
+                <option
+                  key={m.id}
+                  value={m.member_code}
+                  className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                >
                   {m.member_code} — {m.full_name}
                 </option>
               ))}
