@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ClubExpense, ExpenseCategory, ExpensePaymentSource } from '../types';
 import { useClubData } from '../hooks/useClubData';
 import { formatBDT } from '../utils/formatters';
@@ -44,9 +44,28 @@ export const ClubExpenseModal: React.FC<ClubExpenseModalProps> = ({
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  const closeTimerRef = useRef<number | null>(null);
+
   useEffect(() => {
-    if (!isOpen) return;
+    return () => {
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+      setSaving(false);
+      setFeedback(null);
+      return;
+    }
     setFeedback(null);
+    setSaving(false);
     if (editingExpense) {
       setTitle(editingExpense.title);
       setCategory(editingExpense.category);
@@ -68,6 +87,7 @@ export const ClubExpenseModal: React.FC<ClubExpenseModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (saving || feedback?.type === 'success') return;
     setSaving(true);
     setFeedback(null);
 
@@ -100,10 +120,13 @@ export const ClubExpenseModal: React.FC<ClubExpenseModalProps> = ({
           ? 'Club expense updated successfully.'
           : 'Club expense recorded & deducted from available balance.',
       });
-      setTimeout(() => {
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current);
+      }
+      closeTimerRef.current = window.setTimeout(() => {
+        closeTimerRef.current = null;
         onClose();
-        setFeedback(null);
-      }, 900);
+      }, 850);
     } else {
       setFeedback({
         type: 'error',
@@ -316,7 +339,7 @@ export const ClubExpenseModal: React.FC<ClubExpenseModalProps> = ({
             </button>
             <button
               type="submit"
-              disabled={saving}
+              disabled={saving || feedback?.type === 'success'}
               className="px-5 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-xs disabled:opacity-50 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
             >
               <CheckCircle2 className="w-4 h-4" />

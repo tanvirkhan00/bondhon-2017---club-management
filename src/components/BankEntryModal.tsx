@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BankDeposit, BankEntryType } from '../types';
 import { useClubData } from '../hooks/useClubData';
 import { formatBDT } from '../utils/formatters';
@@ -84,9 +84,31 @@ export const BankEntryModal: React.FC<BankEntryModalProps> = ({
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  const pendingDepositRef = useRef(pendingBankDeposit);
+  pendingDepositRef.current = pendingBankDeposit;
+  const closeTimerRef = useRef<number | null>(null);
+
   useEffect(() => {
-    if (!isOpen) return;
+    return () => {
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+      setSaving(false);
+      setFeedback(null);
+      return;
+    }
     setFeedback(null);
+    setSaving(false);
+    const currentCashInHand = pendingDepositRef.current;
     if (editingEntry) {
       setEntryType((editingEntry.entry_type || 'deposit') as BankEntryType);
       setAmount(Number(editingEntry.amount || 0));
@@ -95,7 +117,7 @@ export const BankEntryModal: React.FC<BankEntryModalProps> = ({
       setNotes(editingEntry.notes || '');
     } else {
       setEntryType(defaultEntryType);
-      setAmount(defaultEntryType === 'deposit' && pendingBankDeposit > 0 ? pendingBankDeposit : 0);
+      setAmount(defaultEntryType === 'deposit' && currentCashInHand > 0 ? currentCashInHand : 0);
       setDepositedAt(new Date().toISOString().substring(0, 10));
       setReferenceNo('');
       setNotes(
@@ -106,7 +128,7 @@ export const BankEntryModal: React.FC<BankEntryModalProps> = ({
           : ''
       );
     }
-  }, [isOpen, editingEntry, defaultEntryType, pendingBankDeposit]);
+  }, [isOpen, editingEntry, defaultEntryType]);
 
   const handleSelectType = (nextType: BankEntryType) => {
     setEntryType(nextType);
@@ -129,6 +151,7 @@ export const BankEntryModal: React.FC<BankEntryModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (saving || feedback?.type === 'success') return;
     setSaving(true);
     setFeedback(null);
 
@@ -157,10 +180,13 @@ export const BankEntryModal: React.FC<BankEntryModalProps> = ({
           ? 'Sonali Bank ledger entry updated.'
           : 'Sonali Bank ledger entry recorded successfully.',
       });
-      setTimeout(() => {
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current);
+      }
+      closeTimerRef.current = window.setTimeout(() => {
+        closeTimerRef.current = null;
         onClose();
-        setFeedback(null);
-      }, 900);
+      }, 850);
     } else {
       setFeedback({
         type: 'error',
@@ -354,7 +380,7 @@ export const BankEntryModal: React.FC<BankEntryModalProps> = ({
             </button>
             <button
               type="submit"
-              disabled={saving}
+              disabled={saving || feedback?.type === 'success'}
               className={`px-5 py-2 text-xs font-bold text-white rounded-xl shadow-xs disabled:opacity-50 flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
                 entryType === 'charge'
                   ? 'bg-rose-600 hover:bg-rose-700'

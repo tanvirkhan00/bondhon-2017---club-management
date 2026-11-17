@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MonthlyDue } from '../types';
 import { useClubData } from '../hooks/useClubData';
 import { FISCAL_YEARS, MONTH_NAMES, formatBDT, getMonthName } from '../utils/formatters';
@@ -40,9 +40,29 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  const membersRef = useRef(members);
+  membersRef.current = members;
+  const closeTimerRef = useRef<number | null>(null);
+
   useEffect(() => {
-    if (!due) return;
-    const mem = members.find((m) => m.id === due.member_id) || due.member;
+    return () => {
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!due) {
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+      setLoading(false);
+      setFeedback(null);
+      return;
+    }
+    const mem = membersRef.current.find((m) => m.id === due.member_id) || due.member;
     const bd = calculateDueBreakdown(due, mem?.shares_count);
 
     setMemberId(due.member_id);
@@ -58,7 +78,8 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
     );
     setNotes(due.notes || '');
     setFeedback(null);
-  }, [due, members]);
+    setLoading(false);
+  }, [due]);
 
   const selectedMember = members.find((m) => m.id === memberId);
   const standardFine = (selectedMember?.shares_count || 1) * FINE_PER_SHARE;
@@ -88,7 +109,7 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!due) return;
+    if (!due || loading || feedback?.type === 'success') return;
     setLoading(true);
     setFeedback(null);
 
@@ -118,9 +139,13 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
         type: 'success',
         text: 'পেমেন্ট তথ্য সফলভাবে আপডেট হয়েছে!',
       });
-      setTimeout(() => {
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current);
+      }
+      closeTimerRef.current = window.setTimeout(() => {
+        closeTimerRef.current = null;
         onClose();
-      }, 900);
+      }, 850);
     } else {
       setFeedback({
         type: 'error',
@@ -408,7 +433,7 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || feedback?.type === 'success'}
               className="px-5 py-2 text-xs font-bold text-white bg-[#087F70] hover:bg-[#06675B] rounded-xl disabled:opacity-50 flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
             >
               <CheckCircle2 className="w-4 h-4" />

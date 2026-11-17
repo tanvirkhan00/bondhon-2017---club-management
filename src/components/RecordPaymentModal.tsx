@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useClubData } from '../hooks/useClubData';
 import { FISCAL_YEARS, MONTH_NAMES, formatBDT, getMonthName } from '../utils/formatters';
 import {
@@ -48,28 +48,49 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const prefersReducedMotion = usePrefersReducedMotion();
+  const membersRef = useRef(members);
+  membersRef.current = members;
+  const closeTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current);
+      }
+    };
+  }, []);
 
   // Sync when modal opens
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+      setLoading(false);
+      setMessage(null);
+      return;
+    }
     const nowStr = new Date().toISOString().substring(0, 10);
     setPaidDate(nowStr);
     setMessage(null);
+    setLoading(false);
+    const currentMembers = membersRef.current;
     if (initialMemberId) {
       setMemberId(initialMemberId);
       setAutoSyncMonth(false);
       if (initialMonth) setMonth(initialMonth);
       if (initialYear) setYear(initialYear);
     } else {
-      if (members.length > 0) {
-        setMemberId((prev) => prev || members[0].id);
+      if (currentMembers.length > 0) {
+        setMemberId((prev) => prev || currentMembers[0].id);
       }
       const period = getBillingPeriodFromPaymentDate(nowStr);
       setMonth(initialMonth || period.billingMonth);
       setYear(initialYear || period.billingYear);
       setAutoSyncMonth(true);
     }
-  }, [isOpen, initialMemberId, initialMonth, initialYear, members]);
+  }, [isOpen, initialMemberId, initialMonth, initialYear]);
 
   // If autoSyncMonth is enabled and paidDate changes, map payment month -> previous billing month
   const handlePaidDateChange = (nextDate: string) => {
@@ -110,6 +131,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading || message?.type === 'success') return;
     setLoading(true);
     setMessage(null);
 
@@ -133,10 +155,13 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
         type: 'success',
         text: `পেমেন্ট সফলভাবে এন্ট্রি হয়েছে! (${selectedMember?.full_name}: ৳${totalSaved})`,
       });
-      setTimeout(() => {
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current);
+      }
+      closeTimerRef.current = window.setTimeout(() => {
+        closeTimerRef.current = null;
         onClose();
-        setMessage(null);
-      }, 1200);
+      }, 1050);
     } else {
       setMessage({
         type: 'error',
@@ -186,7 +211,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
           </div>
         </div>
 
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           {message && (
             <motion.div
               key={message.type}

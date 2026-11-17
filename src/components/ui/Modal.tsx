@@ -3,6 +3,9 @@ import { AnimatePresence, motion } from 'motion/react';
 import { X } from 'lucide-react';
 import { ModalLottie } from './ModalLottie';
 
+// Track open modals safely so body scroll lock can never get stuck as 'hidden'
+let openModalCount = 0;
+
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -37,12 +40,15 @@ export const Modal: React.FC<ModalProps> = ({
       }
     };
 
-    const previousOverflow = document.body.style.overflow;
+    openModalCount += 1;
     document.body.style.overflow = 'hidden';
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      openModalCount = Math.max(0, openModalCount - 1);
+      if (openModalCount === 0) {
+        document.body.style.overflow = '';
+      }
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, onClose]);
@@ -50,18 +56,19 @@ export const Modal: React.FC<ModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div
+        <motion.div
+          key="modal-root"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15, ease: 'easeOut' }}
           className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-heading"
         >
           {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.16, ease: 'easeOut' }}
+          <div
             onClick={onClose}
             className="fixed inset-0 bg-[#14243A]/65 backdrop-blur-[3px]"
           />
@@ -71,7 +78,7 @@ export const Modal: React.FC<ModalProps> = ({
             initial={{ opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: 6 }}
-            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
             className={`relative z-10 w-full ${maxWidthClass} bg-white dark:bg-[#111C2D] rounded-2xl border border-[#E8EDF3] dark:border-[#1F2F46] shadow-[0_20px_50px_-12px_rgba(20,36,58,0.35)] overflow-hidden flex flex-col max-h-[92vh]`}
           >
             {/* Header */}
@@ -126,7 +133,7 @@ export const Modal: React.FC<ModalProps> = ({
             {/* Scrollable Content */}
             <div className="p-5 sm:p-6 overflow-y-auto">{children}</div>
           </motion.div>
-        </div>
+        </motion.div>
       )}
     </AnimatePresence>
   );
