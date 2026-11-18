@@ -54,23 +54,23 @@ export const PublicMembers: React.FC = () => {
     <PageTransition className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-8">
       {/* Header & Official Info Banner */}
       <div className="space-y-6">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-[#E8EDF3] dark:border-[#1F2F46]">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-[#DFE6F0] dark:border-[#233452]">
           <div className="space-y-1.5">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#087F70] dark:text-[#34D399] block">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#1D4ED8] dark:text-[#60A5FA] block">
               বন্ধুত্ব সমবায় সমিতি · এস.এস.সি ব্যাচ ২০১৭
             </span>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#14243A] dark:text-white flex flex-wrap items-baseline gap-3">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#0F1B33] dark:text-white flex flex-wrap items-baseline gap-3">
               <span>সদস্য ডিরেক্টরি</span>
-              <span className="text-sm sm:text-base font-mono font-semibold text-[#64748B]">
+              <span className="text-sm sm:text-base font-mono font-semibold text-[#4E5E78]">
                 ({publicMembers.length} Active Members)
               </span>
             </h1>
-            <p className="text-sm text-[#64748B] dark:text-slate-400 max-w-2xl">
+            <p className="text-sm text-[#4E5E78] dark:text-slate-400 max-w-2xl">
               চরচান্দা খাসমহল বাজার ভিত্তিক বন্ধুত্ব সমবায় সমিতির সকল আজীবন সম্মানিত সদস্য ও নির্বাচিত কার্যনির্বাহী পরিষদের পূর্ণাঙ্গ তালিকা।
             </p>
           </div>
 
-          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-[#14243A] text-white border border-[#203650] text-xs shrink-0 self-start lg:self-auto shadow-sm">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-[#0F1B33] text-white border border-[#18294A] text-xs shrink-0 self-start lg:self-auto shadow-sm">
             <Shield className="w-4 h-4 text-[#D6AC62] shrink-0" />
             <div>
               <div className="font-semibold">অফিসিয়াল সদস্য তথ্য</div>
@@ -84,14 +84,14 @@ export const PublicMembers: React.FC = () => {
         {/* Filter & Search Toolbar */}
         <div className="surface-card flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-3.5 rounded-2xl">
           {/* Category Segmented Controls */}
-          <div className="flex items-center gap-1 p-1 bg-[#F5F6F3] dark:bg-[#162438] rounded-xl overflow-x-auto">
+          <div className="flex items-center gap-1 p-1 bg-[#EFF3F9] dark:bg-[#17243C] rounded-xl overflow-x-auto">
             <button
               type="button"
               onClick={() => setCategoryFilter('all')}
               className={`px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                 categoryFilter === 'all'
-                  ? 'bg-white dark:bg-[#111C2D] text-[#14243A] dark:text-white shadow-xs'
-                  : 'text-[#64748B] hover:text-[#14243A] dark:hover:text-white'
+                  ? 'bg-white dark:bg-[#111B2E] text-[#0F1B33] dark:text-white shadow-xs'
+                  : 'text-[#4E5E78] hover:text-[#0F1B33] dark:hover:text-white'
               }`}
             >
               সকল সদস্য ({publicMembers.length})
@@ -101,8 +101,8 @@ export const PublicMembers: React.FC = () => {
               onClick={() => setCategoryFilter('executive')}
               className={`px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
                 categoryFilter === 'executive'
-                  ? 'bg-[#14243A] text-[#D6AC62] shadow-xs font-bold'
-                  : 'text-[#64748B] hover:text-[#14243A] dark:hover:text-white'
+                  ? 'bg-[#0F1B33] text-[#D6AC62] shadow-xs font-bold'
+                  : 'text-[#4E5E78] hover:text-[#0F1B33] dark:hover:text-white'
               }`}
             >
               <Crown className="w-3.5 h-3.5" />
@@ -113,8 +113,8 @@ export const PublicMembers: React.FC = () => {
               onClick={() => setCategoryFilter('general')}
               className={`px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                 categoryFilter === 'general'
-                  ? 'bg-white dark:bg-[#111C2D] text-[#14243A] dark:text-white shadow-xs'
-                  : 'text-[#64748B] hover:text-[#14243A] dark:hover:text-white'
+                  ? 'bg-white dark:bg-[#111B2E] text-[#0F1B33] dark:text-white shadow-xs'
+                  : 'text-[#4E5E78] hover:text-[#0F1B33] dark:hover:text-white'
               }`}
             >
               সাধারণ সদস্য ({generalCount})
@@ -123,26 +123,26 @@ export const PublicMembers: React.FC = () => {
 
           <div className="flex flex-col sm:flex-row items-center gap-2.5">
             <div className="relative w-full sm:w-64 lg:w-72">
-              <Search className="w-4 h-4 text-[#64748B] absolute left-3 top-2.5" />
+              <Search className="w-4 h-4 text-[#4E5E78] absolute left-3 top-2.5" />
               <input
                 type="text"
                 placeholder="সদস্যের নাম বা কোড খুঁজুন..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl focus:outline-hidden focus:ring-2 focus:ring-[#087F70] text-[#172435] dark:text-slate-100 placeholder-[#64748B]"
+                className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8] text-[#0F1B2E] dark:text-slate-100 placeholder-[#4E5E78]"
               />
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <ArrowUpDown className="w-3.5 h-3.5 text-[#64748B] shrink-0" />
+              <ArrowUpDown className="w-3.5 h-3.5 text-[#4E5E78] shrink-0" />
               <select
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value as 'code-asc' | 'alpha-asc' | 'alpha-desc')}
-                className="w-full sm:w-auto text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl px-3 py-2 text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
+                className="w-full sm:w-auto text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl px-3 py-2 text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden cursor-pointer"
               >
-                <option value="code-asc" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">সিরিয়াল কোড (BND-001)</option>
-                <option value="alpha-asc" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">নাম (A → Z)</option>
-                <option value="alpha-desc" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">নাম (Z → A)</option>
+                <option value="code-asc" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">সিরিয়াল কোড (BND-001)</option>
+                <option value="alpha-asc" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">নাম (A → Z)</option>
+                <option value="alpha-desc" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">নাম (Z → A)</option>
               </select>
             </div>
           </div>
@@ -152,11 +152,11 @@ export const PublicMembers: React.FC = () => {
       {/* Members Grid (Zero-Pill Clean Cards) */}
       {filteredMembers.length === 0 ? (
         <div className="surface-card py-16 px-4 text-center rounded-3xl border-dashed">
-          <Users className="w-12 h-12 mx-auto text-[#64748B]/40 mb-3" />
-          <p className="font-bold text-[#14243A] dark:text-slate-200 text-base">
+          <Users className="w-12 h-12 mx-auto text-[#4E5E78]/40 mb-3" />
+          <p className="font-bold text-[#0F1B33] dark:text-slate-200 text-base">
             কোনো সদস্য খুঁজে পাওয়া যায়নি
           </p>
-          <p className="text-xs text-[#64748B] mt-1">
+          <p className="text-xs text-[#4E5E78] mt-1">
             অনুগ্রহ করে সঠিক নাম বা কোড দিয়ে পুনরায় চেষ্টা করুন।
           </p>
         </div>
@@ -176,10 +176,10 @@ export const PublicMembers: React.FC = () => {
                 {/* Avatar Portrait */}
                 <div className="relative mb-3.5 mt-1">
                   <div
-                    className={`w-24 h-24 rounded-full overflow-hidden bg-[#F5F6F3] dark:bg-[#162438] transition-transform duration-300 group-hover:scale-105 ${
+                    className={`w-24 h-24 rounded-full overflow-hidden bg-[#EFF3F9] dark:bg-[#17243C] transition-transform duration-300 group-hover:scale-105 ${
                       isExecutive
                         ? 'ring-3 ring-[#D6AC62]'
-                        : 'ring-2 ring-[#087F70]/35'
+                        : 'ring-2 ring-[#1D4ED8]/35 dark:ring-[#60A5FA]/35'
                     }`}
                   >
                     {member.profile_image_url ? (
@@ -193,7 +193,7 @@ export const PublicMembers: React.FC = () => {
                         }}
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-xl font-bold text-[#14243A] dark:text-slate-300">
+                      <div className="w-full h-full flex items-center justify-center text-xl font-bold text-[#0F1B33] dark:text-slate-300">
                         {member.full_name.substring(0, 2).toUpperCase()}
                       </div>
                     )}
@@ -201,12 +201,12 @@ export const PublicMembers: React.FC = () => {
                 </div>
 
                 {/* Unboxed Monospace Metadata Line */}
-                <div className="text-[11px] font-mono font-bold text-[#64748B] dark:text-slate-400 flex items-center gap-1.5">
-                  <span className="text-[#14243A] dark:text-slate-200">{member.member_code}</span>
+                <div className="text-[11px] font-mono font-bold text-[#4E5E78] dark:text-slate-400 flex items-center gap-1.5">
+                  <span className="text-[#0F1B33] dark:text-slate-200">{member.member_code}</span>
                   {member.shares_count && member.shares_count > 1 && (
                     <>
                       <span>·</span>
-                      <span className="text-[#9A7127] dark:text-[#D6AC62]">
+                      <span className="text-[#92600A] dark:text-[#F0C56E]">
                         {member.shares_count}টি নাম
                       </span>
                     </>
@@ -214,13 +214,13 @@ export const PublicMembers: React.FC = () => {
                 </div>
 
                 {/* Name */}
-                <h3 className="font-bold text-[#14243A] dark:text-white text-base leading-snug mt-1 line-clamp-1 group-hover:text-[#087F70] dark:group-hover:text-[#34D399] transition-colors">
+                <h3 className="font-bold text-[#0F1B33] dark:text-white text-base leading-snug mt-1 line-clamp-1 group-hover:text-[#1D4ED8] dark:group-hover:text-[#60A5FA] transition-colors">
                   {member.full_name}
                 </h3>
 
                 {/* Father's Name */}
                 {member.father_name && (
-                  <p className="text-[11px] text-[#64748B] mt-0.5 truncate max-w-full">
+                  <p className="text-[11px] text-[#4E5E78] mt-0.5 truncate max-w-full">
                     পিতা: {member.father_name}
                   </p>
                 )}
@@ -229,8 +229,8 @@ export const PublicMembers: React.FC = () => {
                 <p
                   className={`mt-1.5 text-xs font-semibold flex items-center gap-1 ${
                     isExecutive
-                      ? 'text-[#9A7127] dark:text-[#D6AC62]'
-                      : 'text-[#087F70] dark:text-[#34D399]'
+                      ? 'text-[#92600A] dark:text-[#F0C56E]'
+                      : 'text-[#1D4ED8] dark:text-[#60A5FA]'
                   }`}
                 >
                   {isExecutive && <Crown className="w-3 h-3 shrink-0" />}
@@ -238,11 +238,11 @@ export const PublicMembers: React.FC = () => {
                 </p>
 
                 {/* Card Footer */}
-                <div className="mt-4 pt-3 border-t border-[#E8EDF3] dark:border-[#1F2F46] w-full flex items-center justify-between text-[11px]">
-                  <span className="font-mono text-[#172435] dark:text-slate-300 font-semibold tabular-nums">
+                <div className="mt-4 pt-3 border-t border-[#DFE6F0] dark:border-[#233452] w-full flex items-center justify-between text-[11px]">
+                  <span className="font-mono text-[#0F1B2E] dark:text-slate-300 font-semibold tabular-nums">
                     মাসিক: ৳{((member.shares_count || 1) * 500).toLocaleString()}
                   </span>
-                  <span className="flex items-center gap-1 text-[#087F70] dark:text-[#34D399] font-medium">
+                  <span className="flex items-center gap-1 text-[#1D4ED8] dark:text-[#60A5FA] font-medium">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>সক্রিয়</span>
                   </span>
@@ -254,7 +254,7 @@ export const PublicMembers: React.FC = () => {
       )}
 
       {/* Club Constitution Reference Banner */}
-      <div className="p-6 sm:p-8 bg-[#14243A] text-white rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl border border-[#203650]">
+      <div className="p-6 sm:p-8 bg-[#0F1B33] text-white rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl border border-[#18294A]">
         <div className="space-y-1.5 text-center md:text-left">
           <div className="flex items-center justify-center md:justify-start gap-2 text-[#D6AC62] text-xs font-mono font-semibold">
             <Award className="w-4 h-4" />
@@ -270,7 +270,7 @@ export const PublicMembers: React.FC = () => {
 
         <Link
           to="/constitution"
-          className="px-5 py-2.5 rounded-xl bg-[#087F70] hover:bg-[#06675B] text-white font-bold text-xs shadow-sm transition-colors whitespace-nowrap shrink-0"
+          className="px-5 py-2.5 rounded-xl bg-[#1D4ED8] hover:bg-[#1E40AF] text-white font-bold text-xs shadow-sm transition-colors whitespace-nowrap shrink-0"
         >
           গঠনতন্ত্র বিস্তারিত পড়ুন
         </Link>

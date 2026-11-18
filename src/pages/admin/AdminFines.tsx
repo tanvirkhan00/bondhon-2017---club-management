@@ -307,13 +307,13 @@ export const AdminFines: React.FC = () => {
   return (
     <PageTransition className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E8EDF3] dark:border-[#1F2F46]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#DFE6F0] dark:border-[#233452]">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#172435] dark:text-slate-100 flex items-center gap-2.5">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0F1B2E] dark:text-slate-100 flex items-center gap-2.5">
             <AlertTriangle className="w-6 h-6 text-[#D6AC62]" />
             <span>Fines &amp; Due Clearance</span>
           </h1>
-          <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400 mt-0.5">
+          <p className="text-xs sm:text-sm text-[#4E5E78] dark:text-slate-400 mt-0.5">
             ৳50/share late fine applies after the 12th of the following collection month
           </p>
         </div>
@@ -321,7 +321,7 @@ export const AdminFines: React.FC = () => {
         <button
           type="button"
           onClick={() => openEntryModal()}
-          className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#087F70] hover:bg-[#06675B] rounded-xl shadow-xs transition-colors cursor-pointer self-start sm:self-auto shrink-0 whitespace-nowrap"
+          className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-xs transition-colors cursor-pointer self-start sm:self-auto shrink-0 whitespace-nowrap"
         >
           <PlusCircle className="w-4 h-4" />
           <span>Clear Fine / Due</span>
@@ -342,7 +342,7 @@ export const AdminFines: React.FC = () => {
           value={formatBDT(fineKpis.totalFineCollected)}
           subLabel="ক্লাব তহবিলে জরিমানা জমা"
           icon={Banknote}
-          accent="emerald"
+          accent="sapphire"
         />
         <MetricCard
           label="বকেয়া জরিমানা (Pending Fines)"
@@ -363,14 +363,14 @@ export const AdminFines: React.FC = () => {
       {/* View Tabs & Filters */}
       <div className="surface-card p-4 rounded-2xl space-y-3">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="inline-flex p-1 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl self-start">
+          <div className="inline-flex p-1 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl self-start">
             <button
               type="button"
               onClick={() => setActiveTab('sheet')}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
                 activeTab === 'sheet'
-                  ? 'bg-[#14243A] dark:bg-[#087F70] text-white shadow-2xs'
-                  : 'text-[#64748B] dark:text-slate-400 hover:text-[#172435] dark:hover:text-white'
+                  ? 'bg-[#0F1B33] dark:bg-[#1D4ED8] text-white shadow-2xs'
+                  : 'text-[#4E5E78] dark:text-slate-400 hover:text-[#0F1B2E] dark:hover:text-white'
               }`}
             >
               <Receipt className="w-3.5 h-3.5" />
@@ -381,8 +381,8 @@ export const AdminFines: React.FC = () => {
               onClick={() => setActiveTab('members')}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
                 activeTab === 'members'
-                  ? 'bg-[#14243A] dark:bg-[#087F70] text-white shadow-2xs'
-                  : 'text-[#64748B] dark:text-slate-400 hover:text-[#172435] dark:hover:text-white'
+                  ? 'bg-[#0F1B33] dark:bg-[#1D4ED8] text-white shadow-2xs'
+                  : 'text-[#4E5E78] dark:text-slate-400 hover:text-[#0F1B2E] dark:hover:text-white'
               }`}
             >
               <Users className="w-3.5 h-3.5" />
@@ -392,13 +392,13 @@ export const AdminFines: React.FC = () => {
 
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative">
-              <Search className="w-3.5 h-3.5 text-[#64748B] absolute left-3 top-2.5" />
+              <Search className="w-3.5 h-3.5 text-[#4E5E78] absolute left-3 top-2.5" />
               <input
                 type="text"
                 placeholder="সদস্যের নাম বা কোড..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 pr-3 py-1.5 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                className="pl-8 pr-3 py-1.5 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
               />
             </div>
 
@@ -407,14 +407,14 @@ export const AdminFines: React.FC = () => {
                 <select
                   value={monthFilter}
                   onChange={(e) => setMonthFilter(e.target.value)}
-                  className="px-2.5 py-1.5 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
+                  className="px-2.5 py-1.5 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden cursor-pointer"
                 >
-                  <option value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">সকল মাস</option>
+                  <option value="all" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">সকল মাস</option>
                   {MONTH_NAMES.map((name, idx) => (
                     <option
                       key={`fine-m-${idx + 1}`}
                       value={String(idx + 1)}
-                      className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                      className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100"
                     >
                       {name}
                     </option>
@@ -424,14 +424,14 @@ export const AdminFines: React.FC = () => {
                 <select
                   value={yearFilter}
                   onChange={(e) => setYearFilter(e.target.value)}
-                  className="px-2.5 py-1.5 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
+                  className="px-2.5 py-1.5 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden cursor-pointer"
                 >
-                  <option value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">সকল সাল</option>
+                  <option value="all" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">সকল সাল</option>
                   {years.map((y) => (
                     <option
                       key={`fine-y-${y}`}
                       value={String(y)}
-                      className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                      className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100"
                     >
                       {y}
                     </option>
@@ -441,12 +441,12 @@ export const AdminFines: React.FC = () => {
                 <select
                   value={fineStatusFilter}
                   onChange={(e) => setFineStatusFilter(e.target.value as FineFilterStatus)}
-                  className="px-2.5 py-1.5 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
+                  className="px-2.5 py-1.5 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden cursor-pointer"
                 >
-                  <option value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">সকল অবস্থা</option>
-                  <option value="pending" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">বকেয়া আছে (Pending)</option>
-                  <option value="paid" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">পরিশোধিত (Cleared)</option>
-                  <option value="waived" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">মওকুফকৃত (Waived)</option>
+                  <option value="all" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">সকল অবস্থা</option>
+                  <option value="pending" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">বকেয়া আছে (Pending)</option>
+                  <option value="paid" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">পরিশোধিত (Cleared)</option>
+                  <option value="waived" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">মওকুফকৃত (Waived)</option>
                 </select>
               </>
             )}
@@ -459,7 +459,7 @@ export const AdminFines: React.FC = () => {
         <div className="surface-card rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#F5F6F3] dark:bg-[#162438] text-[#64748B] dark:text-slate-400 border-b border-[#E8EDF3] dark:border-[#1F2F46]">
+              <thead className="bg-[#EFF3F9] dark:bg-[#17243C] text-[#4E5E78] dark:text-slate-400 border-b border-[#DFE6F0] dark:border-[#233452]">
                 <tr>
                   <th className="py-3 px-4 font-semibold">মাস ও সাল</th>
                   <th className="py-3 px-4 font-semibold">সদস্য (কোড ও নাম)</th>
@@ -471,10 +471,10 @@ export const AdminFines: React.FC = () => {
                   <th className="py-3 px-4 font-semibold text-right">অ্যাকশন (Clear / Waive)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E8EDF3] dark:divide-[#1F2F46]">
+              <tbody className="divide-y divide-[#DFE6F0] dark:divide-[#233452]">
                 {filteredFineRows.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center text-[#64748B]">
+                    <td colSpan={8} className="py-12 text-center text-[#4E5E78]">
                       নির্বাচিত ফিল্টারে কোনো বকেয়া জরিমানা বা জরিমানা রেকর্ড পাওয়া যায়নি।
                     </td>
                   </tr>
@@ -486,48 +486,48 @@ export const AdminFines: React.FC = () => {
                     return (
                       <tr
                         key={due.id}
-                        className="hover:bg-[#F5F6F3]/65 dark:hover:bg-[#162438]/65 transition-colors"
+                        className="hover:bg-[#EFF3F9]/65 dark:hover:bg-[#17243C]/65 transition-colors"
                       >
-                        <td className="py-3 px-4 font-medium text-[#172435] dark:text-slate-100 whitespace-nowrap">
+                        <td className="py-3 px-4 font-medium text-[#0F1B2E] dark:text-slate-100 whitespace-nowrap">
                           {getMonthName(due.month)} {due.year}
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-mono font-bold text-[#64748B] dark:text-slate-400">
+                            <span className="font-mono font-bold text-[#4E5E78] dark:text-slate-400">
                               {member?.member_code}
                             </span>
                             {member ? (
                               <Link
                                 to={`/admin/members/${member.id}`}
-                                className="font-semibold text-[#172435] dark:text-slate-100 hover:text-[#087F70] dark:hover:text-[#34D399]"
+                                className="font-semibold text-[#0F1B2E] dark:text-slate-100 hover:text-[#1D4ED8] dark:hover:text-[#60A5FA]"
                               >
                                 {member.full_name}
                               </Link>
                             ) : (
-                              <span className="font-semibold text-[#172435] dark:text-slate-100">—</span>
+                              <span className="font-semibold text-[#0F1B2E] dark:text-slate-100">—</span>
                             )}
                             {breakdown.sharesCount > 1 && (
-                              <span className="text-[11px] font-semibold text-[#9A7127] dark:text-[#D6AC62] tabular-nums">
+                              <span className="text-[11px] font-semibold text-[#92600A] dark:text-[#F0C56E] tabular-nums">
                                 · {breakdown.sharesCount} Shares
                               </span>
                             )}
                           </div>
                         </td>
                         <td className="py-3 px-4 text-right font-mono tabular-nums">
-                          <span className="text-[#172435] dark:text-slate-200">
+                          <span className="text-[#0F1B2E] dark:text-slate-200">
                             {formatBDT(breakdown.principalDue)}
                           </span>
-                          <span className="block text-[10px] text-[#087F70] dark:text-[#34D399]">
+                          <span className="block text-[10px] text-[#0369A1] dark:text-[#38BDF8]">
                             Paid: {formatBDT(breakdown.principalPaid)}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#9A7127] dark:text-[#D6AC62]">
+                        <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#92600A] dark:text-[#F0C56E]">
                           {formatBDT(breakdown.fineDue)}
                         </td>
-                        <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#087F70] dark:text-[#34D399]">
+                        <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#0369A1] dark:text-[#38BDF8]">
                           {formatBDT(breakdown.finePaid)}
                           {due.fine_paid_at && (
-                            <span className="block text-[10px] text-[#64748B] font-normal">
+                            <span className="block text-[10px] text-[#4E5E78] font-normal">
                               {formatDate(due.fine_paid_at)}
                             </span>
                           )}
@@ -537,11 +537,11 @@ export const AdminFines: React.FC = () => {
                         </td>
                         <td className="py-3 px-4 text-center whitespace-nowrap">
                           {isWaived ? (
-                            <span className="inline-flex px-2 py-0.5 rounded-md bg-slate-100 dark:bg-[#162438] text-[#64748B] dark:text-slate-300 border border-[#E8EDF3] dark:border-[#1F2F46] text-[11px] font-semibold">
+                            <span className="inline-flex px-2 py-0.5 rounded-md bg-slate-100 dark:bg-[#17243C] text-[#4E5E78] dark:text-slate-300 border border-[#DFE6F0] dark:border-[#233452] text-[11px] font-semibold">
                               Waived
                             </span>
                           ) : isCleared ? (
-                            <span className="inline-flex px-2 py-0.5 rounded-md bg-[#087F70]/10 text-[#087F70] dark:text-[#34D399] border border-[#087F70]/25 text-[11px] font-semibold">
+                            <span className="inline-flex px-2 py-0.5 rounded-md bg-[#1D4ED8]/10 text-[#1D4ED8] dark:text-[#60A5FA] border border-[#1D4ED8]/25 dark:border-[#60A5FA]/35 text-[11px] font-semibold">
                               Cleared
                             </span>
                           ) : (
@@ -555,7 +555,7 @@ export const AdminFines: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => openEntryModal(due.member_id, due)}
-                              className="px-2.5 py-1 text-[11px] font-bold text-[#087F70] dark:text-[#34D399] bg-[#087F70]/10 hover:bg-[#087F70]/15 rounded-lg border border-[#087F70]/25 transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                              className="px-2.5 py-1 text-[11px] font-bold text-[#1D4ED8] dark:text-[#60A5FA] bg-[#1D4ED8]/10 hover:bg-[#1D4ED8]/15 rounded-lg border border-[#1D4ED8]/25 dark:border-[#60A5FA]/35 transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
                             >
                               <CheckCircle2 className="w-3 h-3" />
                               <span>{isCleared ? 'Update' : 'Settle'}</span>
@@ -564,7 +564,7 @@ export const AdminFines: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => handleQuickWaive(due)}
-                                className="px-2 py-1 text-[11px] font-semibold text-[#64748B] hover:text-[#9A7127] bg-[#F5F6F3] hover:bg-[#D6AC62]/15 dark:bg-[#162438] rounded-lg border border-[#E8EDF3] dark:border-[#1F2F46] transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                                className="px-2 py-1 text-[11px] font-semibold text-[#4E5E78] hover:text-[#92600A] bg-[#EFF3F9] hover:bg-[#D6AC62]/15 dark:bg-[#17243C] rounded-lg border border-[#DFE6F0] dark:border-[#233452] transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
                                 title="Waive Fine"
                               >
                                 <Ban className="w-3 h-3" />
@@ -586,7 +586,7 @@ export const AdminFines: React.FC = () => {
         <div className="surface-card rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#F5F6F3] dark:bg-[#162438] text-[#64748B] dark:text-slate-400 border-b border-[#E8EDF3] dark:border-[#1F2F46]">
+              <thead className="bg-[#EFF3F9] dark:bg-[#17243C] text-[#4E5E78] dark:text-slate-400 border-b border-[#DFE6F0] dark:border-[#233452]">
                 <tr>
                   <th className="py-3 px-4 font-semibold">Code</th>
                   <th className="py-3 px-4 font-semibold">Member</th>
@@ -599,19 +599,19 @@ export const AdminFines: React.FC = () => {
                   <th className="py-3 px-4 font-semibold text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E8EDF3] dark:divide-[#1F2F46]">
+              <tbody className="divide-y divide-[#DFE6F0] dark:divide-[#233452]">
                 {memberFineSummaries.map((row) => (
                   <tr
                     key={row.member.id}
-                    className="hover:bg-[#F5F6F3]/65 dark:hover:bg-[#162438]/65 transition-colors"
+                    className="hover:bg-[#EFF3F9]/65 dark:hover:bg-[#17243C]/65 transition-colors"
                   >
-                    <td className="py-3 px-4 font-mono font-bold text-[#64748B] dark:text-slate-300">
+                    <td className="py-3 px-4 font-mono font-bold text-[#4E5E78] dark:text-slate-300">
                       {row.member.member_code}
                     </td>
-                    <td className="py-3 px-4 font-semibold text-[#172435] dark:text-slate-100">
+                    <td className="py-3 px-4 font-semibold text-[#0F1B2E] dark:text-slate-100">
                       <Link
                         to={`/admin/members/${row.member.id}`}
-                        className="hover:text-[#087F70] dark:hover:text-[#34D399]"
+                        className="hover:text-[#1D4ED8] dark:hover:text-[#60A5FA]"
                       >
                         {row.member.full_name}
                       </Link>
@@ -622,13 +622,13 @@ export const AdminFines: React.FC = () => {
                     <td className="py-3 px-4 text-center font-mono tabular-nums">
                       {row.finedMonths}
                     </td>
-                    <td className="py-3 px-4 text-right font-mono tabular-nums text-[#172435] dark:text-slate-200">
+                    <td className="py-3 px-4 text-right font-mono tabular-nums text-[#0F1B2E] dark:text-slate-200">
                       {formatBDT(row.fineCharged)}
                     </td>
-                    <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#087F70] dark:text-[#34D399]">
+                    <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#0369A1] dark:text-[#38BDF8]">
                       {formatBDT(row.finePaid)}
                     </td>
-                    <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#9A7127] dark:text-[#D6AC62]">
+                    <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#92600A] dark:text-[#F0C56E]">
                       {row.finePending > 0 ? formatBDT(row.finePending) : '৳0'}
                     </td>
                     <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-rose-700 dark:text-rose-400">
@@ -638,7 +638,7 @@ export const AdminFines: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => openEntryModal(row.member.id)}
-                        className="px-2.5 py-1 text-[11px] font-bold text-[#087F70] dark:text-[#34D399] bg-[#087F70]/10 hover:bg-[#087F70]/15 rounded-lg border border-[#087F70]/25 cursor-pointer whitespace-nowrap"
+                        className="px-2.5 py-1 text-[11px] font-bold text-[#1D4ED8] dark:text-[#60A5FA] bg-[#1D4ED8]/10 hover:bg-[#1D4ED8]/15 rounded-lg border border-[#1D4ED8]/25 dark:border-[#60A5FA]/35 cursor-pointer whitespace-nowrap"
                       >
                         + Clear / Record
                       </button>
@@ -668,7 +668,7 @@ export const AdminFines: React.FC = () => {
             <div
               className={`p-3 rounded-xl text-xs flex items-start gap-2 border ${
                 feedback.type === 'success'
-                  ? 'bg-[#087F70]/10 text-[#087F70] dark:text-[#34D399] border-[#087F70]/25'
+                  ? 'bg-[#1D4ED8]/10 text-[#1D4ED8] dark:text-[#60A5FA] border-[#1D4ED8]/25 dark:border-[#60A5FA]/35'
                   : 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300'
               }`}
             >
@@ -683,20 +683,20 @@ export const AdminFines: React.FC = () => {
 
           <form onSubmit={handleClearBothSubmit} className="space-y-4 text-xs">
             <div>
-              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+              <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                 Member
               </label>
               <select
                 required
                 value={formMemberId}
                 onChange={(e) => setFormMemberId(e.target.value)}
-                className="w-full px-3 py-2.5 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-xs sm:text-sm text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70] cursor-pointer"
+                className="w-full px-3 py-2.5 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-xs sm:text-sm text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8] cursor-pointer"
               >
                 {members.map((m) => (
                   <option
                     key={m.id}
                     value={m.id}
-                    className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                    className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100"
                   >
                     {m.member_code} - {m.full_name} ({m.shares_count} share{m.shares_count > 1 ? 's' : ''} · ৳
                     {m.shares_count * FINE_PER_SHARE} fine)
@@ -707,19 +707,19 @@ export const AdminFines: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+                <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                   Billing Month
                 </label>
                 <select
                   value={formMonth}
                   onChange={(e) => setFormMonth(Number(e.target.value))}
-                  className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70] cursor-pointer"
+                  className="w-full px-3 py-2 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8] cursor-pointer"
                 >
                   {MONTH_NAMES.map((name, idx) => (
                     <option
                       key={idx + 1}
                       value={idx + 1}
-                      className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                      className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100"
                     >
                       {name}
                     </option>
@@ -728,19 +728,19 @@ export const AdminFines: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+                <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                   Year
                 </label>
                 <select
                   value={formYear}
                   onChange={(e) => setFormYear(Number(e.target.value))}
-                  className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono tabular-nums text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70] cursor-pointer"
+                  className="w-full px-3 py-2 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono tabular-nums text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8] cursor-pointer"
                 >
                   {FISCAL_YEARS.map((yr) => (
                     <option
                       key={yr}
                       value={yr}
-                      className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                      className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100"
                     >
                       {yr}
                     </option>
@@ -752,7 +752,7 @@ export const AdminFines: React.FC = () => {
             {/* Fine Amounts */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+                <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                   Fine Due (৳)
                 </label>
                 <input
@@ -761,12 +761,12 @@ export const AdminFines: React.FC = () => {
                   required
                   value={formFineDue}
                   onChange={(e) => setFormFineDue(Number(e.target.value))}
-                  className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono tabular-nums text-sm text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono tabular-nums text-sm text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+                <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                   Fine Paid (৳)
                 </label>
                 <input
@@ -775,19 +775,19 @@ export const AdminFines: React.FC = () => {
                   required
                   value={formFinePaid}
                   onChange={(e) => setFormFinePaid(Number(e.target.value))}
-                  className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono tabular-nums text-sm font-bold text-[#087F70] dark:text-[#34D399] focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono tabular-nums text-sm font-bold text-[#0369A1] dark:text-[#38BDF8] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
                 />
               </div>
             </div>
 
             {/* Principal clearance toggle */}
-            <div className="p-3.5 bg-[#F5F6F3] dark:bg-[#162438] rounded-xl border border-[#E8EDF3] dark:border-[#1F2F46] space-y-2">
-              <label className="flex items-center gap-2 font-semibold text-[#172435] dark:text-slate-200 cursor-pointer">
+            <div className="p-3.5 bg-[#EFF3F9] dark:bg-[#17243C] rounded-xl border border-[#DFE6F0] dark:border-[#233452] space-y-2">
+              <label className="flex items-center gap-2 font-semibold text-[#0F1B2E] dark:text-slate-200 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formClearPrincipal}
                   onChange={(e) => setFormClearPrincipal(e.target.checked)}
-                  className="rounded border-[#E8EDF3] text-[#087F70] focus:ring-[#087F70]"
+                  className="rounded border-[#DFE6F0] text-[#1D4ED8] accent-[#1D4ED8] dark:accent-[#60A5FA] focus:ring-[#1D4ED8]"
                 />
                 <span>
                   Also mark monthly principal as paid (
@@ -797,20 +797,20 @@ export const AdminFines: React.FC = () => {
 
               {formClearPrincipal && (
                 <div className="flex items-center justify-between gap-3 pt-1">
-                  <span className="text-[11px] text-[#64748B]">Principal Paid (৳):</span>
+                  <span className="text-[11px] text-[#4E5E78]">Principal Paid (৳):</span>
                   <input
                     type="number"
                     min={0}
                     value={formPrincipalPaid}
                     onChange={(e) => setFormPrincipalPaid(Number(e.target.value))}
-                    className="w-32 px-2.5 py-1.5 bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-lg font-mono tabular-nums text-xs text-right font-bold"
+                    className="w-32 px-2.5 py-1.5 bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] rounded-lg font-mono tabular-nums text-xs text-right font-bold"
                   />
                 </div>
               )}
 
-              <div className="pt-1.5 border-t border-[#E8EDF3] dark:border-[#1F2F46] flex justify-between text-[11px] font-bold">
+              <div className="pt-1.5 border-t border-[#DFE6F0] dark:border-[#233452] flex justify-between text-[11px] font-bold">
                 <span>Total Payment (Principal + Fine):</span>
-                <span className="text-[#087F70] dark:text-[#34D399] font-mono tabular-nums">
+                <span className="text-[#0369A1] dark:text-[#38BDF8] font-mono tabular-nums">
                   {formatBDT(
                     (formClearPrincipal ? Number(formPrincipalPaid) : 0) + Number(formFinePaid)
                   )}
@@ -820,7 +820,7 @@ export const AdminFines: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+                <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                   Payment Date
                 </label>
                 <input
@@ -828,11 +828,11 @@ export const AdminFines: React.FC = () => {
                   required
                   value={formPaidDate}
                   onChange={(e) => setFormPaidDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
                 />
               </div>
               <div>
-                <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+                <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                   Notes
                 </label>
                 <input
@@ -840,23 +840,23 @@ export const AdminFines: React.FC = () => {
                   placeholder="Cash / bKash / Reference"
                   value={formNotes}
                   onChange={(e) => setFormNotes(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
                 />
               </div>
             </div>
 
-            <div className="flex justify-end gap-2.5 pt-3 border-t border-[#E8EDF3] dark:border-[#1F2F46]">
+            <div className="flex justify-end gap-2.5 pt-3 border-t border-[#DFE6F0] dark:border-[#233452]">
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-[#64748B] hover:bg-slate-100 dark:hover:bg-[#162438] rounded-xl cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-[#4E5E78] hover:bg-slate-100 dark:hover:bg-[#17243C] rounded-xl cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="px-5 py-2 text-xs font-bold text-white bg-[#087F70] hover:bg-[#06675B] rounded-xl shadow-xs disabled:opacity-50 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                className="px-5 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-xs disabled:opacity-50 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>{saving ? 'Saving...' : 'Confirm Settlement'}</span>

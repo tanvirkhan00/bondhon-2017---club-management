@@ -165,13 +165,13 @@ export const AdminPaymentHistory: React.FC = () => {
   return (
     <PageTransition className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E8EDF3] dark:border-[#1F2F46]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#DFE6F0] dark:border-[#233452]">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#172435] dark:text-slate-100 flex items-center gap-2.5">
-            <History className="w-6 h-6 text-[#087F70]" />
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0F1B2E] dark:text-slate-100 flex items-center gap-2.5">
+            <History className="w-6 h-6 text-[#1D4ED8] dark:text-[#60A5FA]" />
             <span>Payment Ledger &amp; History</span>
           </h1>
-          <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400 mt-0.5">
+          <p className="text-xs sm:text-sm text-[#4E5E78] dark:text-slate-400 mt-0.5">
             Complete contribution history and audit trail · Monthly Target: {formatBDT(clubMonthlyTarget)}
           </p>
         </div>
@@ -179,7 +179,7 @@ export const AdminPaymentHistory: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto shrink-0">
           <button
             onClick={() => setRecordModalOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#087F70] hover:bg-[#06675B] rounded-xl shadow-xs transition-colors cursor-pointer whitespace-nowrap"
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-xs transition-colors cursor-pointer whitespace-nowrap"
           >
             <CreditCard className="w-3.5 h-3.5" />
             <span>Record Payment</span>
@@ -187,7 +187,7 @@ export const AdminPaymentHistory: React.FC = () => {
 
           <button
             onClick={handleExportCsv}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#172435] dark:text-slate-200 bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] hover:bg-[#F5F6F3] dark:hover:bg-[#162438] rounded-xl transition-colors cursor-pointer whitespace-nowrap"
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#0F1B2E] dark:text-slate-200 bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] hover:bg-[#EFF3F9] dark:hover:bg-[#17243C] rounded-xl transition-colors cursor-pointer whitespace-nowrap"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Export CSV</span>
@@ -209,7 +209,7 @@ export const AdminPaymentHistory: React.FC = () => {
           value={formatBDT(ledgerSummary.paid)}
           subLabel={`${effectiveTarget > 0 ? Math.round((ledgerSummary.paid / effectiveTarget) * 100) : 0}% of ${formatBDT(effectiveTarget)}`}
           icon={Banknote}
-          accent="emerald"
+          accent="sapphire"
         />
         <MetricCard
           label="Fines Collected"
@@ -231,7 +231,7 @@ export const AdminPaymentHistory: React.FC = () => {
       <div className="surface-card p-4 rounded-2xl space-y-3">
         <div className="flex flex-col lg:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-[#64748B] absolute left-3.5 top-2.5" />
+            <Search className="w-4 h-4 text-[#4E5E78] absolute left-3.5 top-2.5" />
             <input
               type="text"
               placeholder="Search member name, code or phone..."
@@ -240,7 +240,7 @@ export const AdminPaymentHistory: React.FC = () => {
                 setSearchQuery(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full pl-10 pr-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+              className="w-full pl-10 pr-3 py-2 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
             />
           </div>
 
@@ -251,11 +251,11 @@ export const AdminPaymentHistory: React.FC = () => {
                 setSelectedYearFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
+              className="px-3 py-2 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden cursor-pointer"
             >
-              <option key="year-all" value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">All Fiscal Years</option>
+              <option key="year-all" value="all" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">All Fiscal Years</option>
               {years.map((y) => (
-                <option key={`year-${y}`} value={String(y)} className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">{y}</option>
+                <option key={`year-${y}`} value={String(y)} className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">{y}</option>
               ))}
             </select>
 
@@ -265,11 +265,11 @@ export const AdminPaymentHistory: React.FC = () => {
                 setSelectedMonthFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
+              className="px-3 py-2 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden cursor-pointer"
             >
-              <option key="month-all" value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">All Months</option>
+              <option key="month-all" value="all" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">All Months</option>
               {MONTH_NAMES.map((name, idx) => (
-                <option key={`month-${idx + 1}`} value={String(idx + 1)} className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">{name}</option>
+                <option key={`month-${idx + 1}`} value={String(idx + 1)} className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">{name}</option>
               ))}
             </select>
 
@@ -279,12 +279,12 @@ export const AdminPaymentHistory: React.FC = () => {
                 setSelectedStatusFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
+              className="px-3 py-2 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden cursor-pointer"
             >
-              <option key="status-all" value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">All Statuses</option>
-              <option key="status-paid" value="paid" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Paid Only</option>
-              <option key="status-partial" value="partial" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Partial Only</option>
-              <option key="status-unpaid" value="unpaid" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Unpaid Only</option>
+              <option key="status-all" value="all" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">All Statuses</option>
+              <option key="status-paid" value="paid" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">Paid Only</option>
+              <option key="status-partial" value="partial" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">Partial Only</option>
+              <option key="status-unpaid" value="unpaid" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">Unpaid Only</option>
             </select>
 
             <select
@@ -293,11 +293,11 @@ export const AdminPaymentHistory: React.FC = () => {
                 setSelectedMemberFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 truncate focus:outline-hidden cursor-pointer"
+              className="px-3 py-2 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 truncate focus:outline-hidden cursor-pointer"
             >
-              <option key="member-all" value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">All Members ({members.length})</option>
+              <option key="member-all" value="all" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">All Members ({members.length})</option>
               {members.map((m, idx) => (
-                <option key={`member-${m.id || idx}`} value={m.id} className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">{m.member_code} - {m.full_name}</option>
+                <option key={`member-${m.id || idx}`} value={m.id} className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">{m.member_code} - {m.full_name}</option>
               ))}
             </select>
           </div>
@@ -308,7 +308,7 @@ export const AdminPaymentHistory: React.FC = () => {
       <div className="surface-card rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#F5F6F3] dark:bg-[#162438] text-[#64748B] dark:text-slate-400 border-b border-[#E8EDF3] dark:border-[#1F2F46]">
+            <thead className="bg-[#EFF3F9] dark:bg-[#17243C] text-[#4E5E78] dark:text-slate-400 border-b border-[#DFE6F0] dark:border-[#233452]">
               <tr>
                 <th className="py-3 px-4 font-semibold">Month &amp; Year</th>
                 <th className="py-3 px-4 font-semibold">Code</th>
@@ -322,18 +322,18 @@ export const AdminPaymentHistory: React.FC = () => {
                 <th className="py-3 px-4 font-semibold text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E8EDF3] dark:divide-[#1F2F46]">
+            <tbody className="divide-y divide-[#DFE6F0] dark:divide-[#233452]">
               {paginatedRecords.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-[#64748B]">
+                  <td colSpan={10} className="py-12 text-center text-[#4E5E78]">
                     {monthlyDues.length === 0 ? (
                       <div className="space-y-2">
-                        <p className="font-semibold text-[#172435] dark:text-slate-200">
+                        <p className="font-semibold text-[#0F1B2E] dark:text-slate-200">
                           No payment records yet.
                         </p>
                         <button
                           onClick={() => setRecordModalOpen(true)}
-                          className="text-xs text-[#087F70] dark:text-[#34D399] font-semibold underline cursor-pointer"
+                          className="text-xs text-[#1D4ED8] dark:text-[#60A5FA] font-semibold underline cursor-pointer"
                         >
                           + Record First Payment
                         </button>
@@ -351,42 +351,42 @@ export const AdminPaymentHistory: React.FC = () => {
                   return (
                     <tr
                       key={due.id || `due-${due.member_id || idx}-${due.year}-${due.month}`}
-                      className="hover:bg-[#F5F6F3]/65 dark:hover:bg-[#162438]/65 transition-colors"
+                      className="hover:bg-[#EFF3F9]/65 dark:hover:bg-[#17243C]/65 transition-colors"
                     >
-                      <td className="py-3 px-4 font-medium text-[#172435] dark:text-slate-100 whitespace-nowrap">
+                      <td className="py-3 px-4 font-medium text-[#0F1B2E] dark:text-slate-100 whitespace-nowrap">
                         {getMonthName(due.month)} {due.year}
                       </td>
 
-                      <td className="py-3 px-4 font-mono font-bold text-[#172435] dark:text-slate-100 whitespace-nowrap">
+                      <td className="py-3 px-4 font-mono font-bold text-[#0F1B2E] dark:text-slate-100 whitespace-nowrap">
                         {due.member?.member_code}
                       </td>
 
-                      <td className="py-3 px-4 font-medium text-[#172435] dark:text-slate-100">
+                      <td className="py-3 px-4 font-medium text-[#0F1B2E] dark:text-slate-100">
                         <Link
                           to={`/admin/members/${due.member_id}`}
-                          className="hover:text-[#087F70] dark:hover:text-[#34D399] font-semibold"
+                          className="hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] font-semibold"
                         >
                           {due.member?.full_name}
                         </Link>
                         {due.notes && (
-                          <span className="block text-[10px] text-[#64748B] truncate max-w-[180px]">
+                          <span className="block text-[10px] text-[#4E5E78] truncate max-w-[180px]">
                             {due.notes}
                           </span>
                         )}
                       </td>
 
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-[#64748B] dark:text-slate-300">
+                      <td className="py-3 px-4 text-right font-mono tabular-nums text-[#4E5E78] dark:text-slate-300">
                         {formatBDT(bd.principalDue)}
                       </td>
 
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-[#9A7127] dark:text-[#D6AC62]">
+                      <td className="py-3 px-4 text-right font-mono tabular-nums text-[#92600A] dark:text-[#F0C56E]">
                         {due.fine_waived ? (
-                          <span className="text-[10px] text-[#64748B]">Waived</span>
+                          <span className="text-[10px] text-[#4E5E78]">Waived</span>
                         ) : bd.fineDue > 0 ? (
                           <span>
                             {formatBDT(bd.fineDue)}
                             {bd.finePaid > 0 && (
-                              <span className="block text-[10px] text-[#087F70] dark:text-[#34D399]">
+                              <span className="block text-[10px] text-[#0369A1] dark:text-[#38BDF8]">
                                 Paid: {formatBDT(bd.finePaid)}
                               </span>
                             )}
@@ -396,7 +396,7 @@ export const AdminPaymentHistory: React.FC = () => {
                         )}
                       </td>
 
-                      <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#087F70] dark:text-[#34D399]">
+                      <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#0369A1] dark:text-[#38BDF8]">
                         {formatBDT(bd.totalPaid)}
                       </td>
 
@@ -408,7 +408,7 @@ export const AdminPaymentHistory: React.FC = () => {
                         <StatusBadge status={due.status} size="sm" />
                       </td>
 
-                      <td className="py-3 px-4 font-mono text-[#64748B] dark:text-slate-400 whitespace-nowrap tabular-nums">
+                      <td className="py-3 px-4 font-mono text-[#4E5E78] dark:text-slate-400 whitespace-nowrap tabular-nums">
                         {due.paid_at ? formatDate(due.paid_at) : '—'}
                       </td>
 
@@ -417,7 +417,7 @@ export const AdminPaymentHistory: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => setEditDue(due)}
-                            className="p-1.5 text-[#64748B] hover:text-[#087F70] rounded-lg hover:bg-[#F5F6F3] dark:hover:bg-[#203650] cursor-pointer"
+                            className="p-1.5 text-[#4E5E78] hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] rounded-lg hover:bg-[#EFF3F9] dark:hover:bg-[#18294A] cursor-pointer"
                             title="Edit Payment"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
@@ -438,7 +438,7 @@ export const AdminPaymentHistory: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => setDeleteConfirmId(null)}
-                                className="px-1.5 py-0.5 text-[#64748B] text-[10px] cursor-pointer"
+                                className="px-1.5 py-0.5 text-[#4E5E78] text-[10px] cursor-pointer"
                               >
                                 Cancel
                               </button>
@@ -447,7 +447,7 @@ export const AdminPaymentHistory: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => setDeleteConfirmId(due.id)}
-                              className="p-1.5 text-[#64748B] hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
+                              className="p-1.5 text-[#4E5E78] hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
                               title="Delete Record"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -464,7 +464,7 @@ export const AdminPaymentHistory: React.FC = () => {
         </div>
 
         {/* Pagination Bar */}
-        <div className="p-4 border-t border-[#E8EDF3] dark:border-[#1F2F46] flex items-center justify-between text-xs text-[#64748B] dark:text-slate-400">
+        <div className="p-4 border-t border-[#DFE6F0] dark:border-[#233452] flex items-center justify-between text-xs text-[#4E5E78] dark:text-slate-400">
           <span className="tabular-nums">
             Showing {filteredRecords.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} to{' '}
             {Math.min(currentPage * pageSize, filteredRecords.length)} of {filteredRecords.length} records
@@ -474,7 +474,7 @@ export const AdminPaymentHistory: React.FC = () => {
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="p-1.5 rounded-lg border border-[#E8EDF3] dark:border-[#1F2F46] disabled:opacity-40 hover:bg-[#F5F6F3] dark:hover:bg-[#162438] cursor-pointer"
+              className="p-1.5 rounded-lg border border-[#DFE6F0] dark:border-[#233452] disabled:opacity-40 hover:bg-[#EFF3F9] dark:hover:bg-[#17243C] cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -484,7 +484,7 @@ export const AdminPaymentHistory: React.FC = () => {
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="p-1.5 rounded-lg border border-[#E8EDF3] dark:border-[#1F2F46] disabled:opacity-40 hover:bg-[#F5F6F3] dark:hover:bg-[#162438] cursor-pointer"
+              className="p-1.5 rounded-lg border border-[#DFE6F0] dark:border-[#233452] disabled:opacity-40 hover:bg-[#EFF3F9] dark:hover:bg-[#17243C] cursor-pointer"
             >
               <ChevronRight className="w-4 h-4" />
             </button>

@@ -6,42 +6,44 @@
   --font-sans: "Plus Jakarta Sans", "Hind Siliguri", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  --color-navy-950: #0B1320;
-  --color-navy-900: #14243A;
-  --color-navy-800: #203650;
-  --color-navy-700: #2B4564;
+  --color-navy-950: #09101D;
+  --color-navy-900: #0F1B33;
+  --color-navy-800: #18294A;
+  --color-navy-700: #223862;
 
-  --color-brand-emerald: #087F70;
-  --color-brand-emerald-hover: #06675B;
+  --color-brand-sapphire: #1D4ED8;
+  --color-brand-sapphire-hover: #1E40AF;
+  --color-brand-cerulean: #0369A1;
   --color-brand-gold: #D6AC62;
-  --color-brand-canvas: #F5F6F3;
-  --color-brand-border: #E8EDF3;
-  --color-brand-ink: #172435;
-  --color-brand-muted: #64748B;
+  --color-brand-canvas: #F6F7FB;
+  --color-brand-border: #DFE6F0;
+  --color-brand-ink: #0F1B2E;
+  --color-brand-muted: #4E5E78;
 }
 
 :root {
   color-scheme: light;
-  --bg-canvas: #F5F6F3;
+  --bg-canvas: #F6F7FB;
   --bg-surface: #FFFFFF;
-  --bg-surface-muted: #F8FAFC;
-  --border-subtle: #E8EDF3;
-  --text-primary: #172435;
-  --text-secondary: #64748B;
-  --navy-primary: #14243A;
-  --navy-secondary: #203650;
-  --emerald-primary: #087F70;
+  --bg-surface-muted: #EFF3F9;
+  --border-subtle: #DFE6F0;
+  --text-primary: #0F1B2E;
+  --text-secondary: #4E5E78;
+  --navy-primary: #0F1B33;
+  --navy-secondary: #18294A;
+  --sapphire-primary: #1D4ED8;
+  --cerulean-positive: #0369A1;
   --gold-accent: #D6AC62;
 }
 
 .dark {
   color-scheme: dark;
-  --bg-canvas: #0B1320;
-  --bg-surface: #111C2D;
-  --bg-surface-muted: #162438;
-  --border-subtle: #1F2F46;
-  --text-primary: #F1F5F9;
-  --text-secondary: #94A3B8;
+  --bg-canvas: #09101D;
+  --bg-surface: #111B2E;
+  --bg-surface-muted: #17243C;
+  --border-subtle: #233452;
+  --text-primary: #F3F6FC;
+  --text-secondary: #9BB0CD;
 }
 
 html {
@@ -65,31 +67,31 @@ select {
 select option,
 select optgroup {
   background-color: #FFFFFF;
-  color: #172435;
+  color: #0F1B2E;
 }
 
 select option:checked,
 select option:hover,
 select option:focus {
-  background-color: #E6F4F1;
-  color: #06675B;
+  background-color: #E0EAFF;
+  color: #1E40AF;
 }
 
 .dark select {
   color-scheme: dark;
-  color: #F1F5F9;
+  color: #F3F6FC;
 }
 
 .dark select option,
 .dark select optgroup {
-  background-color: #111C2D;
-  color: #F1F5F9;
+  background-color: #111B2E;
+  color: #F3F6FC;
 }
 
 .dark select option:checked,
 .dark select option:hover,
 .dark select option:focus {
-  background-color: #203650;
+  background-color: #1E3A6D;
   color: #FFFFFF;
 }
 
@@ -116,11 +118,11 @@ select option:focus {
 .surface-card {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  box-shadow: 0 1px 2px rgba(20, 36, 58, 0.04), 0 8px 24px -14px rgba(20, 36, 58, 0.08);
+  box-shadow: 0 1px 2px rgba(15, 27, 46, 0.04), 0 8px 24px -14px rgba(15, 27, 46, 0.08);
 }
 
 .dark .surface-card {
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 14px 32px -14px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.34), 0 14px 32px -14px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .surface-card-hover {
@@ -131,12 +133,12 @@ select option:focus {
 
 .surface-card-hover:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(20, 36, 58, 0.06), 0 14px 28px -12px rgba(20, 36, 58, 0.12);
+  box-shadow: 0 4px 12px rgba(15, 27, 46, 0.07), 0 14px 28px -12px rgba(15, 27, 46, 0.13);
 }
 
 .dark .surface-card-hover:hover {
-  border-color: #2B4564;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4), 0 18px 34px -12px rgba(0, 0, 0, 0.55);
+  border-color: #324C75;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.42), 0 18px 34px -12px rgba(0, 0, 0, 0.6);
 }
 
 /* Global Tactile Button & Action Link Animations across the whole website */
@@ -171,19 +173,19 @@ select option:focus {
     scale: 0.92;
   }
 
-  button[class*="bg-[#087F70]"]:not(:disabled):hover,
-  a[class*="bg-[#087F70]"]:hover {
-    box-shadow: 0 10px 22px -8px rgba(8, 127, 112, 0.48);
+  button[class*="bg-[#1D4ED8]"]:not(:disabled):hover,
+  a[class*="bg-[#1D4ED8]"]:hover {
+    box-shadow: 0 10px 22px -8px rgba(29, 78, 216, 0.48);
   }
 
-  button[class*="bg-[#14243A]"]:not(:disabled):hover,
-  a[class*="bg-[#14243A]"]:hover {
-    box-shadow: 0 10px 22px -8px rgba(20, 36, 58, 0.42);
+  button[class*="bg-[#0F1B33]"]:not(:disabled):hover,
+  a[class*="bg-[#0F1B33]"]:hover {
+    box-shadow: 0 10px 22px -8px rgba(15, 27, 51, 0.44);
   }
 
   button[class*="bg-[#D6AC62]"]:not(:disabled):hover,
   a[class*="bg-[#D6AC62]"]:hover {
-    box-shadow: 0 10px 22px -8px rgba(214, 172, 98, 0.45);
+    box-shadow: 0 10px 22px -8px rgba(214, 172, 98, 0.48);
   }
 
   button svg,

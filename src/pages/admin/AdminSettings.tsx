@@ -98,12 +98,12 @@ export const AdminSettings: React.FC = () => {
   return (
     <PageTransition className="space-y-6 max-w-4xl">
       {/* Header */}
-      <div className="pb-4 border-b border-[#E8EDF3] dark:border-[#1F2F46]">
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#172435] dark:text-slate-100 flex items-center gap-2.5">
-          <SettingsIcon className="w-6 h-6 text-[#087F70]" />
+      <div className="pb-4 border-b border-[#DFE6F0] dark:border-[#233452]">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0F1B2E] dark:text-slate-100 flex items-center gap-2.5">
+          <SettingsIcon className="w-6 h-6 text-[#1D4ED8] dark:text-[#60A5FA]" />
           <span>Club Administration Settings</span>
         </h1>
-        <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400 mt-0.5">
+        <p className="text-xs sm:text-sm text-[#4E5E78] dark:text-slate-400 mt-0.5">
           Configure monthly contribution rates, contact details, and data backups
         </p>
       </div>
@@ -111,10 +111,10 @@ export const AdminSettings: React.FC = () => {
       {/* SECTION 1: Club Contact & Default Contribution */}
       <div className="surface-card rounded-2xl p-6 space-y-4">
         <div>
-          <h2 className="text-sm font-bold text-[#172435] dark:text-slate-100">
+          <h2 className="text-sm font-bold text-[#0F1B2E] dark:text-slate-100">
             Club Details &amp; Monthly Fee
           </h2>
-          <p className="text-xs text-[#64748B] dark:text-slate-400">
+          <p className="text-xs text-[#4E5E78] dark:text-slate-400">
             Standard monthly contribution per share (BDT ৳)
           </p>
         </div>
@@ -122,30 +122,30 @@ export const AdminSettings: React.FC = () => {
         <form onSubmit={handleSaveClubSettings} className="space-y-4 text-xs">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+              <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                 Club Name
               </label>
               <input
                 type="text"
                 disabled
                 value="বন্ধুত্ব সমবায় সমিতি (Bondhon 2017)"
-                className="w-full px-3 py-2 text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-bold text-[#172435] dark:text-slate-200 cursor-not-allowed"
+                className="w-full px-3 py-2 text-sm bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-bold text-[#0F1B2E] dark:text-slate-200 cursor-not-allowed"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+              <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                 Monthly Fee Per Share / Name (BDT ৳)
               </label>
               <div className="relative">
-                <span className="absolute left-3.5 top-2 text-sm font-bold text-[#64748B]">৳</span>
+                <span className="absolute left-3.5 top-2 text-sm font-bold text-[#4E5E78]">৳</span>
                 <input
                   type="number"
                   min={100}
                   step={50}
                   value={amountInput}
                   onChange={(e) => setAmountInput(Number(e.target.value))}
-                  className="w-full pl-8 pr-3 py-2 text-sm bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono tabular-nums font-bold text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full pl-8 pr-3 py-2 text-sm bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono tabular-nums font-bold text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
                 />
               </div>
             </div>
@@ -153,45 +153,45 @@ export const AdminSettings: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+              <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                 Official Contact Email
               </label>
               <input
                 type="email"
                 value={clubEmail}
                 onChange={(e) => setClubEmail(e.target.value)}
-                className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                className="w-full px-3 py-2 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+              <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                 Treasurer Contact Number
               </label>
               <input
                 type="text"
                 value={clubPhone}
                 onChange={(e) => setClubPhone(e.target.value)}
-                className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                className="w-full px-3 py-2 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+              <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                 Office Location
               </label>
               <input
                 type="text"
                 value={clubAddress}
                 onChange={(e) => setClubAddress(e.target.value)}
-                className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                className="w-full px-3 py-2 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
               />
             </div>
           </div>
 
           <div className="flex items-center justify-between pt-2">
             {saveSuccess ? (
-              <span className="text-xs text-[#087F70] dark:text-[#34D399] font-semibold flex items-center gap-1.5">
+              <span className="text-xs text-[#1D4ED8] dark:text-[#60A5FA] font-semibold flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4" /> Settings saved successfully
               </span>
             ) : (
@@ -200,7 +200,7 @@ export const AdminSettings: React.FC = () => {
 
             <button
               type="submit"
-              className="px-4 py-2 text-xs font-bold text-white bg-[#087F70] hover:bg-[#06675B] rounded-xl shadow-2xs cursor-pointer transition-colors whitespace-nowrap"
+              className="px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-2xs cursor-pointer transition-colors whitespace-nowrap"
             >
               Save Club Settings
             </button>
@@ -210,20 +210,20 @@ export const AdminSettings: React.FC = () => {
 
       {/* SECTION 2: Data Backups */}
       <div className="surface-card rounded-2xl p-6 space-y-3">
-        <h2 className="text-sm font-bold text-[#172435] dark:text-slate-100 flex items-center gap-2">
-          <Download className="w-4 h-4 text-[#087F70]" />
+        <h2 className="text-sm font-bold text-[#0F1B2E] dark:text-slate-100 flex items-center gap-2">
+          <Download className="w-4 h-4 text-[#1D4ED8] dark:text-[#60A5FA]" />
           <span>Financial Records Backup &amp; Reset</span>
         </h2>
-        <p className="text-xs text-[#64748B] dark:text-slate-400">
+        <p className="text-xs text-[#4E5E78] dark:text-slate-400">
           Export full JSON backup of member profiles and payment records.
         </p>
 
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button
             onClick={handleDownloadJsonBackup}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-[#172435] dark:text-slate-200 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] hover:bg-slate-200/70 dark:hover:bg-[#203650] rounded-xl transition-colors cursor-pointer whitespace-nowrap"
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-[#0F1B2E] dark:text-slate-200 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] hover:bg-slate-200/70 dark:hover:bg-[#18294A] rounded-xl transition-colors cursor-pointer whitespace-nowrap"
           >
-            <Download className="w-3.5 h-3.5 text-[#087F70]" />
+            <Download className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
             <span>Download Full Backup ({members.length} members · {monthlyDues.length} entries)</span>
           </button>
 
@@ -242,33 +242,33 @@ export const AdminSettings: React.FC = () => {
         <button
           type="button"
           onClick={() => setShowAdvancedDb(!showAdvancedDb)}
-          className="w-full p-5 flex items-center justify-between text-left hover:bg-[#F5F6F3]/70 dark:hover:bg-[#162438]/60 transition-colors cursor-pointer"
+          className="w-full p-5 flex items-center justify-between text-left hover:bg-[#EFF3F9]/70 dark:hover:bg-[#17243C]/60 transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-2.5">
-            <Database className="w-4 h-4 text-[#087F70]" />
+            <Database className="w-4 h-4 text-[#1D4ED8] dark:text-[#60A5FA]" />
             <div>
-              <span className="text-sm font-bold text-[#172435] dark:text-slate-100 block">
+              <span className="text-sm font-bold text-[#0F1B2E] dark:text-slate-100 block">
                 Cloud Storage &amp; Sync Configuration
               </span>
-              <span className="text-[11px] text-[#64748B] dark:text-slate-400">
+              <span className="text-[11px] text-[#4E5E78] dark:text-slate-400">
                 {isConfigured ? 'Connected to Cloud Server' : 'Configured via environment'}
               </span>
             </div>
           </div>
           {showAdvancedDb ? (
-            <ChevronUp className="w-4 h-4 text-[#64748B]" />
+            <ChevronUp className="w-4 h-4 text-[#4E5E78]" />
           ) : (
-            <ChevronDown className="w-4 h-4 text-[#64748B]" />
+            <ChevronDown className="w-4 h-4 text-[#4E5E78]" />
           )}
         </button>
 
         {showAdvancedDb && (
-          <div className="p-6 pt-0 border-t border-[#E8EDF3] dark:border-[#1F2F46] space-y-4">
+          <div className="p-6 pt-0 border-t border-[#DFE6F0] dark:border-[#233452] space-y-4">
             {testResult && (
               <div
                 className={`mt-4 p-3.5 rounded-xl text-xs flex items-center gap-2 border ${
                   testResult.success
-                    ? 'bg-[#087F70]/10 text-[#087F70] dark:text-[#34D399] border-[#087F70]/25'
+                    ? 'bg-[#1D4ED8]/10 text-[#1D4ED8] dark:text-[#60A5FA] border-[#1D4ED8]/25 dark:border-[#60A5FA]/35'
                     : 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300'
                 }`}
               >
@@ -283,7 +283,7 @@ export const AdminSettings: React.FC = () => {
 
             <form onSubmit={handleSaveCredentials} className="space-y-4 text-xs mt-4">
               <div>
-                <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+                <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                   Project Endpoint URL
                 </label>
                 <input
@@ -291,12 +291,12 @@ export const AdminSettings: React.FC = () => {
                   placeholder="https://xyzcompany.supabase.co"
                   value={supabaseUrl}
                   onChange={(e) => setSupabaseUrl(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+                <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                   Publishable / Anon Key
                 </label>
                 <input
@@ -304,7 +304,7 @@ export const AdminSettings: React.FC = () => {
                   placeholder="sb_publishable_..."
                   value={supabaseAnonKey}
                   onChange={(e) => setSupabaseAnonKey(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                  className="w-full px-3 py-2 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
                 />
               </div>
 
@@ -313,7 +313,7 @@ export const AdminSettings: React.FC = () => {
                   <button
                     type="submit"
                     disabled={savingCreds}
-                    className="px-4 py-2 text-xs font-bold text-white bg-[#087F70] hover:bg-[#06675B] rounded-xl shadow-2xs cursor-pointer whitespace-nowrap"
+                    className="px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-2xs cursor-pointer whitespace-nowrap"
                   >
                     {savingCreds ? 'Testing...' : 'Save & Test Connection'}
                   </button>
@@ -322,7 +322,7 @@ export const AdminSettings: React.FC = () => {
                     type="button"
                     onClick={handleTestConnection}
                     disabled={savingCreds || !supabaseUrl}
-                    className="px-3.5 py-2 text-xs font-semibold text-[#172435] dark:text-slate-200 bg-[#F5F6F3] hover:bg-slate-200/70 dark:bg-[#162438] dark:hover:bg-[#203650] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl cursor-pointer whitespace-nowrap"
+                    className="px-3.5 py-2 text-xs font-semibold text-[#0F1B2E] dark:text-slate-200 bg-[#EFF3F9] hover:bg-slate-200/70 dark:bg-[#17243C] dark:hover:bg-[#18294A] border border-[#DFE6F0] dark:border-[#233452] rounded-xl cursor-pointer whitespace-nowrap"
                   >
                     Verify Status
                   </button>

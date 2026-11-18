@@ -13,15 +13,15 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'md' })
     switch (normalized) {
       case 'paid':
       case 'active':
-        return 'text-[#087F70] bg-[#087F70]/10 border border-[#087F70]/25 dark:bg-[#087F70]/20 dark:text-[#34D399] dark:border-[#087F70]/40';
+        return 'text-[#0369A1] bg-[#0369A1]/10 border border-[#0369A1]/25 dark:bg-[#38BDF8]/15 dark:text-[#38BDF8] dark:border-[#38BDF8]/35';
       case 'partial':
-        return 'text-[#9A7127] bg-[#D6AC62]/15 border border-[#D6AC62]/40 dark:bg-[#D6AC62]/15 dark:text-[#D6AC62] dark:border-[#D6AC62]/30';
+        return 'text-[#92600A] bg-[#D6AC62]/15 border border-[#D6AC62]/40 dark:bg-[#D6AC62]/15 dark:text-[#F0C56E] dark:border-[#D6AC62]/30';
       case 'unpaid':
         return 'text-rose-700 bg-rose-50 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60';
       case 'inactive':
-        return 'text-[#64748B] bg-slate-100 border border-[#E8EDF3] dark:bg-[#162438] dark:text-slate-400 dark:border-[#1F2F46]';
+        return 'text-[#4E5E78] bg-slate-100 border border-[#DFE6F0] dark:bg-[#17243C] dark:text-[#9BB0CD] dark:border-[#233452]';
       default:
-        return 'text-[#64748B] bg-slate-50 border border-[#E8EDF3]';
+        return 'text-[#4E5E78] bg-slate-50 border border-[#DFE6F0]';
     }
   };
 

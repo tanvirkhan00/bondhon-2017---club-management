@@ -127,30 +127,30 @@ export const AdminReports: React.FC = () => {
   return (
     <PageTransition className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E8EDF3] dark:border-[#1F2F46]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#DFE6F0] dark:border-[#233452]">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#172435] dark:text-slate-100 flex items-center gap-2.5">
-            <BarChart3 className="w-6 h-6 text-[#087F70]" />
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0F1B2E] dark:text-slate-100 flex items-center gap-2.5">
+            <BarChart3 className="w-6 h-6 text-[#1D4ED8] dark:text-[#60A5FA]" />
             <span>Financial Reports &amp; Backups</span>
           </h1>
-          <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400 mt-0.5">
+          <p className="text-xs sm:text-sm text-[#4E5E78] dark:text-slate-400 mt-0.5">
             Annual reconciliations, member-wise contribution rankings, and CSV export backups
           </p>
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          <div className="flex items-center gap-1.5 bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl px-3 py-2 shadow-2xs">
-            <Calendar className="w-3.5 h-3.5 text-[#087F70] shrink-0" />
+          <div className="flex items-center gap-1.5 bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] rounded-xl px-3 py-2 shadow-2xs">
+            <Calendar className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA] shrink-0" />
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="text-xs font-semibold font-mono tabular-nums text-[#172435] dark:text-slate-100 bg-white dark:bg-[#111C2D] focus:outline-hidden cursor-pointer"
+              className="text-xs font-semibold font-mono tabular-nums text-[#0F1B2E] dark:text-slate-100 bg-white dark:bg-[#111B2E] focus:outline-hidden cursor-pointer"
             >
               {FISCAL_YEARS.map((yr) => (
                 <option
                   key={yr}
                   value={yr}
-                  className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                  className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100"
                 >
                   Fiscal Year {yr}
                 </option>
@@ -174,7 +174,7 @@ export const AdminReports: React.FC = () => {
           value={formatBDT(totalYearCollected)}
           subLabel={`${yearCollectionRate}% collection rate`}
           icon={Banknote}
-          accent="emerald"
+          accent="sapphire"
         />
         <MetricCard
           label="Outstanding Balance"
@@ -194,13 +194,13 @@ export const AdminReports: React.FC = () => {
 
       {/* Report Tabs & CSV Action */}
       <div className="surface-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl">
-        <div className="flex items-center gap-1 p-1 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl self-start">
+        <div className="flex items-center gap-1 p-1 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl self-start">
           <button
             onClick={() => setActiveTab('monthly')}
             className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === 'monthly'
-                ? 'bg-[#14243A] dark:bg-[#087F70] text-white shadow-2xs'
-                : 'text-[#64748B] hover:text-[#172435] dark:hover:text-white'
+                ? 'bg-[#0F1B33] dark:bg-[#1D4ED8] text-white shadow-2xs'
+                : 'text-[#4E5E78] hover:text-[#0F1B2E] dark:hover:text-white'
             }`}
           >
             Monthly Reconciliation ({selectedYear})
@@ -209,8 +209,8 @@ export const AdminReports: React.FC = () => {
             onClick={() => setActiveTab('members')}
             className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === 'members'
-                ? 'bg-[#14243A] dark:bg-[#087F70] text-white shadow-2xs'
-                : 'text-[#64748B] hover:text-[#172435] dark:hover:text-white'
+                ? 'bg-[#0F1B33] dark:bg-[#1D4ED8] text-white shadow-2xs'
+                : 'text-[#4E5E78] hover:text-[#0F1B2E] dark:hover:text-white'
             }`}
           >
             Member-Wise Rankings
@@ -221,7 +221,7 @@ export const AdminReports: React.FC = () => {
           {activeTab === 'monthly' ? (
             <button
               onClick={handleExportYearlyReport}
-              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#087F70] hover:bg-[#06675B] rounded-xl transition-colors shadow-2xs cursor-pointer whitespace-nowrap"
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl transition-colors shadow-2xs cursor-pointer whitespace-nowrap"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export Monthly Report CSV</span>
@@ -229,7 +229,7 @@ export const AdminReports: React.FC = () => {
           ) : (
             <button
               onClick={handleExportMembersReport}
-              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#087F70] hover:bg-[#06675B] rounded-xl transition-colors shadow-2xs cursor-pointer whitespace-nowrap"
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl transition-colors shadow-2xs cursor-pointer whitespace-nowrap"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export Members Ranking CSV</span>
@@ -243,7 +243,7 @@ export const AdminReports: React.FC = () => {
         <div className="surface-card rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#F5F6F3] dark:bg-[#162438] text-[#64748B] dark:text-slate-400 border-b border-[#E8EDF3] dark:border-[#1F2F46]">
+              <thead className="bg-[#EFF3F9] dark:bg-[#17243C] text-[#4E5E78] dark:text-slate-400 border-b border-[#DFE6F0] dark:border-[#233452]">
                 <tr>
                   <th className="py-3 px-4 font-semibold">Month</th>
                   <th className="py-3 px-4 font-semibold text-right">Target (৳)</th>
@@ -254,41 +254,41 @@ export const AdminReports: React.FC = () => {
                   <th className="py-3 px-4 font-semibold text-right">Rate</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E8EDF3] dark:divide-[#1F2F46]">
+              <tbody className="divide-y divide-[#DFE6F0] dark:divide-[#233452]">
                 {monthSummaries.map((m) => (
                   <tr
                     key={m.month}
-                    className="hover:bg-[#F5F6F3]/65 dark:hover:bg-[#162438]/65 transition-colors"
+                    className="hover:bg-[#EFF3F9]/65 dark:hover:bg-[#17243C]/65 transition-colors"
                   >
-                    <td className="py-3 px-4 font-medium text-[#172435] dark:text-slate-100 whitespace-nowrap">
+                    <td className="py-3 px-4 font-medium text-[#0F1B2E] dark:text-slate-100 whitespace-nowrap">
                       {m.label}
                     </td>
-                    <td className="py-3 px-4 text-right font-mono tabular-nums text-[#64748B] dark:text-slate-300">
+                    <td className="py-3 px-4 text-right font-mono tabular-nums text-[#4E5E78] dark:text-slate-300">
                       {formatBDT(m.target)}
                     </td>
-                    <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#087F70] dark:text-[#34D399]">
+                    <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#0369A1] dark:text-[#38BDF8]">
                       {formatBDT(m.collected)}
                     </td>
                     <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold text-rose-700 dark:text-rose-400">
                       {m.outstanding > 0 ? formatBDT(m.outstanding) : '—'}
                     </td>
-                    <td className="py-3 px-4 text-center font-mono tabular-nums text-[#172435] dark:text-slate-200">
+                    <td className="py-3 px-4 text-center font-mono tabular-nums text-[#0F1B2E] dark:text-slate-200">
                       {m.paidCount}
                     </td>
-                    <td className="py-3 px-4 text-center font-mono tabular-nums text-[#172435] dark:text-slate-200">
+                    <td className="py-3 px-4 text-center font-mono tabular-nums text-[#0F1B2E] dark:text-slate-200">
                       {m.unpaidCount}
                     </td>
-                    <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold text-[#172435] dark:text-slate-100">
+                    <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold text-[#0F1B2E] dark:text-slate-100">
                       {m.target > 0 ? `${m.collectionRate}%` : '—'}
                     </td>
                   </tr>
                 ))}
               </tbody>
-              <tfoot className="bg-[#14243A] dark:bg-[#162438] dark:border-t dark:border-[#2B4564] text-white font-bold">
+              <tfoot className="bg-[#0F1B33] dark:bg-[#17243C] dark:border-t dark:border-[#223862] text-white font-bold">
                 <tr>
                   <td className="py-3 px-4">TOTAL {selectedYear}</td>
                   <td className="py-3 px-4 text-right font-mono tabular-nums">{formatBDT(totalYearTarget)}</td>
-                  <td className="py-3 px-4 text-right font-mono tabular-nums text-[#34D399]">{formatBDT(totalYearCollected)}</td>
+                  <td className="py-3 px-4 text-right font-mono tabular-nums text-[#38BDF8]">{formatBDT(totalYearCollected)}</td>
                   <td className="py-3 px-4 text-right font-mono tabular-nums text-rose-300">{formatBDT(totalYearOutstanding)}</td>
                   <td colSpan={2}></td>
                   <td className="py-3 px-4 text-right font-mono tabular-nums text-[#D6AC62]">{yearCollectionRate}%</td>
@@ -304,7 +304,7 @@ export const AdminReports: React.FC = () => {
         <div className="surface-card rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#F5F6F3] dark:bg-[#162438] text-[#64748B] dark:text-slate-400 border-b border-[#E8EDF3] dark:border-[#1F2F46]">
+              <thead className="bg-[#EFF3F9] dark:bg-[#17243C] text-[#4E5E78] dark:text-slate-400 border-b border-[#DFE6F0] dark:border-[#233452]">
                 <tr>
                   <th className="py-3 px-4 font-semibold">Rank</th>
                   <th className="py-3 px-4 font-semibold">Member</th>
@@ -316,42 +316,42 @@ export const AdminReports: React.FC = () => {
                   <th className="py-3 px-4 font-semibold text-right">Efficiency</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E8EDF3] dark:divide-[#1F2F46]">
+              <tbody className="divide-y divide-[#DFE6F0] dark:divide-[#233452]">
                 {memberRankings.map((r, index) => (
                   <tr
                     key={r.member.id}
-                    className="hover:bg-[#F5F6F3]/65 dark:hover:bg-[#162438]/65 transition-colors"
+                    className="hover:bg-[#EFF3F9]/65 dark:hover:bg-[#17243C]/65 transition-colors"
                   >
-                    <td className="py-3 px-4 font-mono font-bold text-[#9A7127] dark:text-[#D6AC62] tabular-nums">
+                    <td className="py-3 px-4 font-mono font-bold text-[#92600A] dark:text-[#F0C56E] tabular-nums">
                       #{index + 1}
                     </td>
-                    <td className="py-3 px-4 font-semibold text-[#172435] dark:text-slate-100">
+                    <td className="py-3 px-4 font-semibold text-[#0F1B2E] dark:text-slate-100">
                       <Link
                         to={`/admin/members/${r.member.id}`}
-                        className="hover:text-[#087F70] dark:hover:text-[#34D399]"
+                        className="hover:text-[#1D4ED8] dark:hover:text-[#60A5FA]"
                       >
                         {r.member.full_name}
                       </Link>
-                      <span className="block text-[10px] text-[#087F70] dark:text-[#34D399] font-normal">
+                      <span className="block text-[10px] text-[#1D4ED8] dark:text-[#60A5FA] font-normal">
                         {r.member.designation || 'Member'}
                       </span>
                     </td>
-                    <td className="py-3 px-4 font-mono font-bold text-[#172435] dark:text-slate-100">
+                    <td className="py-3 px-4 font-mono font-bold text-[#0F1B2E] dark:text-slate-100">
                       {r.member.member_code}
                     </td>
-                    <td className="py-3 px-4 text-right font-mono tabular-nums text-[#64748B] dark:text-slate-300">
+                    <td className="py-3 px-4 text-right font-mono tabular-nums text-[#4E5E78] dark:text-slate-300">
                       {formatBDT(r.billed)}
                     </td>
-                    <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#087F70] dark:text-[#34D399]">
+                    <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#0369A1] dark:text-[#38BDF8]">
                       {formatBDT(r.paid)}
                     </td>
                     <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold text-rose-700 dark:text-rose-400">
                       {r.outstanding > 0 ? formatBDT(r.outstanding) : '—'}
                     </td>
-                    <td className="py-3 px-4 text-center font-mono tabular-nums text-[#172435] dark:text-slate-200">
+                    <td className="py-3 px-4 text-center font-mono tabular-nums text-[#0F1B2E] dark:text-slate-200">
                       {r.paidMonths} mo
                     </td>
-                    <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold text-[#172435] dark:text-slate-100">
+                    <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold text-[#0F1B2E] dark:text-slate-100">
                       {r.settlementRate}%
                     </td>
                   </tr>

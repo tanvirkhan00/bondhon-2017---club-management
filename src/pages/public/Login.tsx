@@ -383,13 +383,13 @@ export const Login: React.FC = () => {
   };
 
   const inputBaseClass =
-    'w-full min-h-[44px] pl-10 pr-3.5 py-2.5 text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 placeholder:text-[#64748B]/75 transition-all duration-150 focus:outline-hidden focus:bg-white dark:focus:bg-[#111C2D] focus:border-[#087F70] focus:ring-3 focus:ring-[#087F70]/15';
+    'w-full min-h-[44px] pl-10 pr-3.5 py-2.5 text-sm bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 placeholder:text-[#4E5E78]/75 transition-all duration-150 focus:outline-hidden focus:bg-white dark:focus:bg-[#111B2E] focus:border-[#1D4ED8] focus:ring-3 focus:ring-[#1D4ED8]/15';
 
   return (
-    <PageTransition className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-6 sm:py-10 px-3 sm:px-6 lg:px-8 bg-[#F5F6F3] dark:bg-[#0B1320]">
-      <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-3xl overflow-hidden shadow-[0_24px_60px_-22px_rgba(20,36,58,0.18)]">
+    <PageTransition className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-6 sm:py-10 px-3 sm:px-6 lg:px-8 bg-[#EFF3F9] dark:bg-[#09101D]">
+      <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] rounded-3xl overflow-hidden shadow-[0_24px_60px_-22px_rgba(20,36,58,0.18)]">
         {/* Left Section: LottieFiles Animation Showcase & Bondhon 2017 Brand Identity */}
-        <div className="lg:col-span-6 bg-gradient-to-br from-[#14243A] via-[#192D47] to-[#0E1A2B] text-white p-5 sm:p-7 lg:p-9 flex flex-col justify-between relative overflow-hidden">
+        <div className="lg:col-span-6 bg-gradient-to-br from-[#0F1B33] via-[#192D47] to-[#0E1A2B] text-white p-5 sm:p-7 lg:p-9 flex flex-col justify-between relative overflow-hidden">
           {/* Subtle architectural grid lines */}
           <svg
             aria-hidden="true"
@@ -407,7 +407,7 @@ export const Login: React.FC = () => {
           {/* Brand Header */}
           <div className="relative z-10 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full overflow-hidden ring-2 ring-[#D6AC62]/80 bg-[#0B1320] shrink-0">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full overflow-hidden ring-2 ring-[#D6AC62]/80 bg-[#09101D] shrink-0">
                 <img
                   src={crestImage}
                   alt="Bondhon 2017 Official Crest"
@@ -474,10 +474,10 @@ export const Login: React.FC = () => {
               >
                 {/* Heading */}
                 <div className="space-y-1">
-                  <h1 className="text-2xl sm:text-[26px] font-bold tracking-tight text-[#14243A] dark:text-white">
+                  <h1 className="text-2xl sm:text-[26px] font-bold tracking-tight text-[#0F1B33] dark:text-white">
                     Welcome Back
                   </h1>
-                  <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400">
+                  <p className="text-xs sm:text-sm text-[#4E5E78] dark:text-slate-400">
                     Sign in to access your Bondhon 2017 portal
                   </p>
                 </div>
@@ -486,7 +486,7 @@ export const Login: React.FC = () => {
                 <div
                   role="tablist"
                   aria-label="Portal role selection"
-                  className="grid grid-cols-2 gap-1.5 p-1 bg-[#F5F6F3] dark:bg-[#162438] rounded-xl border border-[#E8EDF3] dark:border-[#1F2F46]"
+                  className="grid grid-cols-2 gap-1.5 p-1 bg-[#EFF3F9] dark:bg-[#17243C] rounded-xl border border-[#DFE6F0] dark:border-[#233452]"
                 >
                   <button
                     type="button"
@@ -502,8 +502,8 @@ export const Login: React.FC = () => {
                     }}
                     className={`min-h-[40px] px-3 rounded-lg text-xs sm:text-[13px] font-semibold transition-all duration-150 flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
                       loginRole === 'member'
-                        ? 'bg-white dark:bg-[#111C2D] text-[#087F70] dark:text-[#34D399] shadow-xs border border-[#E8EDF3]/80 dark:border-[#2B4564]'
-                        : 'text-[#64748B] hover:text-[#14243A] dark:hover:text-white'
+                        ? 'bg-white dark:bg-[#111B2E] text-[#1D4ED8] dark:text-[#60A5FA] shadow-xs border border-[#DFE6F0]/80 dark:border-[#223862]'
+                        : 'text-[#4E5E78] hover:text-[#0F1B33] dark:hover:text-white'
                     }`}
                   >
                     <UserCheck className="w-4 h-4 shrink-0" />
@@ -523,8 +523,8 @@ export const Login: React.FC = () => {
                     }}
                     className={`min-h-[40px] px-3 rounded-lg text-xs sm:text-[13px] font-semibold transition-all duration-150 flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
                       loginRole === 'admin'
-                        ? 'bg-[#14243A] dark:bg-[#087F70] text-white shadow-xs'
-                        : 'text-[#64748B] hover:text-[#14243A] dark:hover:text-white'
+                        ? 'bg-[#0F1B33] dark:bg-[#1D4ED8] text-white shadow-xs'
+                        : 'text-[#4E5E78] hover:text-[#0F1B33] dark:hover:text-white'
                     }`}
                   >
                     <ShieldCheck className="w-4 h-4 shrink-0" />
@@ -542,7 +542,7 @@ export const Login: React.FC = () => {
                       exit={{ opacity: 0, y: -6 }}
                       transition={{ duration: 0.16 }}
                       role="status"
-                      className="p-3.5 bg-[#087F70]/10 border border-[#087F70]/30 text-[#087F70] dark:text-[#34D399] rounded-xl text-xs sm:text-[13px] flex items-start gap-2.5 font-medium leading-relaxed"
+                      className="p-3.5 bg-[#1D4ED8]/10 border border-[#1D4ED8]/30 dark:border-[#60A5FA]/35 text-[#1D4ED8] dark:text-[#60A5FA] rounded-xl text-xs sm:text-[13px] flex items-start gap-2.5 font-medium leading-relaxed"
                     >
                       <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
                       <span>{infoMessage}</span>
@@ -570,7 +570,7 @@ export const Login: React.FC = () => {
                             type="button"
                             onClick={handleResendConfirmation}
                             disabled={resendingEmail || resendCooldown > 0}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-[#111C2D] text-[#087F70] dark:text-[#34D399] border border-[#087F70]/35 hover:bg-[#087F70]/10 disabled:opacity-60 transition-colors cursor-pointer whitespace-nowrap"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-[#111B2E] text-[#1D4ED8] dark:text-[#60A5FA] border border-[#1D4ED8]/35 dark:border-[#60A5FA]/35 hover:bg-[#1D4ED8]/10 dark:hover:bg-[#60A5FA]/15 disabled:opacity-60 transition-colors cursor-pointer whitespace-nowrap"
                           >
                             {resendingEmail ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -590,7 +590,7 @@ export const Login: React.FC = () => {
                             <p
                               className={`text-xs font-medium ${
                                 resendFeedback.type === 'success'
-                                  ? 'text-[#087F70] dark:text-[#34D399]'
+                                  ? 'text-[#1D4ED8] dark:text-[#60A5FA]'
                                   : 'text-rose-600 dark:text-rose-400'
                               }`}
                             >
@@ -610,7 +610,7 @@ export const Login: React.FC = () => {
                       exit={{ opacity: 0, y: -6 }}
                       transition={{ duration: 0.16 }}
                       role="status"
-                      className="p-3.5 bg-[#087F70]/10 border border-[#087F70]/30 text-[#087F70] dark:text-[#34D399] rounded-xl text-xs sm:text-[13px] flex items-center gap-2.5 font-semibold"
+                      className="p-3.5 bg-[#1D4ED8]/10 border border-[#1D4ED8]/30 dark:border-[#60A5FA]/35 text-[#1D4ED8] dark:text-[#60A5FA] rounded-xl text-xs sm:text-[13px] flex items-center gap-2.5 font-semibold"
                     >
                       <CheckCircle2 className="w-4 h-4 shrink-0" />
                       <span>
@@ -628,12 +628,12 @@ export const Login: React.FC = () => {
                     <div>
                       <label
                         htmlFor="member-select"
-                        className="block text-xs font-semibold text-[#172435] dark:text-slate-300 mb-1.5"
+                        className="block text-xs font-semibold text-[#0F1B2E] dark:text-slate-300 mb-1.5"
                       >
                         Member Name
                       </label>
                       <div className="relative">
-                        <UserCheck className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <UserCheck className="w-4 h-4 text-[#4E5E78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                         <select
                           id="member-select"
                           required
@@ -645,32 +645,32 @@ export const Login: React.FC = () => {
                           }}
                           className={`${inputBaseClass} pr-9 appearance-none cursor-pointer`}
                         >
-                          <option value="" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">
+                          <option value="" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">
                             Select your name...
                           </option>
                           {publicMembers.map((m) => (
                             <option
                               key={m.id}
                               value={m.id}
-                              className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                              className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100"
                             >
                               {m.full_name} ({m.member_code})
                             </option>
                           ))}
                         </select>
-                        <ChevronDown className="w-4 h-4 text-[#64748B] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <ChevronDown className="w-4 h-4 text-[#4E5E78] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                       </div>
                     </div>
 
                     <div>
                       <label
                         htmlFor="member-email"
-                        className="block text-xs font-semibold text-[#172435] dark:text-slate-300 mb-1.5"
+                        className="block text-xs font-semibold text-[#0F1B2E] dark:text-slate-300 mb-1.5"
                       >
                         Email Address
                       </label>
                       <div className="relative">
-                        <Mail className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <Mail className="w-4 h-4 text-[#4E5E78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                         <input
                           id="member-email"
                           type="email"
@@ -692,20 +692,20 @@ export const Login: React.FC = () => {
                       <div className="flex items-center justify-between mb-1.5">
                         <label
                           htmlFor="member-password"
-                          className="block text-xs font-semibold text-[#172435] dark:text-slate-300"
+                          className="block text-xs font-semibold text-[#0F1B2E] dark:text-slate-300"
                         >
                           Password
                         </label>
                         <button
                           type="button"
                           onClick={openResetView}
-                          className="text-xs text-[#087F70] dark:text-[#34D399] font-semibold hover:underline cursor-pointer whitespace-nowrap"
+                          className="text-xs text-[#1D4ED8] dark:text-[#60A5FA] font-semibold hover:underline cursor-pointer whitespace-nowrap"
                         >
                           Forgot password?
                         </button>
                       </div>
                       <div className="relative">
-                        <Lock className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <Lock className="w-4 h-4 text-[#4E5E78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                         <input
                           id="member-password"
                           type={showPassword ? 'text' : 'password'}
@@ -724,7 +724,7 @@ export const Login: React.FC = () => {
                           type="button"
                           onClick={() => setShowPassword((prev) => !prev)}
                           aria-label={showPassword ? 'Hide password' : 'Show password'}
-                          className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-lg text-[#64748B] hover:text-[#14243A] dark:hover:text-white transition-colors cursor-pointer"
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-lg text-[#4E5E78] hover:text-[#0F1B33] dark:hover:text-white transition-colors cursor-pointer"
                         >
                           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
@@ -733,12 +733,12 @@ export const Login: React.FC = () => {
 
                     {/* Remember Me */}
                     <div className="flex items-center justify-between pt-0.5">
-                      <label className="inline-flex items-center gap-2 text-xs text-[#64748B] dark:text-slate-400 cursor-pointer select-none">
+                      <label className="inline-flex items-center gap-2 text-xs text-[#4E5E78] dark:text-slate-400 cursor-pointer select-none">
                         <input
                           type="checkbox"
                           checked={rememberMe}
                           onChange={(e) => setRememberMe(e.target.checked)}
-                          className="w-4 h-4 rounded border-[#CBD5E1] dark:border-[#2B4564] text-[#087F70] focus:ring-[#087F70] cursor-pointer accent-[#087F70]"
+                          className="w-4 h-4 rounded border-[#CBD5E1] dark:border-[#223862] text-[#1D4ED8] focus:ring-[#1D4ED8] cursor-pointer accent-[#1D4ED8] dark:accent-[#60A5FA]"
                         />
                         <span>Remember me on this device</span>
                       </label>
@@ -757,12 +757,12 @@ export const Login: React.FC = () => {
                     <div>
                       <label
                         htmlFor="admin-email"
-                        className="block text-xs font-semibold text-[#172435] dark:text-slate-300 mb-1.5"
+                        className="block text-xs font-semibold text-[#0F1B2E] dark:text-slate-300 mb-1.5"
                       >
                         Admin Email
                       </label>
                       <div className="relative">
-                        <Mail className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <Mail className="w-4 h-4 text-[#4E5E78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                         <input
                           id="admin-email"
                           type="email"
@@ -784,20 +784,20 @@ export const Login: React.FC = () => {
                       <div className="flex items-center justify-between mb-1.5">
                         <label
                           htmlFor="admin-password"
-                          className="block text-xs font-semibold text-[#172435] dark:text-slate-300"
+                          className="block text-xs font-semibold text-[#0F1B2E] dark:text-slate-300"
                         >
                           Password
                         </label>
                         <button
                           type="button"
                           onClick={openResetView}
-                          className="text-xs text-[#087F70] dark:text-[#34D399] font-semibold hover:underline cursor-pointer whitespace-nowrap"
+                          className="text-xs text-[#1D4ED8] dark:text-[#60A5FA] font-semibold hover:underline cursor-pointer whitespace-nowrap"
                         >
                           Forgot password?
                         </button>
                       </div>
                       <div className="relative">
-                        <Lock className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <Lock className="w-4 h-4 text-[#4E5E78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                         <input
                           id="admin-password"
                           type={showPassword ? 'text' : 'password'}
@@ -816,7 +816,7 @@ export const Login: React.FC = () => {
                           type="button"
                           onClick={() => setShowPassword((prev) => !prev)}
                           aria-label={showPassword ? 'Hide password' : 'Show password'}
-                          className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-lg text-[#64748B] hover:text-[#14243A] dark:hover:text-white transition-colors cursor-pointer"
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-lg text-[#4E5E78] hover:text-[#0F1B33] dark:hover:text-white transition-colors cursor-pointer"
                         >
                           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
@@ -825,12 +825,12 @@ export const Login: React.FC = () => {
 
                     {/* Remember Me */}
                     <div className="flex items-center justify-between pt-0.5">
-                      <label className="inline-flex items-center gap-2 text-xs text-[#64748B] dark:text-slate-400 cursor-pointer select-none">
+                      <label className="inline-flex items-center gap-2 text-xs text-[#4E5E78] dark:text-slate-400 cursor-pointer select-none">
                         <input
                           type="checkbox"
                           checked={rememberMe}
                           onChange={(e) => setRememberMe(e.target.checked)}
-                          className="w-4 h-4 rounded border-[#CBD5E1] dark:border-[#2B4564] text-[#087F70] focus:ring-[#087F70] cursor-pointer accent-[#087F70]"
+                          className="w-4 h-4 rounded border-[#CBD5E1] dark:border-[#223862] text-[#1D4ED8] focus:ring-[#1D4ED8] cursor-pointer accent-[#1D4ED8] dark:accent-[#60A5FA]"
                         />
                         <span>Remember me on this device</span>
                       </label>
@@ -847,17 +847,17 @@ export const Login: React.FC = () => {
                 )}
 
                 {/* Quick Footer Links */}
-                <div className="pt-4 border-t border-[#E8EDF3] dark:border-[#1F2F46] flex items-center justify-between gap-4 text-xs text-[#64748B] dark:text-slate-400">
+                <div className="pt-4 border-t border-[#DFE6F0] dark:border-[#233452] flex items-center justify-between gap-4 text-xs text-[#4E5E78] dark:text-slate-400">
                   <Link
                     to="/constitution"
-                    className="hover:text-[#087F70] dark:hover:text-[#34D399] inline-flex items-center gap-1.5 transition-colors whitespace-nowrap"
+                    className="hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] inline-flex items-center gap-1.5 transition-colors whitespace-nowrap"
                   >
                     <FileText className="w-3.5 h-3.5" />
                     <span>Club Constitution</span>
                   </Link>
                   <Link
                     to="/members"
-                    className="hover:text-[#087F70] dark:hover:text-[#34D399] transition-colors whitespace-nowrap"
+                    className="hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] transition-colors whitespace-nowrap"
                   >
                     Member Directory
                   </Link>
@@ -879,20 +879,20 @@ export const Login: React.FC = () => {
                     setFormView('login');
                     setResetFeedback(null);
                   }}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#64748B] hover:text-[#14243A] dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#4E5E78] hover:text-[#0F1B33] dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>Back to Sign In</span>
                 </button>
 
                 <div className="space-y-1.5">
-                  <div className="w-10 h-10 rounded-xl bg-[#087F70]/10 border border-[#087F70]/25 text-[#087F70] dark:text-[#34D399] flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-[#1D4ED8]/10 border border-[#1D4ED8]/25 dark:border-[#60A5FA]/35 text-[#1D4ED8] dark:text-[#60A5FA] flex items-center justify-center">
                     <KeyRound className="w-5 h-5" />
                   </div>
-                  <h1 className="text-2xl font-bold tracking-tight text-[#14243A] dark:text-white pt-1">
+                  <h1 className="text-2xl font-bold tracking-tight text-[#0F1B33] dark:text-white pt-1">
                     পাসওয়ার্ড রিসেট করুন
                   </h1>
-                  <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-[#4E5E78] dark:text-slate-400 leading-relaxed">
                     আপনার নিবন্ধিত ইমেইল ঠিকানা লিখুন। পাসওয়ার্ড রিকভারি লিঙ্ক ইমেইলে পাঠানো হবে।
                   </p>
                 </div>
@@ -908,7 +908,7 @@ export const Login: React.FC = () => {
                       role="status"
                       className={`p-3.5 rounded-xl text-xs sm:text-[13px] flex items-start gap-2.5 border ${
                         resetFeedback.type === 'success'
-                          ? 'bg-[#087F70]/10 text-[#087F70] dark:text-[#34D399] border-[#087F70]/30'
+                          ? 'bg-[#1D4ED8]/10 text-[#1D4ED8] dark:text-[#60A5FA] border-[#1D4ED8]/30 dark:border-[#60A5FA]/35'
                           : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/70'
                       }`}
                     >
@@ -926,12 +926,12 @@ export const Login: React.FC = () => {
                   <div>
                     <label
                       htmlFor="reset-email"
-                      className="block text-xs font-semibold text-[#172435] dark:text-slate-300 mb-1.5"
+                      className="block text-xs font-semibold text-[#0F1B2E] dark:text-slate-300 mb-1.5"
                     >
                       Registered Email Address
                     </label>
                     <div className="relative">
-                      <Mail className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <Mail className="w-4 h-4 text-[#4E5E78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                       <input
                         id="reset-email"
                         type="email"
@@ -952,7 +952,7 @@ export const Login: React.FC = () => {
                         setFormView('login');
                         setResetFeedback(null);
                       }}
-                      className="min-h-[44px] px-4 py-2.5 text-xs sm:text-sm font-semibold text-[#64748B] hover:bg-[#F5F6F3] dark:hover:bg-[#162438] rounded-xl transition-colors cursor-pointer whitespace-nowrap"
+                      className="min-h-[44px] px-4 py-2.5 text-xs sm:text-sm font-semibold text-[#4E5E78] hover:bg-[#EFF3F9] dark:hover:bg-[#17243C] rounded-xl transition-colors cursor-pointer whitespace-nowrap"
                     >
                       বাতিল
                     </button>
@@ -961,7 +961,7 @@ export const Login: React.FC = () => {
                       disabled={resetLoading}
                       whileHover={resetLoading ? undefined : { y: -1 }}
                       whileTap={resetLoading ? undefined : { scale: 0.99 }}
-                      className="flex-1 min-h-[44px] px-5 py-2.5 text-xs sm:text-sm font-semibold bg-[#087F70] hover:bg-[#06675B] text-white rounded-xl shadow-xs transition-all disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
+                      className="flex-1 min-h-[44px] px-5 py-2.5 text-xs sm:text-sm font-semibold bg-[#1D4ED8] hover:bg-[#1E40AF] text-white rounded-xl shadow-xs transition-all disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
                     >
                       {resetLoading ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -990,20 +990,20 @@ export const Login: React.FC = () => {
                     setFormView('login');
                     setRecoveryFeedback(null);
                   }}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#64748B] hover:text-[#14243A] dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#4E5E78] hover:text-[#0F1B33] dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>Back to Sign In</span>
                 </button>
 
                 <div className="space-y-1.5">
-                  <div className="w-10 h-10 rounded-xl bg-[#087F70]/10 border border-[#087F70]/25 text-[#087F70] dark:text-[#34D399] flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-[#1D4ED8]/10 border border-[#1D4ED8]/25 dark:border-[#60A5FA]/35 text-[#1D4ED8] dark:text-[#60A5FA] flex items-center justify-center">
                     <KeyRound className="w-5 h-5" />
                   </div>
-                  <h1 className="text-2xl font-bold tracking-tight text-[#14243A] dark:text-white pt-1">
+                  <h1 className="text-2xl font-bold tracking-tight text-[#0F1B33] dark:text-white pt-1">
                     নতুন পাসওয়ার্ড সেট করুন
                   </h1>
-                  <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-[#4E5E78] dark:text-slate-400 leading-relaxed">
                     {user?.email
                       ? `${user.email} অ্যাকাউন্টের জন্য কমপক্ষে ৬ অক্ষরের নতুন পাসওয়ার্ড সেট করুন।`
                       : 'আপনার অ্যাকাউন্টের জন্য কমপক্ষে ৬ অক্ষরের নতুন পাসওয়ার্ড সেট করুন।'}
@@ -1021,7 +1021,7 @@ export const Login: React.FC = () => {
                       role="status"
                       className={`p-3.5 rounded-xl text-xs sm:text-[13px] flex items-start gap-2.5 border ${
                         recoveryFeedback.type === 'success'
-                          ? 'bg-[#087F70]/10 text-[#087F70] dark:text-[#34D399] border-[#087F70]/30'
+                          ? 'bg-[#1D4ED8]/10 text-[#1D4ED8] dark:text-[#60A5FA] border-[#1D4ED8]/30 dark:border-[#60A5FA]/35'
                           : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/70'
                       }`}
                     >
@@ -1039,12 +1039,12 @@ export const Login: React.FC = () => {
                   <div>
                     <label
                       htmlFor="recovery-new-password"
-                      className="block text-xs font-semibold text-[#172435] dark:text-slate-300 mb-1.5"
+                      className="block text-xs font-semibold text-[#0F1B2E] dark:text-slate-300 mb-1.5"
                     >
                       New Password
                     </label>
                     <div className="relative">
-                      <Lock className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <Lock className="w-4 h-4 text-[#4E5E78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                       <input
                         id="recovery-new-password"
                         type={showNewPassword ? 'text' : 'password'}
@@ -1060,7 +1060,7 @@ export const Login: React.FC = () => {
                         type="button"
                         onClick={() => setShowNewPassword((prev) => !prev)}
                         aria-label={showNewPassword ? 'Hide password' : 'Show password'}
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-lg text-[#64748B] hover:text-[#14243A] dark:hover:text-white transition-colors cursor-pointer"
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-lg text-[#4E5E78] hover:text-[#0F1B33] dark:hover:text-white transition-colors cursor-pointer"
                       >
                         {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -1070,12 +1070,12 @@ export const Login: React.FC = () => {
                   <div>
                     <label
                       htmlFor="recovery-confirm-password"
-                      className="block text-xs font-semibold text-[#172435] dark:text-slate-300 mb-1.5"
+                      className="block text-xs font-semibold text-[#0F1B2E] dark:text-slate-300 mb-1.5"
                     >
                       Confirm New Password
                     </label>
                     <div className="relative">
-                      <Lock className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <Lock className="w-4 h-4 text-[#4E5E78] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                       <input
                         id="recovery-confirm-password"
                         type={showNewPassword ? 'text' : 'password'}
@@ -1095,7 +1095,7 @@ export const Login: React.FC = () => {
                     disabled={recoveryLoading}
                     whileHover={recoveryLoading ? undefined : { y: -1 }}
                     whileTap={recoveryLoading ? undefined : { scale: 0.99 }}
-                    className="w-full min-h-[44px] px-5 py-2.5 text-xs sm:text-sm font-semibold bg-[#087F70] hover:bg-[#06675B] text-white rounded-xl shadow-xs transition-all disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
+                    className="w-full min-h-[44px] px-5 py-2.5 text-xs sm:text-sm font-semibold bg-[#1D4ED8] hover:bg-[#1E40AF] text-white rounded-xl shadow-xs transition-all disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
                   >
                     {recoveryLoading ? (
                       <Loader2 className="w-4 h-4 animate-spin" />

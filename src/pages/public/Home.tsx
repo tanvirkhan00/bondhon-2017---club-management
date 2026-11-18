@@ -67,14 +67,14 @@ export const Home: React.FC = () => {
   return (
     <PageTransition className="space-y-16 sm:space-y-24 pb-16">
       {/* 1. HERO SECTION */}
-      <section className="relative overflow-hidden bg-white dark:bg-[#111C2D] border-b border-[#E8EDF3] dark:border-[#1F2F46] pt-10 sm:pt-16 pb-12 sm:pb-20">
+      <section className="relative overflow-hidden bg-white dark:bg-[#111B2E] border-b border-[#DFE6F0] dark:border-[#233452] pt-10 sm:pt-16 pb-12 sm:pb-20">
         {/* Subtle architectural dot/grid line overlay */}
         <div
           aria-hidden="true"
           className="absolute inset-0 opacity-[0.035] dark:opacity-[0.06] pointer-events-none"
           style={{
             backgroundImage:
-              'radial-gradient(#14243A 1px, transparent 1px)',
+              'radial-gradient(#0F1B33 1px, transparent 1px)',
             backgroundSize: '24px 24px',
           }}
         />
@@ -83,7 +83,7 @@ export const Home: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-10 items-center">
             {/* Left Content */}
             <div className="lg:col-span-7 space-y-6 text-left">
-              <div className="text-xs font-mono font-semibold uppercase tracking-wider text-[#087F70] dark:text-[#34D399] flex flex-wrap items-center gap-x-2.5 gap-y-1">
+              <div className="text-xs font-mono font-semibold uppercase tracking-wider text-[#1D4ED8] dark:text-[#60A5FA] flex flex-wrap items-center gap-x-2.5 gap-y-1">
                 <span>বন্ধুত্ব সমবায় সমিতি</span>
                 <span className="text-[#D6AC62]">·</span>
                 <span>এস.এস.সি ব্যাচ ২০১৭</span>
@@ -92,15 +92,15 @@ export const Home: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#14243A] dark:text-white leading-[1.08]">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#0F1B33] dark:text-white leading-[1.08]">
                   Bondhon 2017
                 </h1>
-                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#087F70] dark:text-[#34D399]">
+                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#1D4ED8] dark:text-[#60A5FA]">
                   বন্ধুত্ব সমবায় সমিতি
                 </p>
               </div>
 
-              <p className="text-base sm:text-lg text-[#64748B] dark:text-slate-300 leading-relaxed max-w-2xl">
+              <p className="text-base sm:text-lg text-[#4E5E78] dark:text-slate-300 leading-relaxed max-w-2xl">
                 চরচান্দা খাসমহল বাজার ভিত্তিক এস.এস.সি ব্যাচ ২০১৭-এর সমবায় ও সামাজিক উন্নয়ন প্ল্যাটফর্ম। নিয়মিত সঞ্চয়, স্বচ্ছ ডিজিটাল হিসাবরক্ষণ ও পারস্পরিক আস্থার সম্মিলিত উদ্যোগ।
               </p>
 
@@ -108,7 +108,7 @@ export const Home: React.FC = () => {
               <div className="flex flex-wrap items-center gap-3 pt-1">
                 <Link
                   to="/members"
-                  className="px-6 py-3.5 text-sm font-bold rounded-xl bg-[#087F70] hover:bg-[#06675B] text-white shadow-sm hover:shadow-md transition-all flex items-center gap-2 group whitespace-nowrap"
+                  className="px-6 py-3.5 text-sm font-bold rounded-xl bg-[#1D4ED8] hover:bg-[#1E40AF] text-white shadow-sm hover:shadow-md transition-all flex items-center gap-2 group whitespace-nowrap"
                 >
                   <Users className="w-4 h-4" />
                   <span>সদস্য তালিকা ({totalMembers})</span>
@@ -117,15 +117,15 @@ export const Home: React.FC = () => {
 
                 <Link
                   to="/constitution"
-                  className="px-5 py-3.5 text-sm font-semibold rounded-xl bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] text-[#172435] dark:text-slate-100 hover:border-[#14243A]/30 transition-all flex items-center gap-2 whitespace-nowrap"
+                  className="px-5 py-3.5 text-sm font-semibold rounded-xl bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] text-[#0F1B2E] dark:text-slate-100 hover:border-[#0F1B33]/30 transition-all flex items-center gap-2 whitespace-nowrap"
                 >
-                  <FileText className="w-4 h-4 text-[#087F70] dark:text-[#34D399]" />
+                  <FileText className="w-4 h-4 text-[#1D4ED8] dark:text-[#60A5FA]" />
                   <span>গঠনতন্ত্র ও নীতিমালা</span>
                 </Link>
 
                 <Link
                   to={isAuthenticated ? (isAdmin ? '/admin/dashboard' : '/member/profile') : '/login'}
-                  className="px-5 py-3.5 text-sm font-semibold rounded-xl bg-[#14243A] hover:bg-[#203650] text-white transition-all flex items-center gap-2 whitespace-nowrap"
+                  className="px-5 py-3.5 text-sm font-semibold rounded-xl bg-[#0F1B33] hover:bg-[#18294A] text-white transition-all flex items-center gap-2 whitespace-nowrap"
                 >
                   <Lock className="w-4 h-4 text-[#D6AC62]" />
                   <span>{isAuthenticated ? 'পোর্টাল ড্যাশবোর্ড' : 'সদস্য লগইন'}</span>
@@ -133,33 +133,33 @@ export const Home: React.FC = () => {
               </div>
 
               {/* 4 Quantitative Key Metrics */}
-              <div className="pt-6 border-t border-[#E8EDF3] dark:border-[#1F2F46] grid grid-cols-2 sm:grid-cols-4 gap-5">
+              <div className="pt-6 border-t border-[#DFE6F0] dark:border-[#233452] grid grid-cols-2 sm:grid-cols-4 gap-5">
                 <div>
-                  <span className="text-2xl sm:text-3xl font-extrabold font-mono text-[#14243A] dark:text-white tabular-nums block">
+                  <span className="text-2xl sm:text-3xl font-extrabold font-mono text-[#0F1B33] dark:text-white tabular-nums block">
                     <AnimatedNumber value={totalMembers} />
                   </span>
-                  <span className="text-xs text-[#64748B] dark:text-slate-400 font-medium">সক্রিয় সদস্য</span>
+                  <span className="text-xs text-[#4E5E78] dark:text-slate-400 font-medium">সক্রিয় সদস্য</span>
                 </div>
 
                 <div>
-                  <span className="text-2xl sm:text-3xl font-extrabold font-mono text-[#087F70] dark:text-[#34D399] tabular-nums block">
+                  <span className="text-2xl sm:text-3xl font-extrabold font-mono text-[#0369A1] dark:text-[#38BDF8] tabular-nums block">
                     ৳৫০০
                   </span>
-                  <span className="text-xs text-[#64748B] dark:text-slate-400 font-medium">মাসিক কিস্তি / নাম</span>
+                  <span className="text-xs text-[#4E5E78] dark:text-slate-400 font-medium">মাসিক কিস্তি / নাম</span>
                 </div>
 
                 <div>
-                  <span className="text-2xl sm:text-3xl font-extrabold font-mono text-[#14243A] dark:text-white tabular-nums block">
+                  <span className="text-2xl sm:text-3xl font-extrabold font-mono text-[#0F1B33] dark:text-white tabular-nums block">
                     ১২ তারিখ
                   </span>
-                  <span className="text-xs text-[#64748B] dark:text-slate-400 font-medium">জমার শেষ সময়</span>
+                  <span className="text-xs text-[#4E5E78] dark:text-slate-400 font-medium">জমার শেষ সময়</span>
                 </div>
 
                 <div>
-                  <span className="text-2xl sm:text-3xl font-extrabold font-mono text-[#9A7127] dark:text-[#D6AC62] tabular-nums block">
+                  <span className="text-2xl sm:text-3xl font-extrabold font-mono text-[#92600A] dark:text-[#F0C56E] tabular-nums block">
                     ১০০%
                   </span>
-                  <span className="text-xs text-[#64748B] dark:text-slate-400 font-medium">স্বচ্ছ ডিজিটাল অডিট</span>
+                  <span className="text-xs text-[#4E5E78] dark:text-slate-400 font-medium">স্বচ্ছ ডিজিটাল অডিট</span>
                 </div>
               </div>
             </div>
@@ -168,8 +168,8 @@ export const Home: React.FC = () => {
             <div className="lg:col-span-5 flex justify-center">
               <div className="relative p-6 sm:p-8">
                 {/* Geometric Navy & Gold Medallion Ring */}
-                <div className="relative w-60 h-60 sm:w-76 sm:h-76 rounded-full p-2.5 bg-gradient-to-br from-[#14243A] via-[#203650] to-[#087F70] ring-4 ring-[#D6AC62]/35 shadow-[0_24px_60px_-15px_rgba(20,36,58,0.28)]">
-                  <div className="w-full h-full rounded-full overflow-hidden bg-[#14243A] p-1">
+                <div className="relative w-60 h-60 sm:w-76 sm:h-76 rounded-full p-2.5 bg-gradient-to-br from-[#0F1B33] via-[#18294A] to-[#1D4ED8] ring-4 ring-[#D6AC62]/35 shadow-[0_24px_60px_-15px_rgba(20,36,58,0.28)]">
+                  <div className="w-full h-full rounded-full overflow-hidden bg-[#0F1B33] p-1">
                     <img
                       src={crestImage}
                       alt="Bondhon 2017 Official Emblem"
@@ -180,14 +180,14 @@ export const Home: React.FC = () => {
 
                 {/* Floating Office Location Card */}
                 <div className="surface-card absolute bottom-1 -left-2 sm:left-0 rounded-2xl p-3.5 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#087F70]/10 text-[#087F70] dark:text-[#34D399] flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-[#1D4ED8]/10 text-[#1D4ED8] dark:text-[#60A5FA] flex items-center justify-center shrink-0">
                     <MapPin className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-xs font-bold text-[#14243A] dark:text-white block">
+                    <span className="text-xs font-bold text-[#0F1B33] dark:text-white block">
                       চরচান্দা খাসমহল বাজার
                     </span>
-                    <span className="text-[11px] text-[#64748B] block">
+                    <span className="text-[11px] text-[#4E5E78] block">
                       সমিতির স্থায়ী কার্যালয়
                     </span>
                   </div>
@@ -195,12 +195,12 @@ export const Home: React.FC = () => {
 
                 {/* Floating Verified Ledger Card */}
                 <div className="surface-card absolute top-2 -right-2 sm:right-0 rounded-2xl p-3 flex items-center gap-2.5">
-                  <ShieldCheck className="w-5 h-5 text-[#087F70] dark:text-[#34D399] shrink-0" />
+                  <ShieldCheck className="w-5 h-5 text-[#1D4ED8] dark:text-[#60A5FA] shrink-0" />
                   <div>
-                    <span className="text-[11px] font-bold text-[#14243A] dark:text-white block">
+                    <span className="text-[11px] font-bold text-[#0F1B33] dark:text-white block">
                       স্বচ্ছ আর্থিক হিসাব
                     </span>
-                    <span className="text-[10px] text-[#64748B] block">
+                    <span className="text-[10px] text-[#4E5E78] block">
                       যাচাইকৃত ডিজিটাল লেজার
                     </span>
                   </div>
@@ -215,16 +215,16 @@ export const Home: React.FC = () => {
       <RevealSection className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div>
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#087F70] dark:text-[#34D399] block mb-1">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#1D4ED8] dark:text-[#60A5FA] block mb-1">
               স্বচ্ছ তহবিল বিবরণী · লাইভ পরিসংখ্যান
             </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#14243A] dark:text-white tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0F1B33] dark:text-white tracking-tight">
               সমিতির মোট সংগ্রহ ও জরিমানা হিসাব
             </h2>
           </div>
           <Link
             to={isAuthenticated ? (isAdmin ? '/admin/fines' : '/member/payment-history') : '/login'}
-            className="text-xs sm:text-sm font-semibold text-[#087F70] dark:text-[#34D399] hover:underline inline-flex items-center gap-1 self-start sm:self-auto"
+            className="text-xs sm:text-sm font-semibold text-[#1D4ED8] dark:text-[#60A5FA] hover:underline inline-flex items-center gap-1 self-start sm:self-auto"
           >
             <span>বিস্তারিত লেজার দেখুন</span>
             <ChevronRight className="w-4 h-4" />
@@ -235,18 +235,18 @@ export const Home: React.FC = () => {
           {/* Card 1: Net Club Available Balance */}
           <div className="surface-card surface-card-hover rounded-2xl p-6 flex flex-col justify-between gap-4">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B] dark:text-slate-400">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#4E5E78] dark:text-slate-400">
                 নিট বর্তমান তহবিল (Available Balance)
               </span>
-              <div className="w-9 h-9 rounded-xl bg-[#087F70]/10 text-[#087F70] dark:text-[#34D399] flex items-center justify-center shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-[#1D4ED8]/10 text-[#1D4ED8] dark:text-[#60A5FA] flex items-center justify-center shrink-0">
                 <Banknote className="w-5 h-5" />
               </div>
             </div>
             <div>
-              <div className="text-3xl sm:text-4xl font-extrabold font-mono text-[#087F70] dark:text-[#34D399] tabular-nums">
+              <div className="text-3xl sm:text-4xl font-extrabold font-mono text-[#0369A1] dark:text-[#38BDF8] tabular-nums">
                 {formatBDT(publicClubHighlights.netClubAvailableBalance)}
               </div>
-              <p className="text-xs text-[#64748B] dark:text-slate-400 mt-2 font-mono tabular-nums">
+              <p className="text-xs text-[#4E5E78] dark:text-slate-400 mt-2 font-mono tabular-nums">
                 মোট সংগ্রহ: {formatBDT(publicClubHighlights.totalCollected)} (মূল:{' '}
                 {formatBDT(publicClubHighlights.totalPrincipalCollected)} · জরিমানা:{' '}
                 {formatBDT(publicClubHighlights.totalFineCollected)})
@@ -254,9 +254,9 @@ export const Home: React.FC = () => {
               {(publicClubHighlights.totalBankCharges > 0 ||
                 publicClubHighlights.totalClubExpenses > 0 ||
                 publicClubHighlights.totalBankInterest > 0) && (
-                <p className="text-[11px] text-[#64748B] dark:text-slate-400 mt-1 font-mono tabular-nums">
+                <p className="text-[11px] text-[#4E5E78] dark:text-slate-400 mt-1 font-mono tabular-nums">
                   {publicClubHighlights.totalBankInterest > 0 && (
-                    <span className="text-[#087F70] dark:text-[#34D399] font-semibold">
+                    <span className="text-[#0369A1] dark:text-[#38BDF8] font-semibold">
                       +মুনাফা: {formatBDT(publicClubHighlights.totalBankInterest)}
                     </span>
                   )}
@@ -282,18 +282,18 @@ export const Home: React.FC = () => {
           {/* Card 2: Total Fine Collections */}
           <div className="surface-card surface-card-hover rounded-2xl p-6 flex flex-col justify-between gap-4">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B] dark:text-slate-400">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#4E5E78] dark:text-slate-400">
                 মোট জরিমানা আদায় (Fine Collections)
               </span>
-              <div className="w-9 h-9 rounded-xl bg-[#D6AC62]/15 text-[#9A7127] dark:text-[#D6AC62] flex items-center justify-center shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-[#D6AC62]/15 text-[#92600A] dark:text-[#F0C56E] flex items-center justify-center shrink-0">
                 <Coins className="w-5 h-5" />
               </div>
             </div>
             <div>
-              <div className="text-3xl sm:text-4xl font-extrabold font-mono text-[#9A7127] dark:text-[#D6AC62] tabular-nums">
+              <div className="text-3xl sm:text-4xl font-extrabold font-mono text-[#92600A] dark:text-[#F0C56E] tabular-nums">
                 {formatBDT(publicClubHighlights.totalFineCollected)}
               </div>
-              <p className="text-xs text-[#64748B] dark:text-slate-400 mt-2">
+              <p className="text-xs text-[#4E5E78] dark:text-slate-400 mt-2">
                 ১২ তারিখের পর বিলম্ব পরিশোধের জরিমানা (৳৫০/নাম) থেকে সংগৃহীত
               </p>
             </div>
@@ -302,10 +302,10 @@ export const Home: React.FC = () => {
           {/* Card 3: Top Fine Contributor */}
           <div className="surface-card surface-card-hover rounded-2xl p-6 flex flex-col justify-between gap-4">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B] dark:text-slate-400">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#4E5E78] dark:text-slate-400">
                 সর্বোচ্চ জরিমানা প্রদানকারী (Top Contributor)
               </span>
-              <div className="w-9 h-9 rounded-xl bg-[#14243A]/10 dark:bg-[#203650] text-[#14243A] dark:text-[#D6AC62] flex items-center justify-center shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-[#0F1B33]/10 dark:bg-[#18294A] text-[#0F1B33] dark:text-[#D6AC62] flex items-center justify-center shrink-0">
                 <Trophy className="w-5 h-5" />
               </div>
             </div>
@@ -317,7 +317,7 @@ export const Home: React.FC = () => {
                   return (
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-11 h-11 rounded-full overflow-hidden bg-slate-100 dark:bg-[#203650] ring-2 ring-[#D6AC62]/50 shrink-0 flex items-center justify-center">
+                        <div className="w-11 h-11 rounded-full overflow-hidden bg-slate-100 dark:bg-[#18294A] ring-2 ring-[#D6AC62]/50 shrink-0 flex items-center justify-center">
                           {top.profile_image_url ? (
                             <img
                               src={top.profile_image_url}
@@ -325,21 +325,21 @@ export const Home: React.FC = () => {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <span className="text-xs font-bold text-[#14243A] dark:text-slate-200">
+                            <span className="text-xs font-bold text-[#0F1B33] dark:text-slate-200">
                               {top.full_name.substring(0, 2).toUpperCase()}
                             </span>
                           )}
                         </div>
                         <div className="min-w-0">
-                          <h3 className="text-sm font-bold text-[#14243A] dark:text-white truncate">
+                          <h3 className="text-sm font-bold text-[#0F1B33] dark:text-white truncate">
                             {top.full_name}
                           </h3>
-                          <span className="text-[11px] font-mono text-[#64748B] block">
+                          <span className="text-[11px] font-mono text-[#4E5E78] block">
                             {top.member_code} · {top.fined_months} মাস
                           </span>
                         </div>
                       </div>
-                      <span className="font-mono font-extrabold text-lg text-[#14243A] dark:text-[#D6AC62] tabular-nums shrink-0">
+                      <span className="font-mono font-extrabold text-lg text-[#0F1B33] dark:text-[#D6AC62] tabular-nums shrink-0">
                         {formatBDT(top.total_fine_paid)}
                       </span>
                     </div>
@@ -347,13 +347,13 @@ export const Home: React.FC = () => {
                 })()}
 
                 {publicClubHighlights.topFineContributors.length > 1 && (
-                  <div className="pt-2.5 border-t border-[#E8EDF3] dark:border-[#1F2F46] space-y-1 text-[11px] text-[#64748B] dark:text-slate-400">
+                  <div className="pt-2.5 border-t border-[#DFE6F0] dark:border-[#233452] space-y-1 text-[11px] text-[#4E5E78] dark:text-slate-400">
                     {publicClubHighlights.topFineContributors.slice(1, 3).map((runner, idx) => (
                       <div key={runner.member_id} className="flex items-center justify-between gap-2">
                         <span className="truncate">
                           {idx + 2}. {runner.full_name} ({runner.member_code})
                         </span>
-                        <span className="font-mono font-semibold text-[#172435] dark:text-slate-200 tabular-nums shrink-0">
+                        <span className="font-mono font-semibold text-[#0F1B2E] dark:text-slate-200 tabular-nums shrink-0">
                           {formatBDT(runner.total_fine_paid)}
                         </span>
                       </div>
@@ -363,10 +363,10 @@ export const Home: React.FC = () => {
               </div>
             ) : (
               <div>
-                <div className="text-base font-bold text-[#14243A] dark:text-slate-200">
+                <div className="text-base font-bold text-[#0F1B33] dark:text-slate-200">
                   এখনো কোনো জরিমানা রেকর্ড নেই
                 </div>
-                <p className="text-xs text-[#64748B] dark:text-slate-400 mt-1">
+                <p className="text-xs text-[#4E5E78] dark:text-slate-400 mt-1">
                   সকল সদস্য সময়মতো মাসিক সঞ্চয় কিস্তি পরিশোধ করেছেন।
                 </p>
               </div>
@@ -379,21 +379,21 @@ export const Home: React.FC = () => {
       <RevealSection className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-wider text-[#9A7127] dark:text-[#D6AC62] mb-1">
+            <div className="inline-flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-wider text-[#92600A] dark:text-[#F0C56E] mb-1">
               <Crown className="w-4 h-4" />
               <span>ব্যবস্থাপনা কমিটি · ধারা ৩.১</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#14243A] dark:text-white tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0F1B33] dark:text-white tracking-tight">
               কার্যনির্বাহী পরিষদ
             </h2>
-            <p className="text-sm text-[#64748B] dark:text-slate-400 mt-1">
+            <p className="text-sm text-[#4E5E78] dark:text-slate-400 mt-1">
               বন্ধুত্ব সমবায় সমিতির নীতি নির্ধারণ ও আর্থিক পরিচালনা পরিষদ
             </p>
           </div>
 
           <Link
             to="/about"
-            className="text-xs sm:text-sm font-semibold text-[#087F70] dark:text-[#34D399] flex items-center gap-1 self-start sm:self-auto hover:underline"
+            className="text-xs sm:text-sm font-semibold text-[#1D4ED8] dark:text-[#60A5FA] flex items-center gap-1 self-start sm:self-auto hover:underline"
           >
             <span>কমিটির দায়িত্ব ও বিবরণ</span>
             <ChevronRight className="w-4 h-4" />
@@ -407,7 +407,7 @@ export const Home: React.FC = () => {
               key={officer.id}
               className="surface-card surface-card-hover rounded-2xl p-5 flex items-center gap-4 group"
             >
-              <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full overflow-hidden ring-2 ring-[#D6AC62] bg-[#14243A] shrink-0">
+              <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full overflow-hidden ring-2 ring-[#D6AC62] bg-[#0F1B33] shrink-0">
                 {officer.profile_image_url ? (
                   <img
                     src={officer.profile_image_url}
@@ -423,13 +423,13 @@ export const Home: React.FC = () => {
               </div>
 
               <div className="min-w-0 flex-1 space-y-1">
-                <div className="text-[11px] font-mono font-bold text-[#9A7127] dark:text-[#D6AC62] truncate">
+                <div className="text-[11px] font-mono font-bold text-[#92600A] dark:text-[#F0C56E] truncate">
                   {officer.member_code} · {officer.designation}
                 </div>
-                <h3 className="font-bold text-[#14243A] dark:text-white text-base truncate group-hover:text-[#087F70] dark:group-hover:text-[#34D399] transition-colors">
+                <h3 className="font-bold text-[#0F1B33] dark:text-white text-base truncate group-hover:text-[#1D4ED8] dark:group-hover:text-[#60A5FA] transition-colors">
                   {officer.full_name}
                 </h3>
-                <p className="text-xs text-[#64748B] dark:text-slate-400 font-mono tabular-nums">
+                <p className="text-xs text-[#4E5E78] dark:text-slate-400 font-mono tabular-nums">
                   সঞ্চয়: {formatBDT((officer.shares_count || 1) * 500)}/মাস
                   {(officer.shares_count || 1) > 1 ? ` · ${officer.shares_count}টি নাম` : ''}
                 </p>
@@ -441,7 +441,7 @@ export const Home: React.FC = () => {
 
       {/* 4. INTERACTIVE JOINT SAVINGS PROJECTION CALCULATOR */}
       <RevealSection className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-3xl bg-[#14243A] text-white p-6 sm:p-10 shadow-[0_24px_60px_-20px_rgba(20,36,58,0.45)] border border-[#203650]">
+        <div className="relative overflow-hidden rounded-3xl bg-[#0F1B33] text-white p-6 sm:p-10 shadow-[0_24px_60px_-20px_rgba(20,36,58,0.45)] border border-[#18294A]">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             {/* Left Controls */}
             <div className="lg:col-span-7 space-y-6">
@@ -478,8 +478,8 @@ export const Home: React.FC = () => {
                       onClick={() => setCalcMonths(item.months)}
                       className={`px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                         calcMonths === item.months
-                          ? 'bg-[#087F70] text-white ring-2 ring-[#D6AC62]/60 shadow-md'
-                          : 'bg-[#203650] hover:bg-[#2B4564] text-slate-200'
+                          ? 'bg-[#1D4ED8] text-white ring-2 ring-[#D6AC62]/60 shadow-md'
+                          : 'bg-[#18294A] hover:bg-[#223862] text-slate-200'
                       }`}
                     >
                       {item.label}
@@ -488,7 +488,7 @@ export const Home: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-3.5 bg-[#0B1320]/60 rounded-xl border border-[#2B4564] text-xs text-slate-300 flex flex-wrap items-center justify-between gap-2">
+              <div className="p-3.5 bg-[#09101D]/60 rounded-xl border border-[#223862] text-xs text-slate-300 flex flex-wrap items-center justify-between gap-2">
                 <span>মাসিক যৌথ জমা: ৩৪টি নাম/শেয়ার × ৫০০ ৳ =</span>
                 <span className="font-mono font-bold text-[#D6AC62] text-sm tabular-nums">
                   ৳১৭,০০০ / মাস
@@ -497,12 +497,12 @@ export const Home: React.FC = () => {
             </div>
 
             {/* Right Projected Capital Card */}
-            <div className="lg:col-span-5 bg-[#0B1320]/90 rounded-2xl p-6 border border-[#203650] space-y-5">
-              <div className="border-b border-[#203650] pb-4">
+            <div className="lg:col-span-5 bg-[#09101D]/90 rounded-2xl p-6 border border-[#18294A] space-y-5">
+              <div className="border-b border-[#18294A] pb-4">
                 <span className="text-xs uppercase tracking-wider text-slate-400 font-medium">
                   {calcMonths} মাসে আনুমানিক মোট সংগৃহীত মূলধন
                 </span>
-                <div className="text-3xl sm:text-4xl font-extrabold font-mono text-[#34D399] mt-1 tabular-nums">
+                <div className="text-3xl sm:text-4xl font-extrabold font-mono text-[#38BDF8] mt-1 tabular-nums">
                   {formatBDT(projectedTotal)}
                 </div>
                 <span className="text-[11px] text-slate-400 mt-1 block">
@@ -518,7 +518,7 @@ export const Home: React.FC = () => {
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between items-center text-slate-200">
                     <span className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-sm bg-[#087F70]" />
+                      <span className="w-2.5 h-2.5 rounded-sm bg-[#1D4ED8]" />
                       <span>উৎপাদনমুখী যৌথ বিনিয়োগ (৭০%)</span>
                     </span>
                     <span className="font-mono font-bold tabular-nums">{formatBDT(investmentPool)}</span>
@@ -541,8 +541,8 @@ export const Home: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="w-full bg-[#203650] rounded-full h-2.5 flex overflow-hidden mt-2">
-                  <div style={{ width: '70%' }} className="bg-[#087F70]" />
+                <div className="w-full bg-[#18294A] rounded-full h-2.5 flex overflow-hidden mt-2">
+                  <div style={{ width: '70%' }} className="bg-[#1D4ED8]" />
                   <div style={{ width: '20%' }} className="bg-[#D6AC62]" />
                   <div style={{ width: '10%' }} className="bg-slate-400" />
                 </div>
@@ -556,24 +556,24 @@ export const Home: React.FC = () => {
       <RevealSection className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-wider text-[#087F70] dark:text-[#34D399] mb-1">
+            <div className="inline-flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-wider text-[#1D4ED8] dark:text-[#60A5FA] mb-1">
               <Users className="w-4 h-4" />
               <span>আজ ও আগামী · এস.এস.সি ব্যাচ ২০১৭</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#14243A] dark:text-white tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0F1B33] dark:text-white tracking-tight">
               সম্মানিত সদস্যবৃন্দ ({totalMembers})
             </h2>
-            <p className="text-sm text-[#64748B] dark:text-slate-400 mt-1">
+            <p className="text-sm text-[#4E5E78] dark:text-slate-400 mt-1">
               বন্ধুত্ব সমবায় সমিতি (এস.এস.সি ব্যাচ ২০১৭)-এর সকল {totalMembers} জন সম্মানিত ও সক্রিয় সদস্যের পরিচিতি
             </p>
           </div>
 
           <Link
             to="/members"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] text-[#14243A] dark:text-slate-100 text-xs font-bold hover:border-[#087F70] transition-colors self-start sm:self-auto"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] text-[#0F1B33] dark:text-slate-100 text-xs font-bold hover:border-[#1D4ED8] transition-colors self-start sm:self-auto"
           >
             <span>সম্পূর্ণ ডিরেক্টরি দেখুন ({totalMembers})</span>
-            <ArrowRight className="w-3.5 h-3.5 text-[#087F70]" />
+            <ArrowRight className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
           </Link>
         </div>
 
@@ -587,8 +587,8 @@ export const Home: React.FC = () => {
                 className="surface-card surface-card-hover rounded-2xl p-4 text-center flex flex-col items-center"
               >
                 <div
-                  className={`w-16 h-16 rounded-full overflow-hidden mb-3 bg-slate-100 dark:bg-[#162438] ${
-                    isExec ? 'ring-2 ring-[#D6AC62]' : 'ring-1 ring-[#087F70]/40'
+                  className={`w-16 h-16 rounded-full overflow-hidden mb-3 bg-slate-100 dark:bg-[#17243C] ${
+                    isExec ? 'ring-2 ring-[#D6AC62]' : 'ring-1 ring-[#1D4ED8]/40'
                   }`}
                 >
                   {member.profile_image_url ? (
@@ -599,23 +599,23 @@ export const Home: React.FC = () => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[#14243A] dark:text-slate-200">
+                    <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[#0F1B33] dark:text-slate-200">
                       {member.full_name.substring(0, 2).toUpperCase()}
                     </div>
                   )}
                 </div>
 
-                <span className="font-mono text-[10px] text-[#64748B] font-bold">
+                <span className="font-mono text-[10px] text-[#4E5E78] font-bold">
                   {member.member_code}
                 </span>
 
-                <h4 className="font-bold text-[#14243A] dark:text-slate-100 text-xs truncate max-w-full mt-0.5">
+                <h4 className="font-bold text-[#0F1B33] dark:text-slate-100 text-xs truncate max-w-full mt-0.5">
                   {member.full_name}
                 </h4>
 
                 <span
                   className={`text-[10px] font-semibold truncate max-w-full mt-0.5 ${
-                    isExec ? 'text-[#9A7127] dark:text-[#D6AC62]' : 'text-[#087F70] dark:text-[#34D399]'
+                    isExec ? 'text-[#92600A] dark:text-[#F0C56E]' : 'text-[#1D4ED8] dark:text-[#60A5FA]'
                   }`}
                 >
                   {isExec ? member.designation?.split('(')[0] : 'সদস্য'}
@@ -630,36 +630,36 @@ export const Home: React.FC = () => {
       <RevealSection className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="surface-card rounded-3xl p-6 sm:p-10 space-y-8">
           <div className="text-center max-w-2xl mx-auto space-y-2">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#087F70] dark:text-[#34D399]">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#1D4ED8] dark:text-[#60A5FA]">
               গঠনতন্ত্র ও শৃঙ্খলা
             </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#14243A] dark:text-white tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0F1B33] dark:text-white tracking-tight">
               সমিতির মূল আর্থিক বিধিমালা
             </h2>
-            <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400">
+            <p className="text-xs sm:text-sm text-[#4E5E78] dark:text-slate-400">
               সকল সদস্যের জন্য সমভাবে প্রযোজ্য এবং শতভাগ বাধ্যতামূলক নিয়মসমূহ
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-6 rounded-2xl bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] space-y-3">
+            <div className="p-6 rounded-2xl bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] space-y-3">
               <div className="flex items-center justify-between">
-                <div className="w-10 h-10 rounded-xl bg-[#087F70]/10 text-[#087F70] dark:text-[#34D399] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-[#1D4ED8]/10 text-[#1D4ED8] dark:text-[#60A5FA] flex items-center justify-center">
                   <Coins className="w-5 h-5" />
                 </div>
-                <span className="text-xs font-mono font-bold text-[#087F70] dark:text-[#34D399]">
+                <span className="text-xs font-mono font-bold text-[#1D4ED8] dark:text-[#60A5FA]">
                   ধারা ৪.১.১
                 </span>
               </div>
-              <h3 className="text-base font-bold text-[#14243A] dark:text-white">
+              <h3 className="text-base font-bold text-[#0F1B33] dark:text-white">
                 মাসিক কিস্তি ৫০০ ৳
               </h3>
-              <p className="text-xs text-[#64748B] dark:text-slate-300 leading-relaxed">
-                প্রতি মাসের <strong className="text-[#172435] dark:text-white">১২ তারিখের মধ্যে</strong> প্রত্যেক সদস্যের জন্য নির্ধারিত সঞ্চয় কিস্তি ৫০০ টাকা ব্যাংকে বা কোষাধ্যক্ষের নিকট জমাদান বাধ্যতামূলক।
+              <p className="text-xs text-[#4E5E78] dark:text-slate-300 leading-relaxed">
+                প্রতি মাসের <strong className="text-[#0F1B2E] dark:text-white">১২ তারিখের মধ্যে</strong> প্রত্যেক সদস্যের জন্য নির্ধারিত সঞ্চয় কিস্তি ৫০০ টাকা ব্যাংকে বা কোষাধ্যক্ষের নিকট জমাদান বাধ্যতামূলক।
               </p>
             </div>
 
-            <div className="p-6 rounded-2xl bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] space-y-3">
+            <div className="p-6 rounded-2xl bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] space-y-3">
               <div className="flex items-center justify-between">
                 <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-700 dark:text-rose-400 flex items-center justify-center">
                   <AlertTriangle className="w-5 h-5" />
@@ -668,27 +668,27 @@ export const Home: React.FC = () => {
                   ধারা ৪.১.২
                 </span>
               </div>
-              <h3 className="text-base font-bold text-[#14243A] dark:text-white">
+              <h3 className="text-base font-bold text-[#0F1B33] dark:text-white">
                 বিলম্ব জরিমানা ৫০ ৳
               </h3>
-              <p className="text-xs text-[#64748B] dark:text-slate-300 leading-relaxed">
-                ১২ তারিখের পরে কোনো সদস্য কিস্তি জমা দিলে মূল কিস্তির সাথে অতিরিক্ত <strong className="text-[#172435] dark:text-white">৫০ টাকা বিলম্ব জরিমানা</strong> বাধ্যতামূলকভাবে কার্যকর হইবে।
+              <p className="text-xs text-[#4E5E78] dark:text-slate-300 leading-relaxed">
+                ১২ তারিখের পরে কোনো সদস্য কিস্তি জমা দিলে মূল কিস্তির সাথে অতিরিক্ত <strong className="text-[#0F1B2E] dark:text-white">৫০ টাকা বিলম্ব জরিমানা</strong> বাধ্যতামূলকভাবে কার্যকর হইবে।
               </p>
             </div>
 
-            <div className="p-6 rounded-2xl bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] space-y-3">
+            <div className="p-6 rounded-2xl bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] space-y-3">
               <div className="flex items-center justify-between">
-                <div className="w-10 h-10 rounded-xl bg-[#D6AC62]/15 text-[#9A7127] dark:text-[#D6AC62] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-[#D6AC62]/15 text-[#92600A] dark:text-[#F0C56E] flex items-center justify-center">
                   <TrendingUp className="w-5 h-5" />
                 </div>
-                <span className="text-xs font-mono font-bold text-[#9A7127] dark:text-[#D6AC62]">
+                <span className="text-xs font-mono font-bold text-[#92600A] dark:text-[#F0C56E]">
                   ধারা ১.৩ ও ৩.৩
                 </span>
               </div>
-              <h3 className="text-base font-bold text-[#14243A] dark:text-white">
+              <h3 className="text-base font-bold text-[#0F1B33] dark:text-white">
                 স্বচ্ছ হিসাব ও যৌথ কল্যাণ
               </h3>
-              <p className="text-xs text-[#64748B] dark:text-slate-300 leading-relaxed">
+              <p className="text-xs text-[#4E5E78] dark:text-slate-300 leading-relaxed">
                 সকল জমার হিসাব ক্লাবের সুরক্ষিত পোর্টালে রিয়েলটাইমে সংরক্ষিত থাকে, যা প্রত্যেক সদস্য ব্যক্তিগত আইডি দিয়ে লগইন করে যাচাই করতে পারেন।
               </p>
             </div>
@@ -699,13 +699,13 @@ export const Home: React.FC = () => {
       {/* 7. HOW TO SUBMIT CLUB CONTRIBUTIONS */}
       <RevealSection className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         <div>
-          <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#087F70] dark:text-[#34D399] block mb-1">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#1D4ED8] dark:text-[#60A5FA] block mb-1">
             অফিসিয়াল পেমেন্ট নির্দেশিকা · কোষাধ্যক্ষ ও ব্যাংক
           </span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#14243A] dark:text-white tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0F1B33] dark:text-white tracking-tight">
             সমিতির টাকা জমাদানের মাধ্যম ও নিয়মাবলি
           </h2>
-          <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-[#4E5E78] dark:text-slate-400 mt-1">
             মাসিক কিস্তি ও জরিমানার টাকা নিচের নির্ধারিত মোবাইল ব্যাংকিং বা সোনালী ব্যাংক অ্যাকাউন্টে জমা দিন
           </p>
         </div>
@@ -721,28 +721,28 @@ export const Home: React.FC = () => {
                 <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400 block">
                   bKash · Nagad · Rocket (Personal)
                 </span>
-                <h3 className="text-lg font-bold text-[#14243A] dark:text-white">
+                <h3 className="text-lg font-bold text-[#0F1B33] dark:text-white">
                   Tanvir Khan (Treasurer)
                 </h3>
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] flex items-center justify-between gap-3">
+            <div className="p-4 rounded-xl bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] flex items-center justify-between gap-3">
               <div>
-                <span className="text-[11px] text-[#64748B] block">মোবাইল ব্যাংকিং নম্বর</span>
-                <span className="text-xl sm:text-2xl font-extrabold font-mono text-[#14243A] dark:text-white tracking-wide tabular-nums">
+                <span className="text-[11px] text-[#4E5E78] block">মোবাইল ব্যাংকিং নম্বর</span>
+                <span className="text-xl sm:text-2xl font-extrabold font-mono text-[#0F1B33] dark:text-white tracking-wide tabular-nums">
                   01959948542
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => handleCopyText('01959948542', 'mobile')}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] text-[#172435] dark:text-slate-200 hover:border-[#087F70] transition-colors cursor-pointer shrink-0"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] text-[#0F1B2E] dark:text-slate-200 hover:border-[#1D4ED8] transition-colors cursor-pointer shrink-0"
               >
                 {copiedField === 'mobile' ? (
                   <>
-                    <Check className="w-3.5 h-3.5 text-[#087F70]" />
-                    <span className="text-[#087F70]">Copied</span>
+                    <Check className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
+                    <span className="text-[#1D4ED8] dark:text-[#60A5FA]">Copied</span>
                   </>
                 ) : (
                   <>
@@ -753,43 +753,43 @@ export const Home: React.FC = () => {
               </button>
             </div>
 
-            <p className="text-xs text-[#64748B] dark:text-slate-400 leading-relaxed">
-              <strong className="text-[#172435] dark:text-slate-200">bKash / Nagad / Rocket</strong>-এ Send Money বা Cash In করার সময় অবশ্যই উত্তোলন খরচসহ পাঠাবেন।
+            <p className="text-xs text-[#4E5E78] dark:text-slate-400 leading-relaxed">
+              <strong className="text-[#0F1B2E] dark:text-slate-200">bKash / Nagad / Rocket</strong>-এ Send Money বা Cash In করার সময় অবশ্যই উত্তোলন খরচসহ পাঠাবেন।
             </p>
           </div>
 
           {/* Sonali Bank PLC Card */}
           <div className="surface-card rounded-2xl p-6 flex flex-col justify-between gap-5">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-[#087F70]/10 text-[#087F70] dark:text-[#34D399] flex items-center justify-center shrink-0">
+              <div className="w-11 h-11 rounded-xl bg-[#1D4ED8]/10 text-[#1D4ED8] dark:text-[#60A5FA] flex items-center justify-center shrink-0">
                 <Landmark className="w-5 h-5" />
               </div>
               <div>
-                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#087F70] dark:text-[#34D399] block">
+                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#1D4ED8] dark:text-[#60A5FA] block">
                   Official Bank Deposit Account
                 </span>
-                <h3 className="text-lg font-bold text-[#14243A] dark:text-white">
+                <h3 className="text-lg font-bold text-[#0F1B33] dark:text-white">
                   Sonali Bank PLC
                 </h3>
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] flex items-center justify-between gap-3">
+            <div className="p-4 rounded-xl bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <span className="text-[11px] text-[#64748B] block">ব্যাংক অ্যাকাউন্ট নম্বর</span>
-                <span className="text-xl sm:text-2xl font-extrabold font-mono text-[#087F70] dark:text-[#34D399] tracking-wide tabular-nums block truncate">
+                <span className="text-[11px] text-[#4E5E78] block">ব্যাংক অ্যাকাউন্ট নম্বর</span>
+                <span className="text-xl sm:text-2xl font-extrabold font-mono text-[#0369A1] dark:text-[#38BDF8] tracking-wide tabular-nums block truncate">
                   2102201027292
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => handleCopyText('2102201027292', 'bank')}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] text-[#172435] dark:text-slate-200 hover:border-[#087F70] transition-colors cursor-pointer shrink-0"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] text-[#0F1B2E] dark:text-slate-200 hover:border-[#1D4ED8] transition-colors cursor-pointer shrink-0"
               >
                 {copiedField === 'bank' ? (
                   <>
-                    <Check className="w-3.5 h-3.5 text-[#087F70]" />
-                    <span className="text-[#087F70]">Copied</span>
+                    <Check className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
+                    <span className="text-[#1D4ED8] dark:text-[#60A5FA]">Copied</span>
                   </>
                 ) : (
                   <>
@@ -800,16 +800,16 @@ export const Home: React.FC = () => {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#64748B] dark:text-slate-400">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#4E5E78] dark:text-slate-400">
               <div>
-                <span className="text-[#64748B] block text-[11px]">শাখা (Branch)</span>
-                <span className="font-semibold text-[#172435] dark:text-slate-200">
+                <span className="text-[#4E5E78] block text-[11px]">শাখা (Branch)</span>
+                <span className="font-semibold text-[#0F1B2E] dark:text-slate-200">
                   Bhedarganj Branch, Shariatpur
                 </span>
               </div>
               <div>
-                <span className="text-[#64748B] block text-[11px]">অ্যাকাউন্ট নাম (Account Name)</span>
-                <span className="font-semibold text-[#172435] dark:text-slate-200">
+                <span className="text-[#4E5E78] block text-[11px]">অ্যাকাউন্ট নাম (Account Name)</span>
+                <span className="font-semibold text-[#0F1B2E] dark:text-slate-200">
                   jafor saikot dhali tanvir khan
                 </span>
               </div>
@@ -819,10 +819,10 @@ export const Home: React.FC = () => {
 
         {/* Mandatory Payment Notes */}
         <div className="rounded-2xl bg-[#D6AC62]/12 dark:bg-[#D6AC62]/10 border border-[#D6AC62]/40 p-5 flex items-start gap-3.5">
-          <Info className="w-5 h-5 text-[#9A7127] dark:text-[#D6AC62] shrink-0 mt-0.5" />
-          <div className="space-y-1.5 text-xs sm:text-sm text-[#172435] dark:text-slate-200">
-            <p className="font-bold text-[#14243A] dark:text-[#D6AC62]">গুরুত্বপূর্ণ নির্দেশনা (Note):</p>
-            <ul className="space-y-1 list-disc list-inside text-[#172435]/90 dark:text-slate-300">
+          <Info className="w-5 h-5 text-[#92600A] dark:text-[#F0C56E] shrink-0 mt-0.5" />
+          <div className="space-y-1.5 text-xs sm:text-sm text-[#0F1B2E] dark:text-slate-200">
+            <p className="font-bold text-[#0F1B33] dark:text-[#D6AC62]">গুরুত্বপূর্ণ নির্দেশনা (Note):</p>
+            <ul className="space-y-1 list-disc list-inside text-[#0F1B2E]/90 dark:text-slate-300">
               <li>
                 টাকা পাঠানোর (Send) পর অবশ্যই <strong>Treasurer (কোষাধ্যক্ষ)-এর সাথে inbox-এ confirm</strong> করতে হবে।
               </li>
@@ -836,7 +836,7 @@ export const Home: React.FC = () => {
 
       {/* 8. BOTTOM CALL TO ACTION */}
       <RevealSection className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="p-8 sm:p-12 bg-gradient-to-br from-[#14243A] via-[#203650] to-[#14243A] text-white rounded-3xl shadow-xl border border-[#2B4564] flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="p-8 sm:p-12 bg-gradient-to-br from-[#0F1B33] via-[#18294A] to-[#0F1B33] text-white rounded-3xl shadow-xl border border-[#223862] flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="space-y-3 text-center md:text-left">
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
               আপনার সদস্য হিসাব বিবরণী দেখুন
@@ -849,7 +849,7 @@ export const Home: React.FC = () => {
           <div className="flex flex-wrap items-center justify-center gap-3 shrink-0">
             <Link
               to="/login"
-              className="px-6 py-3 rounded-xl bg-[#087F70] hover:bg-[#06675B] text-white font-bold text-sm transition-colors shadow-md"
+              className="px-6 py-3 rounded-xl bg-[#1D4ED8] hover:bg-[#1E40AF] text-white font-bold text-sm transition-colors shadow-md"
             >
               সদস্য লগইন করুন
             </Link>

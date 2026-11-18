@@ -66,13 +66,13 @@ export const MemberPaymentHistory: React.FC = () => {
   return (
     <PageTransition className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E8EDF3] dark:border-[#1F2F46]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#DFE6F0] dark:border-[#233452]">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#14243A] dark:text-white flex items-center gap-2.5">
-            <History className="w-6 h-6 text-[#087F70] dark:text-[#34D399]" />
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#0F1B33] dark:text-white flex items-center gap-2.5">
+            <History className="w-6 h-6 text-[#1D4ED8] dark:text-[#60A5FA]" />
             <span>Payment Ledger</span>
           </h1>
-          <p className="text-xs sm:text-sm text-[#64748B] mt-0.5 font-mono">
+          <p className="text-xs sm:text-sm text-[#4E5E78] mt-0.5 font-mono">
             {myMemberRecord?.full_name} · {myMemberRecord?.member_code}
           </p>
         </div>
@@ -92,7 +92,7 @@ export const MemberPaymentHistory: React.FC = () => {
           value={formatBDT(filteredBreakdown.paid)}
           subLabel="Monthly contributions"
           icon={CheckCircle2}
-          accent="emerald"
+          accent="sapphire"
           trend={{
             positive: true,
             text: `${filteredBreakdown.due > 0 ? Math.round(((filteredBreakdown.paid + filteredBreakdown.finePaid) / filteredBreakdown.due) * 100) : 0}% settled`,
@@ -110,7 +110,7 @@ export const MemberPaymentHistory: React.FC = () => {
           value={formatBDT(filteredBreakdown.outstanding)}
           subLabel={filteredBreakdown.outstanding === 0 ? 'Account settled' : 'Balance due'}
           icon={AlertCircle}
-          accent={filteredBreakdown.outstanding > 0 ? 'rose' : 'emerald'}
+          accent={filteredBreakdown.outstanding > 0 ? 'rose' : 'sapphire'}
         />
       </div>
 
@@ -118,13 +118,13 @@ export const MemberPaymentHistory: React.FC = () => {
       <div className="surface-card p-4 rounded-2xl space-y-3">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-[#64748B] absolute left-3 top-2.5" />
+            <Search className="w-4 h-4 text-[#4E5E78] absolute left-3 top-2.5" />
             <input
               type="text"
               placeholder="Search by month or year (e.g. November or 2026)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+              className="w-full pl-9 pr-3 py-2 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
             />
           </div>
 
@@ -132,43 +132,43 @@ export const MemberPaymentHistory: React.FC = () => {
             <select
               value={selectedYearFilter}
               onChange={(e) => setSelectedYearFilter(e.target.value)}
-              className="px-2.5 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
+              className="px-2.5 py-2 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden cursor-pointer"
             >
-              <option key="member-year-all" value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">All Years</option>
+              <option key="member-year-all" value="all" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">All Years</option>
               {years.map(y => (
-                <option key={`member-year-${y}`} value={String(y)} className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">{y}</option>
+                <option key={`member-year-${y}`} value={String(y)} className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">{y}</option>
               ))}
             </select>
 
             <select
               value={selectedMonthFilter}
               onChange={(e) => setSelectedMonthFilter(e.target.value)}
-              className="px-2.5 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
+              className="px-2.5 py-2 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden cursor-pointer"
             >
-              <option key="member-month-all" value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">All Months</option>
+              <option key="member-month-all" value="all" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">All Months</option>
               {MONTH_NAMES.map((name, idx) => (
-                <option key={`member-month-${idx + 1}`} value={String(idx + 1)} className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">{name}</option>
+                <option key={`member-month-${idx + 1}`} value={String(idx + 1)} className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">{name}</option>
               ))}
             </select>
 
             <select
               value={selectedStatusFilter}
               onChange={(e) => setSelectedStatusFilter(e.target.value)}
-              className="px-2.5 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
+              className="px-2.5 py-2 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden cursor-pointer"
             >
-              <option key="member-status-all" value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">All Statuses</option>
-              <option key="member-status-paid" value="paid" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Paid Only</option>
-              <option key="member-status-partial" value="partial" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Partial Only</option>
-              <option key="member-status-unpaid" value="unpaid" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Unpaid Only</option>
+              <option key="member-status-all" value="all" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">All Statuses</option>
+              <option key="member-status-paid" value="paid" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">Paid Only</option>
+              <option key="member-status-partial" value="partial" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">Partial Only</option>
+              <option key="member-status-unpaid" value="unpaid" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">Unpaid Only</option>
             </select>
 
             <select
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
-              className="px-2.5 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
+              className="px-2.5 py-2 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden cursor-pointer"
             >
-              <option key="sort-desc" value="desc" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Newest First</option>
-              <option key="sort-asc" value="asc" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Oldest First</option>
+              <option key="sort-desc" value="desc" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">Newest First</option>
+              <option key="sort-asc" value="asc" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">Oldest First</option>
             </select>
           </div>
         </div>
@@ -178,7 +178,7 @@ export const MemberPaymentHistory: React.FC = () => {
       <div className="surface-card rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#F5F6F3] dark:bg-[#162438] text-[#64748B] border-b border-[#E8EDF3] dark:border-[#1F2F46]">
+            <thead className="bg-[#EFF3F9] dark:bg-[#17243C] text-[#4E5E78] border-b border-[#DFE6F0] dark:border-[#233452]">
               <tr>
                 <th className="py-3 px-4 font-semibold">Period</th>
                 <th className="py-3 px-4 font-semibold text-right">Due (৳)</th>
@@ -189,10 +189,10 @@ export const MemberPaymentHistory: React.FC = () => {
                 <th className="py-3 px-4 font-semibold">Payment Date</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E8EDF3] dark:divide-[#1F2F46]">
+            <tbody className="divide-y divide-[#DFE6F0] dark:divide-[#233452]">
               {filteredRecords.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-[#64748B]">
+                  <td colSpan={7} className="py-12 text-center text-[#4E5E78]">
                     No payment records found matching your filters.
                   </td>
                 </tr>
@@ -203,22 +203,22 @@ export const MemberPaymentHistory: React.FC = () => {
                   return (
                     <tr
                       key={d.id || `my-due-${idx}-${d.year}-${d.month}`}
-                      className="hover:bg-[#F5F6F3]/60 dark:hover:bg-[#162438]/60 transition-colors"
+                      className="hover:bg-[#EFF3F9]/60 dark:hover:bg-[#17243C]/60 transition-colors"
                     >
-                      <td className="py-3 px-4 font-semibold text-[#14243A] dark:text-white whitespace-nowrap">
+                      <td className="py-3 px-4 font-semibold text-[#0F1B33] dark:text-white whitespace-nowrap">
                         {getMonthName(d.month)} {d.year}
                       </td>
 
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-[#64748B]">
+                      <td className="py-3 px-4 text-right font-mono tabular-nums text-[#4E5E78]">
                         {formatBDT(bd.principalDue)}
                       </td>
 
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-[#9A7127] dark:text-[#D6AC62]">
+                      <td className="py-3 px-4 text-right font-mono tabular-nums text-[#92600A] dark:text-[#F0C56E]">
                         {bd.fineDue > 0 ? (
                           <span>
                             {formatBDT(bd.fineDue)}
                             {bd.finePaid > 0 && (
-                              <span className="block text-[10px] text-[#087F70] dark:text-[#34D399]">
+                              <span className="block text-[10px] text-[#0369A1] dark:text-[#38BDF8]">
                                 Paid: {formatBDT(bd.finePaid)}
                               </span>
                             )}
@@ -228,7 +228,7 @@ export const MemberPaymentHistory: React.FC = () => {
                         )}
                       </td>
 
-                      <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#087F70] dark:text-[#34D399]">
+                      <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#0369A1] dark:text-[#38BDF8]">
                         {formatBDT(bd.totalPaid)}
                       </td>
 
@@ -240,7 +240,7 @@ export const MemberPaymentHistory: React.FC = () => {
                         <StatusBadge status={d.status} size="sm" />
                       </td>
 
-                      <td className="py-3 px-4 font-mono text-[#64748B] whitespace-nowrap">
+                      <td className="py-3 px-4 font-mono text-[#4E5E78] whitespace-nowrap">
                         {d.paid_at ? formatDate(d.paid_at) : 'Unpaid'}
                       </td>
                     </tr>

@@ -152,7 +152,7 @@ export const ClubExpenseModal: React.FC<ClubExpenseModalProps> = ({
           <div
             className={`p-3 rounded-xl text-xs flex items-center gap-2 border ${
               feedback.type === 'success'
-                ? 'bg-[#087F70]/10 text-[#087F70] dark:text-[#34D399] border-[#087F70]/25'
+                ? 'bg-[#0369A1]/10 text-[#0369A1] dark:text-[#38BDF8] border-[#0369A1]/25 dark:border-[#38BDF8]/35'
                 : 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300'
             }`}
           >
@@ -169,7 +169,7 @@ export const ClubExpenseModal: React.FC<ClubExpenseModalProps> = ({
           {/* Quick Presets */}
           {!editingExpense && (
             <div>
-              <span className="block text-[11px] font-medium text-[#64748B] dark:text-slate-400 mb-1.5">
+              <span className="block text-[11px] font-medium text-[#4E5E78] dark:text-[#9BB0CD] mb-1.5">
                 Common Expense Presets:
               </span>
               <div className="flex flex-wrap gap-1.5">
@@ -183,8 +183,8 @@ export const ClubExpenseModal: React.FC<ClubExpenseModalProps> = ({
                     }}
                     className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-colors cursor-pointer ${
                       title === preset.title
-                        ? 'bg-[#D6AC62]/20 text-[#9A7127] dark:text-[#D6AC62] border-[#D6AC62]/50'
-                        : 'bg-[#F5F6F3] dark:bg-[#162438] text-[#64748B] dark:text-slate-300 border-[#E8EDF3] dark:border-[#1F2F46] hover:border-[#D6AC62]/40'
+                        ? 'bg-[#D6AC62]/20 text-[#92600A] dark:text-[#F0C56E] border-[#D6AC62]/50'
+                        : 'bg-[#EFF3F9] dark:bg-[#17243C] text-[#4E5E78] dark:text-slate-300 border-[#DFE6F0] dark:border-[#233452] hover:border-[#D6AC62]/40'
                     }`}
                   >
                     {preset.title}
@@ -196,7 +196,7 @@ export const ClubExpenseModal: React.FC<ClubExpenseModalProps> = ({
 
           {/* Expense Title */}
           <div>
-            <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+            <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
               Expense Title / Particular
             </label>
             <input
@@ -205,13 +205,13 @@ export const ClubExpenseModal: React.FC<ClubExpenseModalProps> = ({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Account kholar khoros, Meeting expense..."
-              className="w-full px-3 py-2.5 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-xs sm:text-sm text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+              className="w-full px-3 py-2.5 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-xs sm:text-sm text-[#0F1B2E] dark:text-[#F3F6FC] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
             />
           </div>
 
           {/* Payment Source (Cash vs Bank) */}
           <div>
-            <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+            <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
               Deduct From (Payment Source)
             </label>
             <div className="grid grid-cols-2 gap-2.5">
@@ -220,12 +220,12 @@ export const ClubExpenseModal: React.FC<ClubExpenseModalProps> = ({
                 onClick={() => setPaymentSource('cash')}
                 className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                   paymentSource === 'cash'
-                    ? 'bg-[#D6AC62]/15 border-[#D6AC62]/60 text-[#172435] dark:text-white ring-1 ring-[#D6AC62]/50'
-                    : 'bg-[#F5F6F3] dark:bg-[#162438] border-[#E8EDF3] dark:border-[#1F2F46] text-[#64748B] dark:text-slate-400'
+                    ? 'bg-[#D6AC62]/15 border-[#D6AC62]/60 text-[#0F1B2E] dark:text-white ring-1 ring-[#D6AC62]/50'
+                    : 'bg-[#EFF3F9] dark:bg-[#17243C] border-[#DFE6F0] dark:border-[#233452] text-[#4E5E78] dark:text-[#9BB0CD]'
                 }`}
               >
                 <div className="flex items-center gap-1.5 font-bold text-xs">
-                  <Wallet className="w-3.5 h-3.5 text-[#9A7127] dark:text-[#D6AC62]" />
+                  <Wallet className="w-3.5 h-3.5 text-[#92600A] dark:text-[#F0C56E]" />
                   <span>Cash in Hand</span>
                 </div>
                 <span className="block text-[10px] mt-1 font-mono tabular-nums opacity-85">
@@ -238,12 +238,12 @@ export const ClubExpenseModal: React.FC<ClubExpenseModalProps> = ({
                 onClick={() => setPaymentSource('bank')}
                 className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                   paymentSource === 'bank'
-                    ? 'bg-[#087F70]/15 border-[#087F70]/60 text-[#172435] dark:text-white ring-1 ring-[#087F70]/50'
-                    : 'bg-[#F5F6F3] dark:bg-[#162438] border-[#E8EDF3] dark:border-[#1F2F46] text-[#64748B] dark:text-slate-400'
+                    ? 'bg-[#1D4ED8]/15 border-[#1D4ED8]/60 text-[#0F1B2E] dark:text-white ring-1 ring-[#1D4ED8]/50 dark:border-[#60A5FA]/60 dark:ring-[#60A5FA]/50'
+                    : 'bg-[#EFF3F9] dark:bg-[#17243C] border-[#DFE6F0] dark:border-[#233452] text-[#4E5E78] dark:text-[#9BB0CD]'
                 }`}
               >
                 <div className="flex items-center gap-1.5 font-bold text-xs">
-                  <Landmark className="w-3.5 h-3.5 text-[#087F70] dark:text-[#34D399]" />
+                  <Landmark className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
                   <span>Sonali Bank A/C</span>
                 </div>
                 <span className="block text-[10px] mt-1 font-mono tabular-nums opacity-85">
@@ -255,7 +255,7 @@ export const ClubExpenseModal: React.FC<ClubExpenseModalProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+              <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                 Expense Amount (৳)
               </label>
               <input
@@ -265,13 +265,13 @@ export const ClubExpenseModal: React.FC<ClubExpenseModalProps> = ({
                 required
                 value={amount || ''}
                 onChange={(e) => setAmount(Number(e.target.value))}
-                className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono tabular-nums text-sm font-bold text-rose-600 dark:text-rose-400 focus:outline-hidden focus:ring-2 focus:ring-rose-500"
+                className="w-full px-3 py-2 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono tabular-nums text-sm font-bold text-rose-600 dark:text-rose-400 focus:outline-hidden focus:ring-2 focus:ring-rose-500"
                 placeholder="e.g. 100"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+              <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                 Expense Date
               </label>
               <input
@@ -279,26 +279,26 @@ export const ClubExpenseModal: React.FC<ClubExpenseModalProps> = ({
                 required
                 value={expenseDate}
                 onChange={(e) => setExpenseDate(e.target.value)}
-                className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                className="w-full px-3 py-2 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono text-[#0F1B2E] dark:text-[#F3F6FC] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+              <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                 Category
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
-                className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-xs text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70] cursor-pointer"
+                className="w-full px-3 py-2 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-xs text-[#0F1B2E] dark:text-[#F3F6FC] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8] cursor-pointer"
               >
                 {EXPENSE_CATEGORIES.map((c) => (
                   <option
                     key={c.value}
                     value={c.value}
-                    className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                    className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-[#F3F6FC]"
                   >
                     {c.label}
                   </option>
@@ -307,7 +307,7 @@ export const ClubExpenseModal: React.FC<ClubExpenseModalProps> = ({
             </div>
 
             <div>
-              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+              <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                 Voucher / Ref No.
               </label>
               <input
@@ -315,13 +315,13 @@ export const ClubExpenseModal: React.FC<ClubExpenseModalProps> = ({
                 value={referenceNo}
                 onChange={(e) => setReferenceNo(e.target.value)}
                 placeholder="Optional voucher no."
-                className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                className="w-full px-3 py-2 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-[#F3F6FC] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+            <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
               Notes (Optional)
             </label>
             <input
@@ -329,15 +329,15 @@ export const ClubExpenseModal: React.FC<ClubExpenseModalProps> = ({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Additional explanation or committee approval note"
-              className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+              className="w-full px-3 py-2 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-[#F3F6FC] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
             />
           </div>
 
-          <div className="flex justify-end gap-2.5 pt-3 border-t border-[#E8EDF3] dark:border-[#1F2F46]">
+          <div className="flex justify-end gap-2.5 pt-3 border-t border-[#DFE6F0] dark:border-[#233452]">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-[#64748B] hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-[#162438] rounded-xl cursor-pointer"
+              className="px-4 py-2 text-xs font-semibold text-[#4E5E78] hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-[#17243C] rounded-xl cursor-pointer"
             >
               Cancel
             </button>

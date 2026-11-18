@@ -34,7 +34,7 @@ const ENTRY_TYPE_META: Record<
     label: 'Cash Deposit to Bank',
     shortLabel: 'Deposit (+)',
     sign: '+',
-    badgeClass: 'bg-[#087F70]/15 text-[#087F70] dark:text-[#34D399] border-[#087F70]/30',
+    badgeClass: 'bg-[#0369A1]/15 text-[#0369A1] dark:text-[#38BDF8] border-[#0369A1]/30 dark:border-[#38BDF8]/35',
     impactHint: 'Increases Bank Balance & transfers funds from Cash in Hand (no change to Club Net Balance).',
   },
   charge: {
@@ -48,14 +48,14 @@ const ENTRY_TYPE_META: Record<
     label: 'Bank Interest Credited',
     shortLabel: 'Interest (+)',
     sign: '+',
-    badgeClass: 'bg-[#D6AC62]/20 text-[#9A7127] dark:text-[#D6AC62] border-[#D6AC62]/40',
+    badgeClass: 'bg-[#D6AC62]/20 text-[#92600A] dark:text-[#F0C56E] border-[#D6AC62]/40',
     impactHint: 'Adds to BOTH Sonali Bank Balance AND Club Net Available Balance.',
   },
   withdrawal: {
     label: 'Bank Cash Withdrawal',
     shortLabel: 'Withdrawal (-)',
     sign: '-',
-    badgeClass: 'bg-sky-500/15 text-sky-700 dark:text-sky-400 border-sky-500/30',
+    badgeClass: 'bg-[#1D4ED8]/15 text-[#1D4ED8] dark:text-[#60A5FA] border-[#1D4ED8]/30 dark:border-[#60A5FA]/35',
     impactHint: 'Withdraws funds from Bank back to Treasurer Cash in Hand (no change to Club Net Balance).',
   },
 };
@@ -214,7 +214,7 @@ export const BankEntryModal: React.FC<BankEntryModalProps> = ({
           <div
             className={`p-3 rounded-xl text-xs flex items-center gap-2 border ${
               feedback.type === 'success'
-                ? 'bg-[#087F70]/10 text-[#087F70] dark:text-[#34D399] border-[#087F70]/25'
+                ? 'bg-[#0369A1]/10 text-[#0369A1] dark:text-[#38BDF8] border-[#0369A1]/25 dark:border-[#38BDF8]/35'
                 : 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300'
             }`}
           >
@@ -230,7 +230,7 @@ export const BankEntryModal: React.FC<BankEntryModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           {/* Entry Type Selector */}
           <div>
-            <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-2">
+            <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-2">
               Transaction Type
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -251,7 +251,7 @@ export const BankEntryModal: React.FC<BankEntryModalProps> = ({
                     className={`px-2.5 py-2 rounded-xl border text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                       selected
                         ? `${ENTRY_TYPE_META[type].badgeClass} ring-1 ring-current shadow-2xs`
-                        : 'bg-[#F5F6F3] dark:bg-[#162438] text-[#64748B] dark:text-slate-400 border-[#E8EDF3] dark:border-[#1F2F46] hover:text-[#172435] dark:hover:text-white'
+                        : 'bg-[#EFF3F9] dark:bg-[#17243C] text-[#4E5E78] dark:text-[#9BB0CD] border-[#DFE6F0] dark:border-[#233452] hover:text-[#0F1B2E] dark:hover:text-white'
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5 shrink-0" />
@@ -260,7 +260,7 @@ export const BankEntryModal: React.FC<BankEntryModalProps> = ({
                 );
               })}
             </div>
-            <p className="mt-2 px-3 py-2 rounded-lg bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] text-[11px] text-[#64748B] dark:text-slate-300">
+            <p className="mt-2 px-3 py-2 rounded-lg bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] text-[11px] text-[#4E5E78] dark:text-slate-300">
               {activeMeta.impactHint}
             </p>
           </div>
@@ -268,7 +268,7 @@ export const BankEntryModal: React.FC<BankEntryModalProps> = ({
           {/* Quick Presets for Bank Charge */}
           {entryType === 'charge' && (
             <div>
-              <span className="block text-[11px] font-medium text-[#64748B] dark:text-slate-400 mb-1.5">
+              <span className="block text-[11px] font-medium text-[#4E5E78] dark:text-[#9BB0CD] mb-1.5">
                 Quick Bank Fee Presets:
               </span>
               <div className="flex flex-wrap gap-1.5">
@@ -280,7 +280,7 @@ export const BankEntryModal: React.FC<BankEntryModalProps> = ({
                     className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-colors cursor-pointer ${
                       notes === preset
                         ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/40'
-                        : 'bg-[#F5F6F3] dark:bg-[#162438] text-[#64748B] dark:text-slate-300 border-[#E8EDF3] dark:border-[#1F2F46] hover:border-rose-400/50'
+                        : 'bg-[#EFF3F9] dark:bg-[#17243C] text-[#4E5E78] dark:text-slate-300 border-[#DFE6F0] dark:border-[#233452] hover:border-rose-400/50'
                     }`}
                   >
                     {preset}
@@ -293,14 +293,14 @@ export const BankEntryModal: React.FC<BankEntryModalProps> = ({
           {/* Amount Input */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="font-semibold text-[#172435] dark:text-slate-200">
+              <label className="font-semibold text-[#0F1B2E] dark:text-slate-200">
                 Amount (৳) — {activeMeta.label}
               </label>
               {entryType === 'deposit' && pendingBankDeposit > 0 && !editingEntry && (
                 <button
                   type="button"
                   onClick={() => setAmount(pendingBankDeposit)}
-                  className="text-[11px] font-semibold text-[#087F70] dark:text-[#34D399] hover:underline cursor-pointer"
+                  className="text-[11px] font-semibold text-[#1D4ED8] dark:text-[#60A5FA] hover:underline cursor-pointer"
                 >
                   Use Cash in Hand ({formatBDT(pendingBankDeposit)})
                 </button>
@@ -313,10 +313,10 @@ export const BankEntryModal: React.FC<BankEntryModalProps> = ({
               required
               value={amount || ''}
               onChange={(e) => setAmount(Number(e.target.value))}
-              className={`w-full px-3 py-2.5 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono tabular-nums text-sm font-bold focus:outline-hidden focus:ring-2 ${
+              className={`w-full px-3 py-2.5 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono tabular-nums text-sm font-bold focus:outline-hidden focus:ring-2 ${
                 entryType === 'charge' || entryType === 'withdrawal'
                   ? 'text-rose-600 dark:text-rose-400 focus:ring-rose-500'
-                  : 'text-[#087F70] dark:text-[#34D399] focus:ring-[#087F70]'
+                  : 'text-[#0369A1] dark:text-[#38BDF8] focus:ring-[#1D4ED8]'
               }`}
               placeholder={entryType === 'charge' ? 'e.g. 250' : 'e.g. 20000'}
             />
@@ -324,7 +324,7 @@ export const BankEntryModal: React.FC<BankEntryModalProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+              <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                 Transaction Date
               </label>
               <input
@@ -332,11 +332,11 @@ export const BankEntryModal: React.FC<BankEntryModalProps> = ({
                 required
                 value={depositedAt}
                 onChange={(e) => setDepositedAt(e.target.value)}
-                className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                className="w-full px-3 py-2 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono text-[#0F1B2E] dark:text-[#F3F6FC] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
               />
             </div>
             <div>
-              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+              <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                 Slip / Ref No.
               </label>
               <input
@@ -344,13 +344,13 @@ export const BankEntryModal: React.FC<BankEntryModalProps> = ({
                 value={referenceNo}
                 onChange={(e) => setReferenceNo(e.target.value)}
                 placeholder="Optional receipt / TrxID"
-                className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                className="w-full px-3 py-2 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-[#F3F6FC] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+            <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
               Statement Note / Particular
             </label>
             <input
@@ -366,15 +366,15 @@ export const BankEntryModal: React.FC<BankEntryModalProps> = ({
                   ? 'e.g. Credit from Interest'
                   : 'e.g. Cash withdrawal for club event'
               }
-              className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+              className="w-full px-3 py-2 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-[#F3F6FC] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
             />
           </div>
 
-          <div className="flex justify-end gap-2.5 pt-3 border-t border-[#E8EDF3] dark:border-[#1F2F46]">
+          <div className="flex justify-end gap-2.5 pt-3 border-t border-[#DFE6F0] dark:border-[#233452]">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-[#64748B] hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-[#162438] rounded-xl cursor-pointer"
+              className="px-4 py-2 text-xs font-semibold text-[#4E5E78] hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-[#17243C] rounded-xl cursor-pointer"
             >
               Cancel
             </button>
@@ -384,7 +384,7 @@ export const BankEntryModal: React.FC<BankEntryModalProps> = ({
               className={`px-5 py-2 text-xs font-bold text-white rounded-xl shadow-xs disabled:opacity-50 flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
                 entryType === 'charge'
                   ? 'bg-rose-600 hover:bg-rose-700'
-                  : 'bg-[#087F70] hover:bg-[#06675B]'
+                  : 'bg-[#1D4ED8] hover:bg-[#1E40AF]'
               }`}
             >
               <CheckCircle2 className="w-4 h-4" />

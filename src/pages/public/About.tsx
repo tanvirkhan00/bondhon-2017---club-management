@@ -65,31 +65,31 @@ export const About: React.FC = () => {
     <PageTransition className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-16">
       {/* Intro Header */}
       <div className="text-center space-y-4">
-        <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#087F70] dark:text-[#34D399]">
+        <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#1D4ED8] dark:text-[#60A5FA]">
           বন্ধুত্ব সমবায় সমিতি · এস.এস.সি ব্যাচ ২০১৭
         </span>
 
-        <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-[#14243A] dark:text-white">
+        <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-[#0F1B33] dark:text-white">
           About Bondhon 2017
         </h1>
 
-        <p className="text-base sm:text-lg text-[#64748B] dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
-          <strong className="text-[#14243A] dark:text-white">বন্ধুত্ব সমবায় সমিতি</strong> (Bondhon 2017) – চরচান্দা খাসমহল বাজার। স্থাপিত: ০১/০৪/২০২৪ ইং। পারস্পরিক সঞ্চয়, আর্থিক স্বচ্ছতা এবং অটুট বন্ধুত্বের প্রতীক।
+        <p className="text-base sm:text-lg text-[#4E5E78] dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
+          <strong className="text-[#0F1B33] dark:text-white">বন্ধুত্ব সমবায় সমিতি</strong> (Bondhon 2017) – চরচান্দা খাসমহল বাজার। স্থাপিত: ০১/০৪/২০২৪ ইং। পারস্পরিক সঞ্চয়, আর্থিক স্বচ্ছতা এবং অটুট বন্ধুত্বের প্রতীক।
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
           <Link
             to="/constitution"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#087F70] hover:bg-[#06675B] text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1D4ED8] hover:bg-[#1E40AF] text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"
           >
             <FileText className="w-4 h-4" />
             <span>অফিসিয়াল গঠনতন্ত্র ও নীতিমালা পড়ুন</span>
           </Link>
           <Link
             to="/members"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] hover:border-[#087F70] text-[#172435] dark:text-slate-200 rounded-xl text-xs font-semibold transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] hover:border-[#1D4ED8] text-[#0F1B2E] dark:text-slate-200 rounded-xl text-xs font-semibold transition-colors"
           >
-            <Users className="w-4 h-4 text-[#087F70]" />
+            <Users className="w-4 h-4 text-[#1D4ED8] dark:text-[#60A5FA]" />
             <span>সদস্য তালিকা</span>
           </Link>
         </div>
@@ -98,7 +98,7 @@ export const About: React.FC = () => {
       {/* Crest & Story Split */}
       <RevealSection className="surface-card grid grid-cols-1 md:grid-cols-12 gap-8 items-center rounded-3xl p-6 sm:p-10">
         <div className="md:col-span-4 flex justify-center">
-          <div className="w-48 h-48 rounded-full p-1.5 bg-gradient-to-br from-[#14243A] to-[#087F70] ring-4 ring-[#D6AC62]/30 shadow-lg">
+          <div className="w-48 h-48 rounded-full p-1.5 bg-gradient-to-br from-[#0F1B33] to-[#1D4ED8] ring-4 ring-[#D6AC62]/30 shadow-lg">
             <img
               src={crestImage}
               alt="Bondhon 2017 Official Emblem"
@@ -107,25 +107,25 @@ export const About: React.FC = () => {
           </div>
         </div>
         <div className="md:col-span-8 space-y-4">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-mono text-[#64748B]">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-mono text-[#4E5E78]">
             <span className="flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-[#087F70]" />
+              <Calendar className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
               স্থাপিত: ০১/০৪/২০২৪ ইং
             </span>
             <span className="flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-[#087F70]" />
+              <MapPin className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
               চরচান্দা খাসমহল বাজার
             </span>
           </div>
 
-          <h2 className="text-xl sm:text-2xl font-bold text-[#14243A] dark:text-white">
+          <h2 className="text-xl sm:text-2xl font-bold text-[#0F1B33] dark:text-white">
             আমাদের পটভূমি ও আদর্শ
           </h2>
-          <p className="text-sm text-[#64748B] dark:text-slate-300 leading-relaxed">
+          <p className="text-sm text-[#4E5E78] dark:text-slate-300 leading-relaxed">
             ২০১৭ সালের এস.এস.সি ব্যাচের বন্ধুদের আন্তরিক প্রচেষ্টায় গঠিত এই সমবায় সমিতি পারস্পরিক সঞ্চয় ও সৌহার্দ্য বৃদ্ধির এক নির্ভরযোগ্য প্ল্যাটফর্ম। ০১ এপ্রিল ২০২৪ তারিখে আনুষ্ঠানিকভাবে যাত্রা শুরু করে সমিতিটি একটি সুসংগঠিত নিয়মতান্ত্রিক কাঠামোর রূপ নেয়।
           </p>
-          <p className="text-sm text-[#64748B] dark:text-slate-300 leading-relaxed">
-            সমিতির সকল ২১ জন সদস্য প্রতি মাসের <strong className="text-[#172435] dark:text-white">১২ তারিখের মধ্যে</strong> নিয়মিত সঞ্চয় কিস্তি (৫০০ ৳) জমা দেন। নির্দিষ্ট সময়ের পরে জমা দিলে গঠনতন্ত্র অনুযায়ী ৫০ টাকা বিলম্ব জরিমানা কার্যকর হয়, যা প্রতিটি সদস্যের জবাবদিহিতা ও সমিতির আর্থিক শৃঙ্খলা বজায় রাখে।
+          <p className="text-sm text-[#4E5E78] dark:text-slate-300 leading-relaxed">
+            সমিতির সকল ২১ জন সদস্য প্রতি মাসের <strong className="text-[#0F1B2E] dark:text-white">১২ তারিখের মধ্যে</strong> নিয়মিত সঞ্চয় কিস্তি (৫০০ ৳) জমা দেন। নির্দিষ্ট সময়ের পরে জমা দিলে গঠনতন্ত্র অনুযায়ী ৫০ টাকা বিলম্ব জরিমানা কার্যকর হয়, যা প্রতিটি সদস্যের জবাবদিহিতা ও সমিতির আর্থিক শৃঙ্খলা বজায় রাখে।
           </p>
         </div>
       </RevealSection>
@@ -133,10 +133,10 @@ export const About: React.FC = () => {
       {/* Structured Milestones Timeline */}
       <RevealSection className="space-y-6">
         <div className="text-center space-y-1">
-          <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#9A7127] dark:text-[#D6AC62]">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#92600A] dark:text-[#F0C56E]">
             যাত্রাপথ · Milestones
           </span>
-          <h2 className="text-2xl font-bold tracking-tight text-[#14243A] dark:text-white">
+          <h2 className="text-2xl font-bold tracking-tight text-[#0F1B33] dark:text-white">
             সমিতির অগ্রগতি ও ইতিহাস
           </h2>
         </div>
@@ -145,15 +145,15 @@ export const About: React.FC = () => {
           {milestones.map((m, idx) => (
             <div key={m.period} className="surface-card rounded-2xl p-6 space-y-3 relative">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-mono font-bold text-[#087F70] dark:text-[#34D399]">
+                <span className="text-[11px] font-mono font-bold text-[#1D4ED8] dark:text-[#60A5FA]">
                   {m.period}
                 </span>
-                <span className="w-7 h-7 rounded-lg bg-[#14243A] text-[#D6AC62] font-mono text-xs font-bold flex items-center justify-center">
+                <span className="w-7 h-7 rounded-lg bg-[#0F1B33] text-[#D6AC62] font-mono text-xs font-bold flex items-center justify-center">
                   0{idx + 1}
                 </span>
               </div>
-              <h3 className="text-base font-bold text-[#14243A] dark:text-white">{m.title}</h3>
-              <p className="text-xs text-[#64748B] dark:text-slate-400 leading-relaxed">{m.desc}</p>
+              <h3 className="text-base font-bold text-[#0F1B33] dark:text-white">{m.title}</h3>
+              <p className="text-xs text-[#4E5E78] dark:text-slate-400 leading-relaxed">{m.desc}</p>
             </div>
           ))}
         </div>
@@ -162,10 +162,10 @@ export const About: React.FC = () => {
       {/* Community Welfare Initiatives */}
       <RevealSection className="space-y-6">
         <div className="text-center space-y-1">
-          <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#087F70] dark:text-[#34D399]">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#1D4ED8] dark:text-[#60A5FA]">
             সামাজিক দায়বদ্ধতা
           </span>
-          <h2 className="text-2xl font-bold tracking-tight text-[#14243A] dark:text-white">
+          <h2 className="text-2xl font-bold tracking-tight text-[#0F1B33] dark:text-white">
             সামাজিক ও মানবিক কার্যক্রম
           </h2>
         </div>
@@ -175,11 +175,11 @@ export const About: React.FC = () => {
             const Icon = item.icon;
             return (
               <div key={item.title} className="surface-card surface-card-hover rounded-2xl p-6 space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-[#087F70]/10 text-[#087F70] dark:text-[#34D399] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-[#1D4ED8]/10 text-[#1D4ED8] dark:text-[#60A5FA] flex items-center justify-center">
                   <Icon className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-bold text-[#14243A] dark:text-white">{item.title}</h3>
-                <p className="text-xs text-[#64748B] dark:text-slate-400 leading-relaxed">{item.desc}</p>
+                <h3 className="text-base font-bold text-[#0F1B33] dark:text-white">{item.title}</h3>
+                <p className="text-xs text-[#4E5E78] dark:text-slate-400 leading-relaxed">{item.desc}</p>
               </div>
             );
           })}
@@ -189,10 +189,10 @@ export const About: React.FC = () => {
       {/* Executive Committee Section */}
       <RevealSection className="space-y-6">
         <div className="text-center space-y-1">
-          <h2 className="text-2xl font-bold tracking-tight text-[#14243A] dark:text-white">
+          <h2 className="text-2xl font-bold tracking-tight text-[#0F1B33] dark:text-white">
             বর্তমান ব্যবস্থাপনা কমিটি
           </h2>
-          <p className="text-xs sm:text-sm text-[#64748B]">
+          <p className="text-xs sm:text-sm text-[#4E5E78]">
             গঠনতন্ত্রের ধারা ৩.১ অনুসারে নির্বাচিত কার্যনির্বাহী পরিষদ
           </p>
         </div>
@@ -209,13 +209,13 @@ export const About: React.FC = () => {
                 className="w-13 h-13 rounded-full object-cover ring-2 ring-[#D6AC62] shrink-0"
               />
               <div className="min-w-0 flex-1">
-                <span className="text-[11px] font-bold text-[#9A7127] dark:text-[#D6AC62] block leading-tight truncate">
+                <span className="text-[11px] font-bold text-[#92600A] dark:text-[#F0C56E] block leading-tight truncate">
                   {c.role}
                 </span>
-                <h3 className="text-sm font-bold text-[#14243A] dark:text-white truncate mt-0.5">
+                <h3 className="text-sm font-bold text-[#0F1B33] dark:text-white truncate mt-0.5">
                   {c.name}
                 </h3>
-                <span className="text-[11px] text-[#64748B] block">
+                <span className="text-[11px] text-[#4E5E78] block">
                   {c.note}
                 </span>
               </div>
@@ -227,28 +227,28 @@ export const About: React.FC = () => {
       {/* Mission & Vision */}
       <RevealSection className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div className="surface-card p-8 rounded-2xl space-y-3">
-          <div className="w-10 h-10 rounded-xl bg-[#087F70]/10 text-[#087F70] dark:text-[#34D399] flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-xl bg-[#1D4ED8]/10 text-[#1D4ED8] dark:text-[#60A5FA] flex items-center justify-center font-bold">
             <Compass className="w-5 h-5" />
           </div>
-          <h3 className="text-lg font-bold text-[#14243A] dark:text-white">আমাদের লক্ষ্য</h3>
-          <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-300 leading-relaxed">
+          <h3 className="text-lg font-bold text-[#0F1B33] dark:text-white">আমাদের লক্ষ্য</h3>
+          <p className="text-xs sm:text-sm text-[#4E5E78] dark:text-slate-300 leading-relaxed">
             সদস্যদের আর্থিক উন্নয়ন সাধন করা, সঞ্চয় প্রথা গড়ে তোলা এবং প্রতিটি সদস্যের ভবিষ্যৎ আর্থিক নিরাপত্তা ও সৌহার্দ্যপূর্ণ সম্পর্ক সুদৃঢ় করা।
           </p>
         </div>
 
         <div className="surface-card p-8 rounded-2xl space-y-3">
-          <div className="w-10 h-10 rounded-xl bg-[#D6AC62]/15 text-[#9A7127] dark:text-[#D6AC62] flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-xl bg-[#D6AC62]/15 text-[#92600A] dark:text-[#F0C56E] flex items-center justify-center font-bold">
             <Award className="w-5 h-5" />
           </div>
-          <h3 className="text-lg font-bold text-[#14243A] dark:text-white">আমাদের দর্শন</h3>
-          <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-300 leading-relaxed">
+          <h3 className="text-lg font-bold text-[#0F1B33] dark:text-white">আমাদের দর্শন</h3>
+          <p className="text-xs sm:text-sm text-[#4E5E78] dark:text-slate-300 leading-relaxed">
             শতভাগ আর্থিক স্বচ্ছতা ও ডিজিটাল হিসাবরক্ষণের মাধ্যমে সদস্যদের পারস্পরিক আস্থা অর্জন এবং একটি আদর্শ সমবায় সমিতির দৃষ্টান্ত স্থাপন করা।
           </p>
         </div>
       </RevealSection>
 
       {/* Call to action */}
-      <RevealSection className="text-center p-8 sm:p-10 bg-[#14243A] text-white rounded-3xl border border-[#203650] space-y-4">
+      <RevealSection className="text-center p-8 sm:p-10 bg-[#0F1B33] text-white rounded-3xl border border-[#18294A] space-y-4">
         <h3 className="text-xl font-bold">
           সমিতির গঠনতন্ত্র ও পূর্ণাঙ্গ বিধিমালা দেখতে চান?
         </h3>
@@ -257,7 +257,7 @@ export const About: React.FC = () => {
         </p>
         <Link
           to="/constitution"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#087F70] hover:bg-[#06675B] text-white font-semibold text-xs transition-colors shadow-sm"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1D4ED8] hover:bg-[#1E40AF] text-white font-semibold text-xs transition-colors shadow-sm"
         >
           <span>পূর্ণাঙ্গ গঠনতন্ত্র পড়ুন</span>
           <ArrowRight className="w-4 h-4" />

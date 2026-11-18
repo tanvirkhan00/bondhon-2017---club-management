@@ -22,9 +22,9 @@ export const PublicLayout: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F5F6F3] dark:bg-[#0B1320] text-[#172435] dark:text-slate-100">
+    <div className="min-h-screen flex flex-col bg-[#F6F7FB] dark:bg-[#09101D] text-[#0F1B2E] dark:text-[#F3F6FC]">
       {/* Top Bar Contract (3 cleanly separated zones) */}
-      <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#111C2D]/95 backdrop-blur-md border-b border-[#E8EDF3] dark:border-[#1F2F46] print:hidden">
+      <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#111B2E]/95 backdrop-blur-md border-b border-[#DFE6F0] dark:border-[#233452] print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-6 h-16">
             {/* Zone 1: Single-line Brand Wordmark */}
@@ -32,7 +32,7 @@ export const PublicLayout: React.FC = () => {
               to="/"
               className="flex items-center gap-2.5 text-left focus:outline-hidden group shrink-0"
             >
-              <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-[#D6AC62]/50 shrink-0 bg-[#14243A] shadow-xs transition-transform duration-200 group-hover:scale-105">
+              <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-[#D6AC62]/50 shrink-0 bg-[#0F1B33] shadow-xs transition-transform duration-200 group-hover:scale-105">
                 <img
                   src={crestImage}
                   alt="Bondhon 2017 Official Logo"
@@ -40,7 +40,7 @@ export const PublicLayout: React.FC = () => {
                   referrerPolicy="no-referrer"
                 />
               </div>
-              <span className="text-base sm:text-lg font-extrabold tracking-tight text-[#14243A] dark:text-white whitespace-nowrap shrink-0 group-hover:text-[#087F70] dark:group-hover:text-[#34D399] transition-colors">
+              <span className="text-base sm:text-lg font-extrabold tracking-tight text-[#0F1B33] dark:text-white whitespace-nowrap shrink-0 group-hover:text-[#1D4ED8] dark:group-hover:text-[#60A5FA] transition-colors">
                 Bondhon 2017
               </span>
             </Link>
@@ -55,8 +55,8 @@ export const PublicLayout: React.FC = () => {
                   className={({ isActive }) =>
                     `relative px-3.5 py-2 rounded-lg text-xs lg:text-sm font-semibold transition-colors whitespace-nowrap shrink-0 ${
                       isActive
-                        ? 'text-[#087F70] dark:text-[#34D399] bg-[#087F70]/8 dark:bg-[#087F70]/15'
-                        : 'text-[#64748B] dark:text-slate-300 hover:text-[#14243A] dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-[#203650]/50'
+                        ? 'text-[#1D4ED8] dark:text-[#60A5FA] bg-[#1D4ED8]/10 dark:bg-[#60A5FA]/15'
+                        : 'text-[#4E5E78] dark:text-slate-300 hover:text-[#0F1B33] dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-[#18294A]/60'
                     }`
                   }
                 >
@@ -71,7 +71,7 @@ export const PublicLayout: React.FC = () => {
                 <div className="hidden sm:flex items-center gap-2">
                   <Link
                     to={isAdmin ? '/admin/dashboard' : '/member/profile'}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-[#087F70] hover:bg-[#06675B] text-white transition-colors shadow-xs whitespace-nowrap"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-[#1D4ED8] hover:bg-[#1E40AF] text-white transition-colors shadow-xs whitespace-nowrap"
                   >
                     {isAdmin ? (
                       <>
@@ -91,7 +91,7 @@ export const PublicLayout: React.FC = () => {
                     onClick={() => signOut()}
                     title="Logout"
                     aria-label="Logout"
-                    className="p-2 rounded-xl text-[#64748B] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                    className="p-2 rounded-xl text-[#4E5E78] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" />
                   </button>
@@ -99,7 +99,7 @@ export const PublicLayout: React.FC = () => {
               ) : (
                 <Link
                   to="/login"
-                  className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-[#087F70] hover:bg-[#06675B] rounded-xl shadow-xs transition-all hover:shadow-sm whitespace-nowrap shrink-0"
+                  className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-xs transition-all hover:shadow-sm whitespace-nowrap shrink-0"
                 >
                   <LogIn className="w-3.5 h-3.5" />
                   <span>Member Login</span>
@@ -110,7 +110,7 @@ export const PublicLayout: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen((prev) => !prev)}
-                className="md:hidden min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-[#14243A] dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#203650] transition-colors cursor-pointer"
+                className="md:hidden min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-[#0F1B33] dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#18294A] transition-colors cursor-pointer"
                 aria-label="Toggle navigation menu"
                 aria-expanded={mobileMenuOpen}
               >
@@ -128,7 +128,7 @@ export const PublicLayout: React.FC = () => {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.18, ease: 'easeOut' }}
-              className="md:hidden overflow-hidden border-t border-[#E8EDF3] dark:border-[#1F2F46] bg-white dark:bg-[#111C2D]"
+              className="md:hidden overflow-hidden border-t border-[#DFE6F0] dark:border-[#233452] bg-white dark:bg-[#111B2E]"
             >
               <div className="px-4 py-3 space-y-1">
                 {navLinks.map((link) => (
@@ -140,8 +140,8 @@ export const PublicLayout: React.FC = () => {
                     className={({ isActive }) =>
                       `flex items-center min-h-[44px] px-3.5 rounded-xl text-sm font-semibold transition-colors ${
                         isActive
-                          ? 'bg-[#087F70]/10 text-[#087F70] dark:text-[#34D399]'
-                          : 'text-[#64748B] dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#203650]/50'
+                          ? 'bg-[#1D4ED8]/10 text-[#1D4ED8] dark:text-[#60A5FA]'
+                          : 'text-[#4E5E78] dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#18294A]/50'
                       }`
                     }
                   >
@@ -149,13 +149,13 @@ export const PublicLayout: React.FC = () => {
                   </NavLink>
                 ))}
 
-                <div className="pt-2.5 mt-2 border-t border-[#E8EDF3] dark:border-[#1F2F46] flex flex-col gap-2">
+                <div className="pt-2.5 mt-2 border-t border-[#DFE6F0] dark:border-[#233452] flex flex-col gap-2">
                   {isAuthenticated ? (
                     <>
                       <Link
                         to={isAdmin ? '/admin/dashboard' : '/member/profile'}
                         onClick={() => setMobileMenuOpen(false)}
-                        className="flex items-center justify-center gap-2 min-h-[44px] px-4 text-xs font-semibold text-white bg-[#087F70] hover:bg-[#06675B] rounded-xl"
+                        className="flex items-center justify-center gap-2 min-h-[44px] px-4 text-xs font-semibold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl"
                       >
                         {isAdmin ? <ShieldCheck className="w-4 h-4" /> : <UserIcon className="w-4 h-4" />}
                         <span>{isAdmin ? 'Admin Dashboard' : 'My Member Portal'}</span>
@@ -175,7 +175,7 @@ export const PublicLayout: React.FC = () => {
                     <Link
                       to="/login"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center justify-center gap-2 min-h-[44px] px-4 text-xs font-semibold text-white bg-[#087F70] hover:bg-[#06675B] rounded-xl"
+                      className="flex items-center justify-center gap-2 min-h-[44px] px-4 text-xs font-semibold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl"
                     >
                       <LogIn className="w-4 h-4" />
                       <span>Member Login</span>
@@ -194,9 +194,9 @@ export const PublicLayout: React.FC = () => {
       </main>
 
       {/* Institutional Navy Footer */}
-      <footer className="bg-[#14243A] text-slate-300 border-t border-[#203650] py-12 print:hidden">
+      <footer className="bg-[#0F1B33] text-slate-300 border-t border-[#18294A] py-12 print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-8 border-b border-[#203650]">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-8 border-b border-[#18294A]">
             <div className="md:col-span-5 space-y-3.5">
               <div className="flex items-center gap-3">
                 <img

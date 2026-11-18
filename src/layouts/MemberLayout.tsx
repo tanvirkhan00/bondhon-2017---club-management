@@ -27,9 +27,9 @@ export const MemberLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F5F6F3] dark:bg-[#0B1320] text-[#172435] dark:text-slate-100">
+    <div className="min-h-screen flex flex-col bg-[#F6F7FB] dark:bg-[#09101D] text-[#0F1B2E] dark:text-[#F3F6FC]">
       {/* Top Banner & Header */}
-      <header className="bg-white/95 dark:bg-[#111C2D]/95 backdrop-blur-md border-b border-[#E8EDF3] dark:border-[#1F2F46] sticky top-0 z-30">
+      <header className="bg-white/95 dark:bg-[#111B2E]/95 backdrop-blur-md border-b border-[#DFE6F0] dark:border-[#233452] sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 gap-3">
             {/* Left: Brand */}
@@ -40,10 +40,10 @@ export const MemberLayout: React.FC = () => {
                 className="w-9 h-9 rounded-full object-cover ring-2 ring-[#D6AC62]/50"
               />
               <div className="hidden sm:block">
-                <span className="font-extrabold text-[#14243A] dark:text-white text-sm block leading-tight">
+                <span className="font-extrabold text-[#0F1B33] dark:text-white text-sm block leading-tight">
                   Bondhon 2017
                 </span>
-                <span className="text-[10px] font-mono text-[#087F70] dark:text-[#34D399] font-bold uppercase tracking-wider">
+                <span className="text-[10px] font-mono text-[#1D4ED8] dark:text-[#60A5FA] font-bold uppercase tracking-wider">
                   Member Portal
                 </span>
               </div>
@@ -52,10 +52,10 @@ export const MemberLayout: React.FC = () => {
             {/* Right: Member Context & Actions */}
             <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
               <div className="text-right min-w-0">
-                <span className="text-xs font-bold text-[#14243A] dark:text-white block truncate max-w-[140px] sm:max-w-[220px]">
+                <span className="text-xs font-bold text-[#0F1B33] dark:text-white block truncate max-w-[140px] sm:max-w-[220px]">
                   {myMemberRecord?.full_name || profile?.full_name || 'Member'}
                 </span>
-                <span className="text-[11px] font-mono text-[#087F70] dark:text-[#34D399] block truncate">
+                <span className="text-[11px] font-mono text-[#0369A1] dark:text-[#38BDF8] block truncate">
                   {myMemberRecord?.member_code || 'Active'} · {myMemberRecord?.designation || 'Member'}
                 </span>
               </div>
@@ -63,7 +63,7 @@ export const MemberLayout: React.FC = () => {
               {isAdmin && (
                 <Link
                   to="/admin/dashboard"
-                  className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#14243A] text-white rounded-xl hover:bg-[#203650] transition-colors whitespace-nowrap"
+                  className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#0F1B33] text-white rounded-xl hover:bg-[#18294A] transition-colors whitespace-nowrap"
                 >
                   <ShieldCheck className="w-3.5 h-3.5 text-[#D6AC62]" />
                   <span>Admin Dashboard</span>
@@ -89,8 +89,8 @@ export const MemberLayout: React.FC = () => {
               className={({ isActive }) =>
                 `flex items-center gap-2 px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
                   isActive
-                    ? 'border-[#087F70] text-[#087F70] dark:text-[#34D399]'
-                    : 'border-transparent text-[#64748B] hover:text-[#14243A] dark:hover:text-white'
+                    ? 'border-[#1D4ED8] text-[#1D4ED8] dark:border-[#60A5FA] dark:text-[#60A5FA]'
+                    : 'border-transparent text-[#4E5E78] dark:text-[#9BB0CD] hover:text-[#0F1B33] dark:hover:text-white'
                 }`
               }
             >
@@ -103,8 +103,8 @@ export const MemberLayout: React.FC = () => {
               className={({ isActive }) =>
                 `flex items-center gap-2 px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
                   isActive
-                    ? 'border-[#087F70] text-[#087F70] dark:text-[#34D399]'
-                    : 'border-transparent text-[#64748B] hover:text-[#14243A] dark:hover:text-white'
+                    ? 'border-[#1D4ED8] text-[#1D4ED8] dark:border-[#60A5FA] dark:text-[#60A5FA]'
+                    : 'border-transparent text-[#4E5E78] dark:text-[#9BB0CD] hover:text-[#0F1B33] dark:hover:text-white'
                 }`
               }
             >
@@ -114,7 +114,7 @@ export const MemberLayout: React.FC = () => {
 
             <Link
               to="/"
-              className="ml-auto text-xs font-medium text-[#64748B] hover:text-[#14243A] dark:hover:text-white py-3 px-2 flex items-center gap-1 whitespace-nowrap shrink-0"
+              className="ml-auto text-xs font-medium text-[#4E5E78] dark:text-[#9BB0CD] hover:text-[#0F1B33] dark:hover:text-white py-3 px-2 flex items-center gap-1 whitespace-nowrap shrink-0"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Public Site</span>
@@ -129,7 +129,7 @@ export const MemberLayout: React.FC = () => {
       </main>
 
       {/* Quiet Member Portal Footer */}
-      <footer className="border-t border-[#E8EDF3] dark:border-[#1F2F46] bg-white/60 dark:bg-[#111C2D]/60 py-4 text-center text-xs text-[#64748B]">
+      <footer className="border-t border-[#DFE6F0] dark:border-[#233452] bg-white/60 dark:bg-[#111B2E]/60 py-4 text-center text-xs text-[#4E5E78] dark:text-[#9BB0CD]">
         <p>Bondhon 2017 Member Portal · Verified Financial Ledger · BDT (৳)</p>
       </footer>
     </div>

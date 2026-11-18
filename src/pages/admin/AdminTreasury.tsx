@@ -28,12 +28,12 @@ const BANK_TYPE_LABELS: Record<BankEntryType, { label: string; isCredit: boolean
   deposit: {
     label: 'Cash Deposit',
     isCredit: true,
-    badge: 'bg-[#087F70]/12 text-[#087F70] dark:text-[#34D399] border-[#087F70]/30',
+    badge: 'bg-[#1D4ED8]/12 text-[#1D4ED8] dark:text-[#60A5FA] border-[#1D4ED8]/30 dark:border-[#60A5FA]/35',
   },
   interest: {
     label: 'Bank Interest',
     isCredit: true,
-    badge: 'bg-[#D6AC62]/15 text-[#9A7127] dark:text-[#D6AC62] border-[#D6AC62]/35',
+    badge: 'bg-[#D6AC62]/15 text-[#92600A] dark:text-[#F0C56E] border-[#D6AC62]/35',
   },
   charge: {
     label: 'Bank Charge / Fee',
@@ -259,13 +259,13 @@ export const AdminTreasury: React.FC = () => {
   return (
     <PageTransition className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E8EDF3] dark:border-[#1F2F46]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#DFE6F0] dark:border-[#233452]">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#172435] dark:text-slate-100 flex items-center gap-2.5">
-            <Landmark className="w-6 h-6 text-[#087F70]" />
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0F1B2E] dark:text-slate-100 flex items-center gap-2.5">
+            <Landmark className="w-6 h-6 text-[#1D4ED8] dark:text-[#60A5FA]" />
             <span>Sonali Bank &amp; Club Expense Ledger</span>
           </h1>
-          <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400 mt-0.5">
+          <p className="text-xs sm:text-sm text-[#4E5E78] dark:text-slate-400 mt-0.5">
             Track Bank Deposits, Interest, Service Charges (SMS/VAT/TDS), and Club Expenses to maintain exact Net Available Balance
           </p>
         </div>
@@ -274,7 +274,7 @@ export const AdminTreasury: React.FC = () => {
           <button
             type="button"
             onClick={() => openBankModal('deposit')}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-[#087F70] hover:bg-[#06675B] rounded-xl shadow-xs transition-colors cursor-pointer whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-xs transition-colors cursor-pointer whitespace-nowrap"
           >
             <PlusCircle className="w-3.5 h-3.5" />
             <span>+ Bank Entry</span>
@@ -292,7 +292,7 @@ export const AdminTreasury: React.FC = () => {
           <button
             type="button"
             onClick={() => openExpenseModal()}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-[#9A7127] dark:text-[#D6AC62] bg-[#D6AC62]/15 hover:bg-[#D6AC62]/25 border border-[#D6AC62]/35 rounded-xl transition-colors cursor-pointer whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-[#92600A] dark:text-[#F0C56E] bg-[#D6AC62]/15 hover:bg-[#D6AC62]/25 border border-[#D6AC62]/35 rounded-xl transition-colors cursor-pointer whitespace-nowrap"
           >
             <Wallet className="w-3.5 h-3.5" />
             <span>+ Club Expense</span>
@@ -307,7 +307,7 @@ export const AdminTreasury: React.FC = () => {
           value={formatBDT(totalClubCollected)}
           subLabel={`Dues: ${formatBDT(totalClubPrincipalCollected)} · Fine: ${formatBDT(totalClubFineCollected)}`}
           icon={Coins}
-          accent="emerald"
+          accent="sapphire"
           trend={{
             positive: true,
             text: `${yearlyCollectionRows.length} fiscal ${yearlyCollectionRows.length === 1 ? 'year' : 'years'}`,
@@ -318,7 +318,7 @@ export const AdminTreasury: React.FC = () => {
           value={formatBDT(netClubAvailableBalance)}
           subLabel={`Int: +${formatBDT(totalBankInterest)} · Ded: -${formatBDT(totalDeductions)}`}
           icon={Scale}
-          accent="emerald"
+          accent="sapphire"
           trend={{
             positive: netClubAvailableBalance >= totalClubCollected - totalDeductions,
             text: totalDeductions > 0 ? `-${formatBDT(totalDeductions)} deducted` : 'No deductions',
@@ -358,14 +358,14 @@ export const AdminTreasury: React.FC = () => {
       {/* Reconciliation Formula Banner */}
       <div className="surface-card rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs">
-          <span className="font-bold text-[#172435] dark:text-slate-100 uppercase tracking-wider text-[11px]">
+          <span className="font-bold text-[#0F1B2E] dark:text-slate-100 uppercase tracking-wider text-[11px]">
             Available Balance Formula:
           </span>
-          <span className="px-2.5 py-1 rounded-lg bg-[#F5F6F3] dark:bg-[#162438] font-mono tabular-nums font-semibold text-[#172435] dark:text-slate-200">
+          <span className="px-2.5 py-1 rounded-lg bg-[#EFF3F9] dark:bg-[#17243C] font-mono tabular-nums font-semibold text-[#0F1B2E] dark:text-slate-200">
             Member Collections ({formatBDT(totalClubCollected)})
           </span>
-          <span className="text-[#087F70] dark:text-[#34D399] font-bold">+</span>
-          <span className="px-2.5 py-1 rounded-lg bg-[#D6AC62]/15 font-mono tabular-nums font-semibold text-[#9A7127] dark:text-[#D6AC62]">
+          <span className="text-[#1D4ED8] dark:text-[#60A5FA] font-bold">+</span>
+          <span className="px-2.5 py-1 rounded-lg bg-[#D6AC62]/15 font-mono tabular-nums font-semibold text-[#92600A] dark:text-[#F0C56E]">
             Bank Interest ({formatBDT(totalBankInterest)})
           </span>
           <span className="text-rose-500 font-bold">−</span>
@@ -376,8 +376,8 @@ export const AdminTreasury: React.FC = () => {
           <span className="px-2.5 py-1 rounded-lg bg-rose-500/12 font-mono tabular-nums font-semibold text-rose-700 dark:text-rose-400">
             Club Expenses ({formatBDT(totalClubExpenses)})
           </span>
-          <span className="text-[#64748B] font-bold">=</span>
-          <span className="px-3 py-1 rounded-lg bg-[#087F70] text-white font-mono tabular-nums font-extrabold">
+          <span className="text-[#4E5E78] font-bold">=</span>
+          <span className="px-3 py-1 rounded-lg bg-[#1D4ED8] text-white font-mono tabular-nums font-extrabold">
             {formatBDT(netClubAvailableBalance)}
           </span>
         </div>
@@ -385,14 +385,14 @@ export const AdminTreasury: React.FC = () => {
 
       {/* View Switcher & Export */}
       <div className="surface-card p-3.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-1 p-1 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl self-start">
+        <div className="flex items-center gap-1 p-1 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl self-start">
           <button
             type="button"
             onClick={() => setActiveTab('bank')}
             className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === 'bank'
-                ? 'bg-[#14243A] dark:bg-[#087F70] text-white shadow-2xs'
-                : 'text-[#64748B] hover:text-[#172435] dark:hover:text-white'
+                ? 'bg-[#0F1B33] dark:bg-[#1D4ED8] text-white shadow-2xs'
+                : 'text-[#4E5E78] hover:text-[#0F1B2E] dark:hover:text-white'
             }`}
           >
             Sonali Bank Account Statement ({bankStatementRows.length})
@@ -402,8 +402,8 @@ export const AdminTreasury: React.FC = () => {
             onClick={() => setActiveTab('club')}
             className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === 'club'
-                ? 'bg-[#14243A] dark:bg-[#087F70] text-white shadow-2xs'
-                : 'text-[#64748B] hover:text-[#172435] dark:hover:text-white'
+                ? 'bg-[#0F1B33] dark:bg-[#1D4ED8] text-white shadow-2xs'
+                : 'text-[#4E5E78] hover:text-[#0F1B2E] dark:hover:text-white'
             }`}
           >
             Club Cashbook &amp; Expenses ({clubExpenses.length})
@@ -415,23 +415,23 @@ export const AdminTreasury: React.FC = () => {
             <select
               value={bankFilter}
               onChange={(e) => setBankFilter(e.target.value as typeof bankFilter)}
-              className="px-3 py-2 text-xs font-semibold bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
+              className="px-3 py-2 text-xs font-semibold bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden cursor-pointer"
             >
-              <option value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">All Bank Entries</option>
-              <option value="deposit" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Deposits Only (+)</option>
-              <option value="interest" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Bank Interest Only (+)</option>
-              <option value="charge" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Bank Charges / VAT / TDS (-)</option>
-              <option value="withdrawal" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Withdrawals (-)</option>
-              <option value="bank_expense" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Expenses Paid via Bank (-)</option>
+              <option value="all" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">All Bank Entries</option>
+              <option value="deposit" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">Deposits Only (+)</option>
+              <option value="interest" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">Bank Interest Only (+)</option>
+              <option value="charge" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">Bank Charges / VAT / TDS (-)</option>
+              <option value="withdrawal" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">Withdrawals (-)</option>
+              <option value="bank_expense" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">Expenses Paid via Bank (-)</option>
             </select>
           )}
 
           <button
             type="button"
             onClick={activeTab === 'bank' ? handleExportBankStatementCsv : handleExportClubStatementCsv}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-[#172435] dark:text-slate-100 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] hover:border-[#087F70] rounded-xl transition-colors cursor-pointer whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-[#0F1B2E] dark:text-slate-100 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] hover:border-[#1D4ED8] dark:hover:border-[#60A5FA] rounded-xl transition-colors cursor-pointer whitespace-nowrap"
           >
-            <Download className="w-3.5 h-3.5 text-[#087F70]" />
+            <Download className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
             <span>Export CSV</span>
           </button>
         </div>
@@ -440,20 +440,20 @@ export const AdminTreasury: React.FC = () => {
       {/* TAB 1: SONALI BANK STATEMENT */}
       {activeTab === 'bank' && (
         <div className="surface-card rounded-2xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-[#E8EDF3] dark:border-[#1F2F46] flex flex-wrap items-center justify-between gap-3 bg-[#F8FAFC]/60 dark:bg-[#14243A]/40">
+          <div className="px-5 py-4 border-b border-[#DFE6F0] dark:border-[#233452] flex flex-wrap items-center justify-between gap-3 bg-[#EFF3F9]/70 dark:bg-[#0F1B33]/40">
             <div>
-              <h2 className="text-sm font-bold text-[#172435] dark:text-slate-100">
+              <h2 className="text-sm font-bold text-[#0F1B2E] dark:text-slate-100">
                 Bank Account Statement — Sonali Bank PLC (A/C 2102201027292)
               </h2>
-              <p className="text-[11px] text-[#64748B] dark:text-slate-400">
+              <p className="text-[11px] text-[#4E5E78] dark:text-slate-400">
                 Chronological ledger with running bank cash balance
               </p>
             </div>
             <div className="text-right">
-              <span className="text-[10px] uppercase tracking-wider text-[#64748B] dark:text-slate-400 block">
+              <span className="text-[10px] uppercase tracking-wider text-[#4E5E78] dark:text-slate-400 block">
                 Current Account Cash
               </span>
-              <span className="text-base font-extrabold font-mono text-[#087F70] dark:text-[#34D399] tabular-nums">
+              <span className="text-base font-extrabold font-mono text-[#0369A1] dark:text-[#38BDF8] tabular-nums">
                 {formatBDT(currentBankBalance)}
               </span>
             </div>
@@ -461,7 +461,7 @@ export const AdminTreasury: React.FC = () => {
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#F5F6F3] dark:bg-[#162438] text-[#64748B] dark:text-slate-400 border-b border-[#E8EDF3] dark:border-[#1F2F46]">
+              <thead className="bg-[#EFF3F9] dark:bg-[#17243C] text-[#4E5E78] dark:text-slate-400 border-b border-[#DFE6F0] dark:border-[#233452]">
                 <tr>
                   <th className="py-3 px-4 font-semibold">Date</th>
                   <th className="py-3 px-4 font-semibold">Type</th>
@@ -472,10 +472,10 @@ export const AdminTreasury: React.FC = () => {
                   <th className="py-3 px-4 font-semibold text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E8EDF3] dark:divide-[#1F2F46]">
+              <tbody className="divide-y divide-[#DFE6F0] dark:divide-[#233452]">
                 {filteredBankRows.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-10 text-center text-[#64748B] dark:text-slate-400">
+                    <td colSpan={7} className="py-10 text-center text-[#4E5E78] dark:text-slate-400">
                       No Sonali Bank entries match this filter yet. Click "+ Bank Entry" or "+ Bank Fee / VAT" to add a record.
                     </td>
                   </tr>
@@ -488,8 +488,8 @@ export const AdminTreasury: React.FC = () => {
                         : BANK_TYPE_LABELS[row.entryType].badge;
 
                     return (
-                      <tr key={row.id} className="hover:bg-[#F5F6F3]/60 dark:hover:bg-[#162438]/60 transition-colors">
-                        <td className="py-3 px-4 font-mono text-[#172435] dark:text-slate-200 whitespace-nowrap tabular-nums">
+                      <tr key={row.id} className="hover:bg-[#EFF3F9]/60 dark:hover:bg-[#17243C]/60 transition-colors">
+                        <td className="py-3 px-4 font-mono text-[#0F1B2E] dark:text-slate-200 whitespace-nowrap tabular-nums">
                           {formatDate(row.date)}
                         </td>
                         <td className="py-3 px-4 whitespace-nowrap">
@@ -504,22 +504,22 @@ export const AdminTreasury: React.FC = () => {
                             <span>{row.label}</span>
                           </span>
                         </td>
-                        <td className="py-3 px-4 font-medium text-[#172435] dark:text-slate-100 max-w-xs truncate">
+                        <td className="py-3 px-4 font-medium text-[#0F1B2E] dark:text-slate-100 max-w-xs truncate">
                           {row.note}
                         </td>
-                        <td className="py-3 px-4 font-mono text-[#64748B] dark:text-slate-400 whitespace-nowrap">
+                        <td className="py-3 px-4 font-mono text-[#4E5E78] dark:text-slate-400 whitespace-nowrap">
                           {row.refNo}
                         </td>
                         <td
                           className={`py-3 px-4 text-right font-mono font-bold tabular-nums whitespace-nowrap ${
                             row.signedAmount >= 0
-                              ? 'text-[#087F70] dark:text-[#34D399]'
+                              ? 'text-[#0369A1] dark:text-[#38BDF8]'
                               : 'text-rose-600 dark:text-rose-400'
                           }`}
                         >
                           {row.signedAmount >= 0 ? `+${formatBDT(row.signedAmount)}` : `-${formatBDT(Math.abs(row.signedAmount))}`}
                         </td>
-                        <td className="py-3 px-4 text-right font-mono font-semibold text-[#172435] dark:text-slate-200 tabular-nums whitespace-nowrap">
+                        <td className="py-3 px-4 text-right font-mono font-semibold text-[#0F1B2E] dark:text-slate-200 tabular-nums whitespace-nowrap">
                           {formatBDT(row.runningBalance)}
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
@@ -531,7 +531,7 @@ export const AdminTreasury: React.FC = () => {
                                   ? openBankModal((row.rawBank.entry_type || 'deposit') as BankEntryType, row.rawBank)
                                   : row.rawExpense && openExpenseModal(row.rawExpense)
                               }
-                              className="p-1.5 text-[#64748B] hover:text-[#087F70] rounded-lg hover:bg-[#F5F6F3] dark:hover:bg-[#203650] cursor-pointer"
+                              className="p-1.5 text-[#4E5E78] hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] rounded-lg hover:bg-[#EFF3F9] dark:hover:bg-[#18294A] cursor-pointer"
                               title="Edit Entry"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
@@ -555,7 +555,7 @@ export const AdminTreasury: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={() => setConfirmDeleteId(null)}
-                                  className="px-1.5 py-0.5 text-[#64748B] text-[10px] cursor-pointer"
+                                  className="px-1.5 py-0.5 text-[#4E5E78] text-[10px] cursor-pointer"
                                 >
                                   Cancel
                                 </button>
@@ -564,7 +564,7 @@ export const AdminTreasury: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => setConfirmDeleteId(row.id)}
-                                className="p-1.5 text-[#64748B] hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
+                                className="p-1.5 text-[#4E5E78] hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
                                 title="Delete Entry"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -587,40 +587,40 @@ export const AdminTreasury: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left: Club Total Cash Reconciliation Sheet (like user's right-hand Excel table) */}
           <div className="lg:col-span-5 surface-card rounded-2xl overflow-hidden self-start">
-            <div className="px-5 py-4 border-b border-[#E8EDF3] dark:border-[#1F2F46] flex items-center justify-between bg-[#F8FAFC]/60 dark:bg-[#14243A]/40">
+            <div className="px-5 py-4 border-b border-[#DFE6F0] dark:border-[#233452] flex items-center justify-between bg-[#EFF3F9]/70 dark:bg-[#0F1B33]/40">
               <div>
-                <h2 className="text-sm font-bold text-[#172435] dark:text-slate-100 flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-[#087F70]" />
+                <h2 className="text-sm font-bold text-[#0F1B2E] dark:text-slate-100 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-[#1D4ED8] dark:text-[#60A5FA]" />
                   <span>Club Total Cash Statement</span>
                 </h2>
-                <p className="text-[11px] text-[#64748B] dark:text-slate-400">
+                <p className="text-[11px] text-[#4E5E78] dark:text-slate-400">
                   Net Available Balance Calculation
                 </p>
               </div>
-              <span className="text-base font-extrabold font-mono text-[#087F70] dark:text-[#34D399] tabular-nums">
+              <span className="text-base font-extrabold font-mono text-[#0369A1] dark:text-[#38BDF8] tabular-nums">
                 {formatBDT(netClubAvailableBalance)}
               </span>
             </div>
 
-            <div className="divide-y divide-[#E8EDF3] dark:divide-[#1F2F46] text-xs">
+            <div className="divide-y divide-[#DFE6F0] dark:divide-[#233452] text-xs">
               {yearlyCollectionRows.map((yr) => (
                 <React.Fragment key={yr.year}>
                   {yr.principal > 0 && (
                     <div className="px-5 py-2.5 flex items-center justify-between">
-                      <span className="font-medium text-[#172435] dark:text-slate-200">
+                      <span className="font-medium text-[#0F1B2E] dark:text-slate-200">
                         {yr.year} Principal Collection
                       </span>
-                      <span className="font-mono font-bold text-[#087F70] dark:text-[#34D399] tabular-nums">
+                      <span className="font-mono font-bold text-[#0369A1] dark:text-[#38BDF8] tabular-nums">
                         +{formatBDT(yr.principal)}
                       </span>
                     </div>
                   )}
                   {yr.fine > 0 && (
                     <div className="px-5 py-2.5 flex items-center justify-between">
-                      <span className="font-medium text-[#172435] dark:text-slate-200">
+                      <span className="font-medium text-[#0F1B2E] dark:text-slate-200">
                         {yr.year} Jorimana Collection
                       </span>
-                      <span className="font-mono font-bold text-[#9A7127] dark:text-[#D6AC62] tabular-nums">
+                      <span className="font-mono font-bold text-[#92600A] dark:text-[#F0C56E] tabular-nums">
                         +{formatBDT(yr.fine)}
                       </span>
                     </div>
@@ -630,10 +630,10 @@ export const AdminTreasury: React.FC = () => {
 
               {totalBankInterest > 0 && (
                 <div className="px-5 py-2.5 flex items-center justify-between bg-[#D6AC62]/8">
-                  <span className="font-semibold text-[#9A7127] dark:text-[#D6AC62]">
+                  <span className="font-semibold text-[#92600A] dark:text-[#F0C56E]">
                     Bank Interest Credited
                   </span>
-                  <span className="font-mono font-bold text-[#9A7127] dark:text-[#D6AC62] tabular-nums">
+                  <span className="font-mono font-bold text-[#92600A] dark:text-[#F0C56E] tabular-nums">
                     +{formatBDT(totalBankInterest)}
                   </span>
                 </div>
@@ -661,9 +661,9 @@ export const AdminTreasury: React.FC = () => {
                 </div>
               )}
 
-              <div className="px-5 py-3.5 flex items-center justify-between bg-[#14243A] dark:bg-[#162438] text-white font-bold">
+              <div className="px-5 py-3.5 flex items-center justify-between bg-[#0F1B33] dark:bg-[#17243C] text-white font-bold">
                 <span>Club Net Available Balance</span>
-                <span className="font-mono text-sm text-[#34D399] tabular-nums">
+                <span className="font-mono text-sm text-[#38BDF8] tabular-nums">
                   {formatBDT(netClubAvailableBalance)}
                 </span>
               </div>
@@ -672,12 +672,12 @@ export const AdminTreasury: React.FC = () => {
 
           {/* Right: Club Expenses Ledger Table */}
           <div className="lg:col-span-7 surface-card rounded-2xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#E8EDF3] dark:border-[#1F2F46] flex items-center justify-between bg-[#F8FAFC]/60 dark:bg-[#14243A]/40">
+            <div className="px-5 py-4 border-b border-[#DFE6F0] dark:border-[#233452] flex items-center justify-between bg-[#EFF3F9]/70 dark:bg-[#0F1B33]/40">
               <div>
-                <h2 className="text-sm font-bold text-[#172435] dark:text-slate-100">
+                <h2 className="text-sm font-bold text-[#0F1B2E] dark:text-slate-100">
                   Club Expenses &amp; Non-Bank Deductions
                 </h2>
-                <p className="text-[11px] text-[#64748B] dark:text-slate-400">
+                <p className="text-[11px] text-[#4E5E78] dark:text-slate-400">
                   Account opening fees, operations, events &amp; welfare costs
                 </p>
               </div>
@@ -693,7 +693,7 @@ export const AdminTreasury: React.FC = () => {
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-[#F5F6F3] dark:bg-[#162438] text-[#64748B] dark:text-slate-400 border-b border-[#E8EDF3] dark:border-[#1F2F46]">
+                <thead className="bg-[#EFF3F9] dark:bg-[#17243C] text-[#4E5E78] dark:text-slate-400 border-b border-[#DFE6F0] dark:border-[#233452]">
                   <tr>
                     <th className="py-3 px-4 font-semibold">Date</th>
                     <th className="py-3 px-4 font-semibold">Particular</th>
@@ -702,11 +702,11 @@ export const AdminTreasury: React.FC = () => {
                     <th className="py-3 px-4 font-semibold text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#E8EDF3] dark:divide-[#1F2F46]">
+                <tbody className="divide-y divide-[#DFE6F0] dark:divide-[#233452]">
                   {clubExpenses.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-10 text-center text-[#64748B] dark:text-slate-400 space-y-2">
-                        <CheckCircle2 className="w-7 h-7 text-[#087F70] mx-auto" />
+                      <td colSpan={5} className="py-10 text-center text-[#4E5E78] dark:text-slate-400 space-y-2">
+                        <CheckCircle2 className="w-7 h-7 text-[#1D4ED8] dark:text-[#60A5FA] mx-auto" />
                         <p>No club expenses recorded yet.</p>
                       </td>
                     </tr>
@@ -715,15 +715,15 @@ export const AdminTreasury: React.FC = () => {
                       const delKey = `clubexp-${exp.id}`;
                       const isDeleting = confirmDeleteId === delKey;
                       return (
-                        <tr key={exp.id} className="hover:bg-[#F5F6F3]/60 dark:hover:bg-[#162438]/60 transition-colors">
-                          <td className="py-3 px-4 font-mono text-[#172435] dark:text-slate-200 whitespace-nowrap tabular-nums">
+                        <tr key={exp.id} className="hover:bg-[#EFF3F9]/60 dark:hover:bg-[#17243C]/60 transition-colors">
+                          <td className="py-3 px-4 font-mono text-[#0F1B2E] dark:text-slate-200 whitespace-nowrap tabular-nums">
                             {formatDate(exp.expense_date)}
                           </td>
                           <td className="py-3 px-4">
-                            <span className="font-semibold text-[#172435] dark:text-slate-100 block">
+                            <span className="font-semibold text-[#0F1B2E] dark:text-slate-100 block">
                               {exp.title}
                             </span>
-                            <span className="text-[10px] text-[#64748B] dark:text-slate-400">
+                            <span className="text-[10px] text-[#4E5E78] dark:text-slate-400">
                               {EXPENSE_CATEGORY_LABELS[exp.category] || exp.category}
                               {exp.reference_no ? ` · Ref: ${exp.reference_no}` : ''}
                             </span>
@@ -732,8 +732,8 @@ export const AdminTreasury: React.FC = () => {
                             <span
                               className={`inline-flex items-center px-2 py-0.5 rounded-md border text-[10px] font-bold ${
                                 exp.payment_source === 'bank'
-                                  ? 'bg-[#087F70]/12 text-[#087F70] dark:text-[#34D399] border-[#087F70]/30'
-                                  : 'bg-[#D6AC62]/15 text-[#9A7127] dark:text-[#D6AC62] border-[#D6AC62]/35'
+                                  ? 'bg-[#1D4ED8]/12 text-[#1D4ED8] dark:text-[#60A5FA] border-[#1D4ED8]/30 dark:border-[#60A5FA]/35'
+                                  : 'bg-[#D6AC62]/15 text-[#92600A] dark:text-[#F0C56E] border-[#D6AC62]/35'
                               }`}
                             >
                               {exp.payment_source === 'bank' ? 'Sonali Bank A/C' : 'Cash in Hand'}
@@ -747,7 +747,7 @@ export const AdminTreasury: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => openExpenseModal(exp)}
-                                className="p-1.5 text-[#64748B] hover:text-[#087F70] rounded-lg hover:bg-[#F5F6F3] dark:hover:bg-[#203650] cursor-pointer"
+                                className="p-1.5 text-[#4E5E78] hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] rounded-lg hover:bg-[#EFF3F9] dark:hover:bg-[#18294A] cursor-pointer"
                                 title="Edit Expense"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
@@ -767,7 +767,7 @@ export const AdminTreasury: React.FC = () => {
                                   <button
                                     type="button"
                                     onClick={() => setConfirmDeleteId(null)}
-                                    className="px-1.5 py-0.5 text-[#64748B] text-[10px] cursor-pointer"
+                                    className="px-1.5 py-0.5 text-[#4E5E78] text-[10px] cursor-pointer"
                                   >
                                     Cancel
                                   </button>
@@ -776,7 +776,7 @@ export const AdminTreasury: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={() => setConfirmDeleteId(delKey)}
-                                  className="p-1.5 text-[#64748B] hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
+                                  className="p-1.5 text-[#4E5E78] hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
                                   title="Delete Expense"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />

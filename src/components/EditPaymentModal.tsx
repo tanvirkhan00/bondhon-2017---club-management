@@ -171,7 +171,7 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
           <div
             className={`p-3 rounded-xl text-xs flex items-center gap-2 border ${
               feedback.type === 'success'
-                ? 'bg-[#087F70]/10 text-[#087F70] dark:text-[#34D399] border-[#087F70]/25'
+                ? 'bg-[#0369A1]/10 text-[#0369A1] dark:text-[#38BDF8] border-[#0369A1]/25 dark:border-[#38BDF8]/35'
                 : 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/40'
             }`}
           >
@@ -187,21 +187,21 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           {/* Member */}
           <div>
-            <label className="font-semibold text-[#172435] dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 text-[#087F70]" />
+            <label className="font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
               <span>Member</span>
             </label>
             <select
               required
               value={memberId}
               onChange={(e) => handleMemberChange(e.target.value)}
-              className="w-full px-3 py-2.5 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-xs sm:text-sm text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70] cursor-pointer"
+              className="w-full px-3 py-2.5 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-xs sm:text-sm text-[#0F1B2E] dark:text-[#F3F6FC] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8] cursor-pointer"
             >
               {members.map((m) => (
                 <option
                   key={m.id}
                   value={m.id}
-                  className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                  className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-[#F3F6FC]"
                 >
                   {m.member_code} - {m.full_name} ({m.shares_count} share{m.shares_count > 1 ? 's' : ''} · ৳{m.monthly_contribution})
                 </option>
@@ -213,20 +213,20 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="font-semibold text-[#172435] dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-[#087F70]" />
+                <label className="font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
                   <span>Billing Month</span>
                 </label>
                 <select
                   value={month}
                   onChange={(e) => setMonth(Number(e.target.value))}
-                  className="w-full px-3 py-2.5 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-xs sm:text-sm text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70] cursor-pointer"
+                  className="w-full px-3 py-2.5 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-xs sm:text-sm text-[#0F1B2E] dark:text-[#F3F6FC] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8] cursor-pointer"
                 >
                   {MONTH_NAMES.map((name, idx) => (
                     <option
                       key={idx + 1}
                       value={idx + 1}
-                      className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                      className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-[#F3F6FC]"
                     >
                       {idx + 1}. {name}
                     </option>
@@ -235,19 +235,19 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
               </div>
 
               <div>
-                <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+                <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                   Fiscal Year
                 </label>
                 <select
                   value={year}
                   onChange={(e) => setYear(Number(e.target.value))}
-                  className="w-full px-3 py-2.5 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono tabular-nums text-xs sm:text-sm text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70] cursor-pointer"
+                  className="w-full px-3 py-2.5 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono tabular-nums text-xs sm:text-sm text-[#0F1B2E] dark:text-[#F3F6FC] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8] cursor-pointer"
                 >
                   {FISCAL_YEARS.map((yr) => (
                     <option
                       key={yr}
                       value={yr}
-                      className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                      className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-[#F3F6FC]"
                     >
                       {yr}
                     </option>
@@ -256,13 +256,13 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-[#F5F6F3] dark:bg-[#162438] rounded-xl border border-[#E8EDF3] dark:border-[#1F2F46] text-[10px]">
-              <span className="text-[#64748B] dark:text-slate-400">
-                Deadline: <strong className="text-[#172435] dark:text-slate-200">{deadlineDay} {getMonthName(deadlineMonth)} {deadlineYear}</strong> ·{' '}
+            <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-[#EFF3F9] dark:bg-[#17243C] rounded-xl border border-[#DFE6F0] dark:border-[#233452] text-[10px]">
+              <span className="text-[#4E5E78] dark:text-[#9BB0CD]">
+                Deadline: <strong className="text-[#0F1B2E] dark:text-slate-200">{deadlineDay} {getMonthName(deadlineMonth)} {deadlineYear}</strong> ·{' '}
                 {isPaidDateLate ? (
-                  <span className="text-[#9A7127] dark:text-[#D6AC62] font-bold">Late payment</span>
+                  <span className="text-[#92600A] dark:text-[#F0C56E] font-bold">Late payment</span>
                 ) : (
-                  <span className="text-[#087F70] dark:text-[#34D399] font-bold">On time</span>
+                  <span className="text-[#0369A1] dark:text-[#38BDF8] font-bold">On time</span>
                 )}
               </span>
               {paidDate && (
@@ -273,7 +273,7 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
                     setMonth(p.billingMonth);
                     setYear(p.billingYear);
                   }}
-                  className="px-2.5 py-1 rounded-md bg-[#087F70]/10 text-[#087F70] dark:text-[#34D399] font-semibold hover:bg-[#087F70]/20 transition-colors cursor-pointer"
+                  className="px-2.5 py-1 rounded-md bg-[#1D4ED8]/10 text-[#1D4ED8] dark:text-[#7EB6FF] font-semibold hover:bg-[#1D4ED8]/20 transition-colors cursor-pointer"
                 >
                   Match Prior Month
                 </button>
@@ -284,7 +284,7 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
           {/* Principal Amounts */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+              <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                 Principal Due (৳)
               </label>
               <input
@@ -293,12 +293,12 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
                 required
                 value={amountDue}
                 onChange={(e) => setAmountDue(Number(e.target.value))}
-                className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono tabular-nums text-sm text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                className="w-full px-3 py-2 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono tabular-nums text-sm text-[#0F1B2E] dark:text-[#F3F6FC] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+              <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                 Principal Paid (৳)
               </label>
               <input
@@ -307,7 +307,7 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
                 required
                 value={amountPaid}
                 onChange={(e) => setAmountPaid(Number(e.target.value))}
-                className="w-full px-3 py-2 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono tabular-nums text-sm font-bold text-[#087F70] dark:text-[#34D399] focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                className="w-full px-3 py-2 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono tabular-nums text-sm font-bold text-[#0369A1] dark:text-[#38BDF8] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
               />
             </div>
           </div>
@@ -320,7 +320,7 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
                 setAmountDue(standardDue);
                 setAmountPaid(standardDue);
               }}
-              className="flex-1 py-1.5 px-2.5 text-xs font-semibold bg-[#087F70]/10 text-[#087F70] dark:text-[#34D399] rounded-lg hover:bg-[#087F70]/15 border border-[#087F70]/25 transition-colors cursor-pointer whitespace-nowrap"
+              className="flex-1 py-1.5 px-2.5 text-xs font-semibold bg-[#1D4ED8]/10 text-[#1D4ED8] dark:text-[#7EB6FF] rounded-lg hover:bg-[#1D4ED8]/15 border border-[#1D4ED8]/25 dark:border-[#60A5FA]/35 transition-colors cursor-pointer whitespace-nowrap"
             >
               Full Principal (৳{standardDue})
             </button>
@@ -330,7 +330,7 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
                 setAmountPaid(0);
                 setFinePaid(0);
               }}
-              className="py-1.5 px-3 text-xs font-semibold bg-[#F5F6F3] dark:bg-[#162438] text-[#64748B] dark:text-slate-300 border border-[#E8EDF3] dark:border-[#1F2F46] rounded-lg hover:bg-slate-200/70 dark:hover:bg-[#203650] transition-colors cursor-pointer whitespace-nowrap"
+              className="py-1.5 px-3 text-xs font-semibold bg-[#EFF3F9] dark:bg-[#17243C] text-[#4E5E78] dark:text-slate-300 border border-[#DFE6F0] dark:border-[#233452] rounded-lg hover:bg-slate-200/70 dark:hover:bg-[#18294A] transition-colors cursor-pointer whitespace-nowrap"
             >
               ৳0 (Unpaid)
             </button>
@@ -339,7 +339,7 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
           {/* Fine Edit Section */}
           <div className="p-3.5 bg-[#D6AC62]/10 rounded-xl border border-[#D6AC62]/30 space-y-2.5">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="flex items-center gap-1.5 text-[11px] font-bold text-[#9A7127] dark:text-[#D6AC62]">
+              <span className="flex items-center gap-1.5 text-[11px] font-bold text-[#92600A] dark:text-[#F0C56E]">
                 <AlertTriangle className="w-3.5 h-3.5" />
                 <span>Late Fine Adjustment</span>
               </span>
@@ -348,14 +348,14 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
                 <button
                   type="button"
                   onClick={applyWithFine}
-                  className="px-2.5 py-1 text-[10px] font-bold rounded-md bg-[#D6AC62] text-[#14243A] hover:bg-[#c59a50] transition-colors cursor-pointer whitespace-nowrap"
+                  className="px-2.5 py-1 text-[10px] font-bold rounded-md bg-[#D6AC62] text-[#0F1B33] hover:bg-[#c59a50] transition-colors cursor-pointer whitespace-nowrap"
                 >
                   Apply Fine (৳{standardFine})
                 </button>
                 <button
                   type="button"
                   onClick={applyWithoutFine}
-                  className="px-2.5 py-1 text-[10px] font-bold rounded-md bg-[#14243A] dark:bg-[#203650] dark:border dark:border-[#2B4564] text-white hover:bg-[#203650] dark:hover:bg-[#2B4564] transition-colors cursor-pointer whitespace-nowrap"
+                  className="px-2.5 py-1 text-[10px] font-bold rounded-md bg-[#0F1B33] dark:bg-[#18294A] dark:border dark:border-[#223862] text-white hover:bg-[#18294A] dark:hover:bg-[#223862] transition-colors cursor-pointer whitespace-nowrap"
                 >
                   No Fine (৳0)
                 </button>
@@ -364,7 +364,7 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-medium text-[#64748B] dark:text-slate-300 mb-1">
+                <label className="block text-[11px] font-medium text-[#4E5E78] dark:text-slate-300 mb-1">
                   Fine Due (৳)
                 </label>
                 <input
@@ -373,12 +373,12 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
                   disabled={fineWaived}
                   value={fineWaived ? 0 : fineDue}
                   onChange={(e) => setFineDue(Number(e.target.value))}
-                  className="w-full px-2.5 py-1.5 text-sm bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-lg font-mono tabular-nums disabled:opacity-50"
+                  className="w-full px-2.5 py-1.5 text-sm bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] rounded-lg font-mono tabular-nums disabled:opacity-50"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-medium text-[#64748B] dark:text-slate-300 mb-1">
+                <label className="block text-[11px] font-medium text-[#4E5E78] dark:text-slate-300 mb-1">
                   Fine Paid (৳)
                 </label>
                 <input
@@ -387,23 +387,23 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
                   disabled={fineWaived}
                   value={fineWaived ? 0 : finePaid}
                   onChange={(e) => setFinePaid(Number(e.target.value))}
-                  className="w-full px-2.5 py-1.5 text-sm bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-lg font-mono tabular-nums font-bold text-[#087F70] dark:text-[#34D399] disabled:opacity-50"
+                  className="w-full px-2.5 py-1.5 text-sm bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] rounded-lg font-mono tabular-nums font-bold text-[#0369A1] dark:text-[#38BDF8] disabled:opacity-50"
                 />
               </div>
             </div>
 
             <div className="flex items-center justify-between text-[11px] pt-1">
-              <label className="flex items-center gap-2 font-semibold text-[#172435] dark:text-slate-200 cursor-pointer">
+              <label className="flex items-center gap-2 font-semibold text-[#0F1B2E] dark:text-slate-200 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={fineWaived}
                   onChange={(e) => setFineWaived(e.target.checked)}
-                  className="rounded border-[#E8EDF3] text-[#087F70]"
+                  className="rounded border-[#DFE6F0] text-[#1D4ED8]"
                 />
                 <span>Waive Late Fine</span>
               </label>
 
-              <span className="font-mono tabular-nums font-bold text-[#087F70] dark:text-[#34D399]">
+              <span className="font-mono tabular-nums font-bold text-[#0369A1] dark:text-[#38BDF8]">
                 Total Paid: {formatBDT(Number(amountPaid) + (fineWaived ? 0 : Number(finePaid)))}
               </span>
             </div>
@@ -412,19 +412,19 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
           {/* Date & Notes */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+              <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                 Payment Date
               </label>
               <input
                 type="date"
                 value={paidDate}
                 onChange={(e) => setPaidDate(e.target.value)}
-                className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                className="w-full px-3 py-2 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono text-[#0F1B2E] dark:text-[#F3F6FC] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+              <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                 Notes
               </label>
               <input
@@ -432,23 +432,23 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({ due, onClose
                 placeholder="Cash / bKash / TrxID"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full px-3 py-2 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+                className="w-full px-3 py-2 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-[#F3F6FC] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2.5 pt-3 border-t border-[#E8EDF3] dark:border-[#1F2F46]">
+          <div className="flex justify-end gap-2.5 pt-3 border-t border-[#DFE6F0] dark:border-[#233452]">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-[#64748B] dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#162438] rounded-xl transition-colors cursor-pointer"
+              className="px-4 py-2 text-xs font-semibold text-[#4E5E78] dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#17243C] rounded-xl transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || feedback?.type === 'success'}
-              className="px-5 py-2 text-xs font-bold text-white bg-[#087F70] hover:bg-[#06675B] rounded-xl disabled:opacity-50 flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+              className="px-5 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl disabled:opacity-50 flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>{loading ? 'Updating...' : 'Save Changes'}</span>

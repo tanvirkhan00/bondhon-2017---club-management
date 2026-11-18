@@ -80,12 +80,12 @@ export const AdminMemberProfile: React.FC = () => {
   if (!member || !summary) {
     return (
       <div className="surface-card p-8 rounded-2xl text-center space-y-3">
-        <p className="text-sm font-semibold text-[#172435] dark:text-slate-200">
+        <p className="text-sm font-semibold text-[#0F1B2E] dark:text-slate-200">
           Member record not found.
         </p>
         <Link
           to="/admin/members"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#087F70] hover:underline"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1D4ED8] dark:text-[#60A5FA] hover:underline"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to Member Directory</span>
@@ -128,11 +128,11 @@ export const AdminMemberProfile: React.FC = () => {
   return (
     <PageTransition className="space-y-6">
       {/* Top Bar Navigation & Quick Member Switcher */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#E8EDF3] dark:border-[#1F2F46]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#DFE6F0] dark:border-[#233452]">
         <div className="flex items-center gap-2.5 flex-wrap">
           <Link
             to="/admin/members"
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-[#172435] dark:text-slate-200 bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl hover:bg-[#F5F6F3] dark:hover:bg-[#162438] transition-colors whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-[#0F1B2E] dark:text-slate-200 bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] rounded-xl hover:bg-[#EFF3F9] dark:hover:bg-[#17243C] transition-colors whitespace-nowrap"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Directory</span>
@@ -141,13 +141,13 @@ export const AdminMemberProfile: React.FC = () => {
           <select
             value={member.id}
             onChange={(e) => navigate(`/admin/members/${e.target.value}`)}
-            className="px-3 py-2 text-xs font-semibold bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-[#087F70]"
+            className="px-3 py-2 text-xs font-semibold bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
           >
             {members.map((m) => (
               <option
                 key={m.id}
                 value={m.id}
-                className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100"
               >
                 {m.member_code} — {m.full_name}
               </option>
@@ -159,7 +159,7 @@ export const AdminMemberProfile: React.FC = () => {
           <button
             type="button"
             onClick={handleExportStatement}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#172435] dark:text-slate-200 bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] hover:bg-[#F5F6F3] dark:hover:bg-[#162438] rounded-xl cursor-pointer transition-colors whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#0F1B2E] dark:text-slate-200 bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] hover:bg-[#EFF3F9] dark:hover:bg-[#17243C] rounded-xl cursor-pointer transition-colors whitespace-nowrap"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Export CSV</span>
@@ -168,7 +168,7 @@ export const AdminMemberProfile: React.FC = () => {
           <button
             type="button"
             onClick={() => setRecordTarget({})}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#087F70] hover:bg-[#06675B] rounded-xl shadow-xs cursor-pointer transition-colors whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-xs cursor-pointer transition-colors whitespace-nowrap"
           >
             <PlusCircle className="w-3.5 h-3.5" />
             <span>Record Payment</span>
@@ -178,9 +178,9 @@ export const AdminMemberProfile: React.FC = () => {
 
       {/* Member Identity Card */}
       <div className="surface-card rounded-2xl overflow-hidden">
-        <div className="h-1.5 bg-gradient-to-r from-[#14243A] via-[#087F70] to-[#D6AC62]" />
+        <div className="h-1.5 bg-gradient-to-r from-[#0F1B33] via-[#1D4ED8] to-[#D6AC62]" />
         <div className="p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
-          <div className="w-20 h-20 rounded-full bg-[#F5F6F3] dark:bg-[#162438] ring-3 ring-[#087F70]/25 flex items-center justify-center font-bold text-2xl text-[#087F70] dark:text-[#34D399] overflow-hidden shrink-0">
+          <div className="w-20 h-20 rounded-full bg-[#EFF3F9] dark:bg-[#17243C] ring-3 ring-[#1D4ED8]/25 dark:ring-[#60A5FA]/30 flex items-center justify-center font-bold text-2xl text-[#1D4ED8] dark:text-[#60A5FA] overflow-hidden shrink-0">
             {member.profile_image_url ? (
               <img
                 src={member.profile_image_url}
@@ -194,43 +194,43 @@ export const AdminMemberProfile: React.FC = () => {
 
           <div className="flex-1 space-y-2 min-w-0">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs">
-              <span className="font-mono font-bold text-[#14243A] dark:text-[#D6AC62]">
+              <span className="font-mono font-bold text-[#0F1B33] dark:text-[#F0C56E]">
                 {member.member_code}
               </span>
-              <span className="text-[#64748B]">·</span>
-              <span className="font-semibold text-[#087F70] dark:text-[#34D399]">
+              <span className="text-[#4E5E78]">·</span>
+              <span className="font-semibold text-[#1D4ED8] dark:text-[#60A5FA]">
                 {member.designation || 'Member'}
               </span>
-              <span className="text-[#64748B]">·</span>
+              <span className="text-[#4E5E78]">·</span>
               <StatusBadge status={member.status} size="sm" />
             </div>
 
-            <h1 className="text-2xl font-bold tracking-tight text-[#172435] dark:text-slate-100">
+            <h1 className="text-2xl font-bold tracking-tight text-[#0F1B2E] dark:text-slate-100">
               {member.full_name}
             </h1>
 
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1.5 text-xs text-[#64748B] dark:text-slate-400 pt-0.5">
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1.5 text-xs text-[#4E5E78] dark:text-slate-400 pt-0.5">
               {member.father_name && (
                 <span className="flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5 text-[#087F70]" />
+                  <User className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
                   <span>{member.father_name}</span>
                 </span>
               )}
-              <span className="flex items-center gap-1.5 font-mono text-[#172435] dark:text-slate-200">
-                <Phone className="w-3.5 h-3.5 text-[#087F70]" />
+              <span className="flex items-center gap-1.5 font-mono text-[#0F1B2E] dark:text-slate-200">
+                <Phone className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
                 <span>{member.phone || '—'}</span>
               </span>
               {member.email && (
                 <span className="flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-[#087F70]" />
+                  <Mail className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
                   <span>{member.email}</span>
                 </span>
               )}
               <span className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-[#087F70]" />
+                <Calendar className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
                 <span>Joined {formatDate(member.join_date)}</span>
               </span>
-              <span className="flex items-center gap-1.5 font-semibold text-[#087F70] dark:text-[#34D399] tabular-nums">
+              <span className="flex items-center gap-1.5 font-semibold text-[#0369A1] dark:text-[#38BDF8] tabular-nums">
                 <CreditCard className="w-3.5 h-3.5" />
                 <span>
                   {formatBDT(summary.monthlyContribution)}/month ({member.shares_count}{' '}
@@ -249,7 +249,7 @@ export const AdminMemberProfile: React.FC = () => {
           value={formatBDT(summary.totalPaid)}
           subLabel={`${summary.totalPaidMonths} months cleared`}
           icon={Banknote}
-          accent="emerald"
+          accent="sapphire"
         />
         <MetricCard
           label="Total Outstanding"
@@ -267,17 +267,17 @@ export const AdminMemberProfile: React.FC = () => {
         />
         <div className="surface-card surface-card-hover rounded-2xl p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between gap-3">
-            <span className="text-[11px] font-semibold tracking-wider uppercase text-[#64748B] dark:text-slate-400">
+            <span className="text-[11px] font-semibold tracking-wider uppercase text-[#4E5E78] dark:text-slate-400">
               Account Status
             </span>
-            <div className="w-9 h-9 rounded-xl border bg-[#14243A]/8 text-[#14243A] dark:bg-[#203650] dark:text-slate-200 border-[#14243A]/10 dark:border-[#2B4564] flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl border bg-[#0F1B33]/8 text-[#0F1B33] dark:bg-[#18294A] dark:text-slate-200 border-[#0F1B33]/10 dark:border-[#223862] flex items-center justify-center shrink-0">
               <ShieldCheck className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
             <StatusBadge status={summary.currentStatus} />
           </div>
-          <div className="mt-3.5 pt-2.5 border-t border-[#E8EDF3] dark:border-[#1F2F46] text-xs text-[#64748B] dark:text-slate-400 font-mono tabular-nums">
+          <div className="mt-3.5 pt-2.5 border-t border-[#DFE6F0] dark:border-[#233452] text-xs text-[#4E5E78] dark:text-slate-400 font-mono tabular-nums">
             Last payment: {summary.lastPaymentDate ? formatDate(summary.lastPaymentDate) : 'None'}
           </div>
         </div>
@@ -285,12 +285,12 @@ export const AdminMemberProfile: React.FC = () => {
 
       {/* Filters & Month-by-Month Ledger */}
       <div className="surface-card rounded-2xl overflow-hidden">
-        <div className="p-4 sm:p-5 border-b border-[#E8EDF3] dark:border-[#1F2F46] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="p-4 sm:p-5 border-b border-[#DFE6F0] dark:border-[#233452] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-sm font-bold text-[#172435] dark:text-slate-100">
+            <h2 className="text-sm font-bold text-[#0F1B2E] dark:text-slate-100">
               Complete Monthly Ledger ({filteredLedger.length})
             </h2>
-            <p className="text-[11px] text-[#64748B] dark:text-slate-400">
+            <p className="text-[11px] text-[#4E5E78] dark:text-slate-400">
               Audit, edit, or record entries for any billing cycle
             </p>
           </div>
@@ -299,11 +299,11 @@ export const AdminMemberProfile: React.FC = () => {
             <select
               value={yearFilter}
               onChange={(e) => setYearFilter(e.target.value)}
-              className="px-3 py-1.5 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl font-mono text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
+              className="px-3 py-1.5 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden cursor-pointer"
             >
-              <option value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">All Years</option>
+              <option value="all" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">All Years</option>
               {years.map((y) => (
-                <option key={y} value={String(y)} className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">
+                <option key={y} value={String(y)} className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">
                   {y}
                 </option>
               ))}
@@ -312,19 +312,19 @@ export const AdminMemberProfile: React.FC = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-1.5 text-xs bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden cursor-pointer"
+              className="px-3 py-1.5 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden cursor-pointer"
             >
-              <option value="all" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">All Status</option>
-              <option value="paid" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Paid</option>
-              <option value="partial" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Partial</option>
-              <option value="unpaid" className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100">Unpaid</option>
+              <option value="all" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">All Status</option>
+              <option value="paid" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">Paid</option>
+              <option value="partial" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">Partial</option>
+              <option value="unpaid" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">Unpaid</option>
             </select>
           </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#F5F6F3] dark:bg-[#162438] text-[#64748B] dark:text-slate-400 border-b border-[#E8EDF3] dark:border-[#1F2F46]">
+            <thead className="bg-[#EFF3F9] dark:bg-[#17243C] text-[#4E5E78] dark:text-slate-400 border-b border-[#DFE6F0] dark:border-[#233452]">
               <tr>
                 <th className="py-3 px-4 font-semibold">Billing Cycle</th>
                 <th className="py-3 px-4 font-semibold text-right">Due (৳)</th>
@@ -336,7 +336,7 @@ export const AdminMemberProfile: React.FC = () => {
                 <th className="py-3 px-4 font-semibold text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E8EDF3] dark:divide-[#1F2F46]">
+            <tbody className="divide-y divide-[#DFE6F0] dark:divide-[#233452]">
               {filteredLedger.map((d) => {
                 const bd = calculateDueBreakdown(d, member.shares_count);
                 const isDeleting = deleteConfirmId === d.id;
@@ -344,29 +344,29 @@ export const AdminMemberProfile: React.FC = () => {
                 return (
                   <tr
                     key={d.id}
-                    className={`hover:bg-[#F5F6F3]/65 dark:hover:bg-[#162438]/65 transition-colors ${
+                    className={`hover:bg-[#EFF3F9]/65 dark:hover:bg-[#17243C]/65 transition-colors ${
                       d.isVirtual ? 'bg-rose-50/30 dark:bg-rose-950/10' : ''
                     }`}
                   >
-                    <td className="py-3 px-4 font-medium text-[#172435] dark:text-slate-100 whitespace-nowrap">
+                    <td className="py-3 px-4 font-medium text-[#0F1B2E] dark:text-slate-100 whitespace-nowrap">
                       <span>{getMonthName(d.month)} {d.year}</span>
                       {d.notes && (
-                        <span className="block text-[10px] text-[#64748B] truncate max-w-[200px]">
+                        <span className="block text-[10px] text-[#4E5E78] truncate max-w-[200px]">
                           {d.notes}
                         </span>
                       )}
                     </td>
 
-                    <td className="py-3 px-4 text-right font-mono tabular-nums text-[#64748B] dark:text-slate-300">
+                    <td className="py-3 px-4 text-right font-mono tabular-nums text-[#4E5E78] dark:text-slate-300">
                       {formatBDT(bd.principalDue)}
                     </td>
 
-                    <td className="py-3 px-4 text-right font-mono tabular-nums text-[#9A7127] dark:text-[#D6AC62]">
+                    <td className="py-3 px-4 text-right font-mono tabular-nums text-[#92600A] dark:text-[#F0C56E]">
                       {bd.fineDue > 0 ? (
                         <span>
                           {formatBDT(bd.fineDue)}
                           {bd.finePaid > 0 && (
-                            <span className="block text-[10px] text-[#087F70] dark:text-[#34D399]">
+                            <span className="block text-[10px] text-[#0369A1] dark:text-[#38BDF8]">
                               Paid: {formatBDT(bd.finePaid)}
                             </span>
                           )}
@@ -376,7 +376,7 @@ export const AdminMemberProfile: React.FC = () => {
                       )}
                     </td>
 
-                    <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#087F70] dark:text-[#34D399]">
+                    <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#0369A1] dark:text-[#38BDF8]">
                       {formatBDT(bd.totalPaid)}
                     </td>
 
@@ -388,7 +388,7 @@ export const AdminMemberProfile: React.FC = () => {
                       <StatusBadge status={d.status} size="sm" />
                     </td>
 
-                    <td className="py-3 px-4 font-mono text-[#64748B] dark:text-slate-400 whitespace-nowrap tabular-nums">
+                    <td className="py-3 px-4 font-mono text-[#4E5E78] dark:text-slate-400 whitespace-nowrap tabular-nums">
                       {d.paid_at ? formatDate(d.paid_at) : '—'}
                     </td>
 
@@ -397,7 +397,7 @@ export const AdminMemberProfile: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setRecordTarget({ month: d.month, year: d.year })}
-                          className="px-2.5 py-1 text-[11px] font-bold text-[#087F70] dark:text-[#34D399] bg-[#087F70]/10 hover:bg-[#087F70]/15 rounded-lg border border-[#087F70]/25 cursor-pointer whitespace-nowrap"
+                          className="px-2.5 py-1 text-[11px] font-bold text-[#1D4ED8] dark:text-[#60A5FA] bg-[#1D4ED8]/10 hover:bg-[#1D4ED8]/15 rounded-lg border border-[#1D4ED8]/25 dark:border-[#60A5FA]/35 cursor-pointer whitespace-nowrap"
                         >
                           + Record
                         </button>
@@ -406,7 +406,7 @@ export const AdminMemberProfile: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => setEditDue(d)}
-                            className="p-1.5 text-[#64748B] hover:text-[#087F70] hover:bg-[#F5F6F3] dark:hover:bg-[#203650] rounded-lg cursor-pointer"
+                            className="p-1.5 text-[#4E5E78] hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] hover:bg-[#EFF3F9] dark:hover:bg-[#18294A] rounded-lg cursor-pointer"
                             title="Edit Payment"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
@@ -427,7 +427,7 @@ export const AdminMemberProfile: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => setDeleteConfirmId(null)}
-                                className="px-1.5 py-0.5 text-[#64748B] text-[10px] cursor-pointer"
+                                className="px-1.5 py-0.5 text-[#4E5E78] text-[10px] cursor-pointer"
                               >
                                 Cancel
                               </button>
@@ -436,7 +436,7 @@ export const AdminMemberProfile: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => setDeleteConfirmId(d.id)}
-                              className="p-1.5 text-[#64748B] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg cursor-pointer"
+                              className="p-1.5 text-[#4E5E78] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg cursor-pointer"
                               title="Delete Entry"
                             >
                               <Trash2 className="w-3.5 h-3.5" />

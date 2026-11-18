@@ -70,7 +70,7 @@ export const Modal: React.FC<ModalProps> = ({
           {/* Backdrop */}
           <div
             onClick={onClose}
-            className="fixed inset-0 bg-[#14243A]/65 backdrop-blur-[3px]"
+            className="fixed inset-0 bg-[#09101D]/65 backdrop-blur-[3px]"
           />
 
           {/* Dialog Panel */}
@@ -79,19 +79,19 @@ export const Modal: React.FC<ModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: 6 }}
             transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-            className={`relative z-10 w-full ${maxWidthClass} bg-white dark:bg-[#111C2D] rounded-2xl border border-[#E8EDF3] dark:border-[#1F2F46] shadow-[0_20px_50px_-12px_rgba(20,36,58,0.35)] overflow-hidden flex flex-col max-h-[92vh]`}
+            className={`relative z-10 w-full ${maxWidthClass} bg-white dark:bg-[#111B2E] rounded-2xl border border-[#DFE6F0] dark:border-[#233452] shadow-[0_20px_50px_-12px_rgba(9,16,29,0.4)] overflow-hidden flex flex-col max-h-[92vh]`}
           >
             {/* Header */}
-            <div className="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 border-b border-[#E8EDF3] dark:border-[#1F2F46] bg-[#F8FAFC]/80 dark:bg-[#14243A]/60 shrink-0">
+            <div className="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 border-b border-[#DFE6F0] dark:border-[#233452] bg-[#EFF3F9]/80 dark:bg-[#0F1B33]/65 shrink-0">
               <div className="flex items-center gap-3 min-w-0">
                 {lottieSrc ? (
-                  <div className="w-11 h-11 rounded-xl bg-white dark:bg-slate-100/95 border border-[#E8EDF3] dark:border-[#2B4564] flex items-center justify-center p-1 shrink-0 overflow-hidden shadow-2xs">
+                  <div className="w-11 h-11 rounded-xl bg-white dark:bg-slate-100/95 border border-[#DFE6F0] dark:border-[#223862] flex items-center justify-center p-1 shrink-0 overflow-hidden shadow-2xs">
                     <ModalLottie
                       src={lottieSrc}
                       isSuccess={lottieSuccess}
                       speed={lottieSpeed}
                       fallbackIcon={
-                        <span className="text-[#087F70] flex items-center justify-center">
+                        <span className="text-[#1D4ED8] flex items-center justify-center">
                           {icon}
                         </span>
                       }
@@ -100,7 +100,7 @@ export const Modal: React.FC<ModalProps> = ({
                   </div>
                 ) : (
                   icon && (
-                    <div className="w-9 h-9 rounded-xl bg-[#087F70]/10 dark:bg-[#087F70]/20 text-[#087F70] dark:text-[#34D399] border border-[#087F70]/20 flex items-center justify-center shrink-0">
+                    <div className="w-9 h-9 rounded-xl bg-[#1D4ED8]/10 dark:bg-[#60A5FA]/15 text-[#1D4ED8] dark:text-[#60A5FA] border border-[#1D4ED8]/20 dark:border-[#60A5FA]/30 flex items-center justify-center shrink-0">
                       {icon}
                     </div>
                   )
@@ -108,12 +108,12 @@ export const Modal: React.FC<ModalProps> = ({
                 <div className="min-w-0">
                   <h2
                     id="modal-heading"
-                    className="text-base font-bold text-[#172435] dark:text-slate-100 truncate"
+                    className="text-base font-bold text-[#0F1B2E] dark:text-[#F3F6FC] truncate"
                   >
                     {title}
                   </h2>
                   {subtitle && (
-                    <p className="text-[11px] text-[#64748B] dark:text-slate-400 truncate mt-0.5">
+                    <p className="text-[11px] text-[#4E5E78] dark:text-[#9BB0CD] truncate mt-0.5">
                       {subtitle}
                     </p>
                   )}
@@ -124,7 +124,7 @@ export const Modal: React.FC<ModalProps> = ({
                 type="button"
                 onClick={onClose}
                 aria-label="Close modal"
-                className="p-2 rounded-lg text-[#64748B] hover:text-[#172435] dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-[#203650] transition-colors cursor-pointer shrink-0"
+                className="p-2 rounded-lg text-[#4E5E78] dark:text-[#9BB0CD] hover:text-[#0F1B2E] dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-[#18294A] transition-colors cursor-pointer shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>

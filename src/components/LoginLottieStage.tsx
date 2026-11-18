@@ -124,10 +124,10 @@ export const LoginLottieStage: React.FC<LoginLottieStageProps> = ({ role, authSt
         style={{
           background:
             authState === 'error'
-              ? 'radial-gradient(circle, rgba(225,29,72,0.22) 0%, rgba(20,36,58,0) 72%)'
+              ? 'radial-gradient(circle, rgba(225,29,72,0.22) 0%, rgba(15,27,51,0) 72%)'
               : role === 'admin'
-              ? 'radial-gradient(circle, rgba(214,172,98,0.24) 0%, rgba(20,36,58,0) 72%)'
-              : 'radial-gradient(circle, rgba(8,127,112,0.28) 0%, rgba(20,36,58,0) 72%)',
+              ? 'radial-gradient(circle, rgba(214,172,98,0.24) 0%, rgba(15,27,51,0) 72%)'
+              : 'radial-gradient(circle, rgba(37,99,235,0.32) 0%, rgba(15,27,51,0) 72%)',
         }}
       />
 
@@ -135,16 +135,16 @@ export const LoginLottieStage: React.FC<LoginLottieStageProps> = ({ role, authSt
       <div
         className={`relative z-10 w-36 h-36 sm:w-44 sm:h-44 lg:w-68 lg:h-68 xl:w-76 xl:h-76 rounded-full flex items-center justify-center p-4 sm:p-5 lg:p-6 transition-all duration-300 shadow-[0_20px_45px_rgba(0,0,0,0.32)] ${
           isVerifyingOrSuccess
-            ? 'bg-[#0F1B2D] ring-2 ring-[#34D399]/50'
+            ? 'bg-[#09101D] ring-2 ring-[#60A5FA]/50'
             : role === 'admin'
-            ? 'bg-gradient-to-br from-[#F5F6F3] to-[#E8EFEF] ring-4 ring-[#D6AC62]/35'
-            : 'bg-gradient-to-br from-[#FFFFFF] to-[#EDF5F3] ring-4 ring-[#34D399]/30'
+            ? 'bg-gradient-to-br from-[#F6F7FB] to-[#EAEFF8] ring-4 ring-[#D6AC62]/35'
+            : 'bg-gradient-to-br from-[#FFFFFF] to-[#EAF1FF] ring-4 ring-[#60A5FA]/35'
         }`}
       >
         {loadFailed ? (
           <div className="flex flex-col items-center justify-center gap-2 text-center">
-            <ShieldCheck className="w-10 h-10 text-[#087F70]" />
-            <span className="text-xs font-semibold text-[#14243A]">Secure Portal</span>
+            <ShieldCheck className="w-10 h-10 text-[#1D4ED8]" />
+            <span className="text-xs font-semibold text-[#0F1B33]">Secure Portal</span>
           </div>
         ) : !activeSrc ? (
           <div
@@ -289,8 +289,8 @@ export const AnimatedLoginButton: React.FC<AnimatedLoginButtonProps> = ({
 
   const baseBgClass =
     variant === 'member'
-      ? 'bg-[#087F70] hover:bg-[#06675B]'
-      : 'bg-[#14243A] hover:bg-[#203650] dark:bg-[#087F70] dark:hover:bg-[#06675B]';
+      ? 'bg-[#1D4ED8] hover:bg-[#1E40AF]'
+      : 'bg-[#0F1B33] hover:bg-[#18294A] dark:bg-[#1D4ED8] dark:hover:bg-[#1E40AF]';
 
   return (
     <motion.button
@@ -324,7 +324,7 @@ export const AnimatedLoginButton: React.FC<AnimatedLoginButtonProps> = ({
         {loading ? (
           <Loader2 className="w-4 h-4 animate-spin text-[#D6AC62]" />
         ) : isSuccess ? (
-          <CheckCircle2 className="w-4 h-4 text-[#34D399]" />
+          <CheckCircle2 className="w-4 h-4 text-[#38BDF8]" />
         ) : unlockData ? (
           <Lottie
             lottieRef={unlockRef}

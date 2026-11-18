@@ -166,30 +166,30 @@ export const AdminPayments: React.FC = () => {
   return (
     <PageTransition className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E8EDF3] dark:border-[#1F2F46]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#DFE6F0] dark:border-[#233452]">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#172435] dark:text-slate-100 flex items-center gap-2.5">
-            <CreditCard className="w-6 h-6 text-[#087F70]" />
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0F1B2E] dark:text-slate-100 flex items-center gap-2.5">
+            <CreditCard className="w-6 h-6 text-[#1D4ED8] dark:text-[#60A5FA]" />
             <span>Monthly Dues Management</span>
           </h1>
-          <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400 mt-0.5">
+          <p className="text-xs sm:text-sm text-[#4E5E78] dark:text-slate-400 mt-0.5">
             Generate dues, record collections, and reconcile monthly member accounts
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1.5 bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl px-3 py-2 shadow-2xs">
-            <Calendar className="w-3.5 h-3.5 text-[#087F70] shrink-0" />
+          <div className="flex items-center gap-1.5 bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] rounded-xl px-3 py-2 shadow-2xs">
+            <Calendar className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA] shrink-0" />
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className="text-xs font-semibold text-[#172435] dark:text-slate-100 bg-white dark:bg-[#111C2D] focus:outline-hidden cursor-pointer"
+              className="text-xs font-semibold text-[#0F1B2E] dark:text-slate-100 bg-white dark:bg-[#111B2E] focus:outline-hidden cursor-pointer"
             >
               {MONTH_NAMES.map((name, idx) => (
                 <option
                   key={idx + 1}
                   value={idx + 1}
-                  className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                  className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100"
                 >
                   {name}
                 </option>
@@ -200,13 +200,13 @@ export const AdminPayments: React.FC = () => {
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(Number(e.target.value))}
-            className="text-xs font-semibold font-mono tabular-nums text-[#172435] dark:text-slate-100 bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl px-3 py-2 shadow-2xs focus:outline-hidden cursor-pointer"
+            className="text-xs font-semibold font-mono tabular-nums text-[#0F1B2E] dark:text-slate-100 bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] rounded-xl px-3 py-2 shadow-2xs focus:outline-hidden cursor-pointer"
           >
             {FISCAL_YEARS.map((yr) => (
               <option
                 key={yr}
                 value={yr}
-                className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100"
               >
                 {yr}
               </option>
@@ -218,7 +218,7 @@ export const AdminPayments: React.FC = () => {
               setTargetMemberForRecord(undefined);
               setRecordModalOpen(true);
             }}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#087F70] hover:bg-[#06675B] rounded-xl shadow-xs transition-all shrink-0 cursor-pointer whitespace-nowrap"
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-xs transition-all shrink-0 cursor-pointer whitespace-nowrap"
           >
             <CreditCard className="w-3.5 h-3.5" />
             <span>Record Payment</span>
@@ -226,9 +226,9 @@ export const AdminPayments: React.FC = () => {
 
           <button
             onClick={() => setGenerateModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#172435] dark:text-slate-200 bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] hover:bg-[#F5F6F3] dark:hover:bg-[#162438] rounded-xl transition-colors shrink-0 cursor-pointer whitespace-nowrap"
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#0F1B2E] dark:text-slate-200 bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] hover:bg-[#EFF3F9] dark:hover:bg-[#17243C] rounded-xl transition-colors shrink-0 cursor-pointer whitespace-nowrap"
           >
-            <PlusCircle className="w-3.5 h-3.5 text-[#087F70]" />
+            <PlusCircle className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
             <span>Generate Dues</span>
           </button>
         </div>
@@ -248,7 +248,7 @@ export const AdminPayments: React.FC = () => {
           value={formatBDT(collectedTotal)}
           subLabel={`${targetTotal > 0 ? Math.round((collectedTotal / targetTotal) * 100) : 0}% of ${formatBDT(targetTotal)}`}
           icon={Banknote}
-          accent="emerald"
+          accent="sapphire"
         />
         <MetricCard
           label="Outstanding"
@@ -269,23 +269,23 @@ export const AdminPayments: React.FC = () => {
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
         <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-[#64748B] absolute left-3.5 top-2.5" />
+          <Search className="w-4 h-4 text-[#4E5E78] absolute left-3.5 top-2.5" />
           <input
             type="text"
             placeholder="Search member name, code or phone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-3 py-2 text-xs sm:text-sm bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl focus:outline-hidden focus:ring-2 focus:ring-[#087F70] text-[#172435] dark:text-slate-100"
+            className="w-full pl-10 pr-3 py-2 text-xs sm:text-sm bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] rounded-xl focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8] text-[#0F1B2E] dark:text-slate-100"
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-1 p-1 bg-white dark:bg-[#111C2D] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-1 p-1 bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] rounded-xl self-start sm:self-auto">
           <button
             onClick={() => setStatusFilter('all')}
             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
               statusFilter === 'all'
-                ? 'bg-[#14243A] dark:bg-[#087F70] text-white font-semibold'
-                : 'text-[#64748B] hover:text-[#172435] dark:hover:text-slate-100'
+                ? 'bg-[#0F1B33] dark:bg-[#1D4ED8] text-white font-semibold'
+                : 'text-[#4E5E78] hover:text-[#0F1B2E] dark:hover:text-slate-100'
             }`}
           >
             All ({currentMonthDues.length})
@@ -294,8 +294,8 @@ export const AdminPayments: React.FC = () => {
             onClick={() => setStatusFilter('paid')}
             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
               statusFilter === 'paid'
-                ? 'bg-[#087F70] text-white font-semibold'
-                : 'text-[#64748B] hover:text-[#172435] dark:hover:text-slate-100'
+                ? 'bg-[#1D4ED8] text-white font-semibold'
+                : 'text-[#4E5E78] hover:text-[#0F1B2E] dark:hover:text-slate-100'
             }`}
           >
             Paid ({paidCount})
@@ -304,8 +304,8 @@ export const AdminPayments: React.FC = () => {
             onClick={() => setStatusFilter('partial')}
             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
               statusFilter === 'partial'
-                ? 'bg-[#D6AC62] text-[#14243A] font-semibold'
-                : 'text-[#64748B] hover:text-[#172435] dark:hover:text-slate-100'
+                ? 'bg-[#D6AC62] text-[#0F1B33] font-semibold'
+                : 'text-[#4E5E78] hover:text-[#0F1B2E] dark:hover:text-slate-100'
             }`}
           >
             Partial ({partialCount})
@@ -315,7 +315,7 @@ export const AdminPayments: React.FC = () => {
             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
               statusFilter === 'unpaid'
                 ? 'bg-rose-600 text-white font-semibold'
-                : 'text-[#64748B] hover:text-[#172435] dark:hover:text-slate-100'
+                : 'text-[#4E5E78] hover:text-[#0F1B2E] dark:hover:text-slate-100'
             }`}
           >
             Unpaid ({unpaidCount})
@@ -327,7 +327,7 @@ export const AdminPayments: React.FC = () => {
       <div className="surface-card rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#F5F6F3] dark:bg-[#162438] text-[#64748B] dark:text-slate-400 border-b border-[#E8EDF3] dark:border-[#1F2F46]">
+            <thead className="bg-[#EFF3F9] dark:bg-[#17243C] text-[#4E5E78] dark:text-slate-400 border-b border-[#DFE6F0] dark:border-[#233452]">
               <tr>
                 <th className="py-3 px-4 font-semibold">Code</th>
                 <th className="py-3 px-4 font-semibold">Member Name</th>
@@ -340,19 +340,19 @@ export const AdminPayments: React.FC = () => {
                 <th className="py-3 px-4 font-semibold text-right">Admin Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E8EDF3] dark:divide-[#1F2F46]">
+            <tbody className="divide-y divide-[#DFE6F0] dark:divide-[#233452]">
               {filteredDues.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-[#64748B]">
+                  <td colSpan={9} className="py-12 text-center text-[#4E5E78]">
                     {currentMonthDues.length === 0 ? (
                       <div className="space-y-2">
-                        <AlertCircle className="w-8 h-8 text-[#64748B] mx-auto" />
-                        <p className="font-semibold text-[#172435] dark:text-slate-200">
+                        <AlertCircle className="w-8 h-8 text-[#4E5E78] mx-auto" />
+                        <p className="font-semibold text-[#0F1B2E] dark:text-slate-200">
                           No dues generated for {getMonthName(selectedMonth)} {selectedYear}.
                         </p>
                         <button
                           onClick={() => setGenerateModalOpen(true)}
-                          className="text-xs text-[#087F70] font-semibold underline cursor-pointer"
+                          className="text-xs text-[#1D4ED8] dark:text-[#60A5FA] font-semibold underline cursor-pointer"
                         >
                           Click here to generate monthly dues for all active members
                         </button>
@@ -371,50 +371,50 @@ export const AdminPayments: React.FC = () => {
                   return (
                     <tr
                       key={due.id}
-                      className="hover:bg-[#F5F6F3]/65 dark:hover:bg-[#162438]/65 transition-colors"
+                      className="hover:bg-[#EFF3F9]/65 dark:hover:bg-[#17243C]/65 transition-colors"
                     >
-                      <td className="py-3 px-4 font-mono font-bold text-[#172435] dark:text-slate-100 whitespace-nowrap">
+                      <td className="py-3 px-4 font-mono font-bold text-[#0F1B2E] dark:text-slate-100 whitespace-nowrap">
                         {due.member?.member_code}
                       </td>
 
-                      <td className="py-3 px-4 font-medium text-[#172435] dark:text-slate-100">
+                      <td className="py-3 px-4 font-medium text-[#0F1B2E] dark:text-slate-100">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <Link
                             to={`/admin/members/${due.member_id}`}
-                            className="font-semibold hover:text-[#087F70] dark:hover:text-[#34D399]"
+                            className="font-semibold hover:text-[#1D4ED8] dark:hover:text-[#60A5FA]"
                           >
                             {due.member?.full_name}
                           </Link>
                           {due.member?.shares_count && due.member.shares_count > 1 && (
-                            <span className="text-[11px] font-semibold text-[#9A7127] dark:text-[#D6AC62] tabular-nums">
+                            <span className="text-[11px] font-semibold text-[#92600A] dark:text-[#F0C56E] tabular-nums">
                               · {due.member.shares_count} shares
                             </span>
                           )}
                         </div>
                         {due.member?.father_name && (
-                          <span className="block text-[11px] text-[#64748B] dark:text-slate-400 font-normal">
+                          <span className="block text-[11px] text-[#4E5E78] dark:text-slate-400 font-normal">
                             {due.member.father_name}
                           </span>
                         )}
                       </td>
 
-                      <td className="py-3 px-4 font-mono text-[#64748B] dark:text-slate-400 whitespace-nowrap">
+                      <td className="py-3 px-4 font-mono text-[#4E5E78] dark:text-slate-400 whitespace-nowrap">
                         {due.member?.phone || '—'}
                       </td>
 
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-[#64748B] dark:text-slate-300">
+                      <td className="py-3 px-4 text-right font-mono tabular-nums text-[#4E5E78] dark:text-slate-300">
                         <span>{formatBDT(due.amount_due)}</span>
                         {bd.fineDue > 0 && (
-                          <span className="block text-[10px] font-semibold text-[#9A7127] dark:text-[#D6AC62]">
+                          <span className="block text-[10px] font-semibold text-[#92600A] dark:text-[#F0C56E]">
                             +{formatBDT(bd.fineDue)} fine
                           </span>
                         )}
                       </td>
 
-                      <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#087F70] dark:text-[#34D399]">
+                      <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#0369A1] dark:text-[#38BDF8]">
                         <span>{formatBDT(due.amount_paid)}</span>
                         {bd.finePaid > 0 && (
-                          <span className="block text-[10px] font-normal text-[#087F70] dark:text-[#34D399]">
+                          <span className="block text-[10px] font-normal text-[#0369A1] dark:text-[#38BDF8]">
                             +{formatBDT(bd.finePaid)} fine
                           </span>
                         )}
@@ -428,7 +428,7 @@ export const AdminPayments: React.FC = () => {
                         <StatusBadge status={due.status} size="sm" />
                       </td>
 
-                      <td className="py-3 px-4 font-mono text-[#64748B] dark:text-slate-400 whitespace-nowrap tabular-nums">
+                      <td className="py-3 px-4 font-mono text-[#4E5E78] dark:text-slate-400 whitespace-nowrap tabular-nums">
                         {due.paid_at ? formatDate(due.paid_at) : '—'}
                       </td>
 
@@ -456,7 +456,7 @@ export const AdminPayments: React.FC = () => {
                                   });
                                 }
                               }}
-                              className="px-2.5 py-1 text-[11px] font-semibold text-[#087F70] dark:text-[#34D399] bg-[#087F70]/10 hover:bg-[#087F70]/15 rounded-lg border border-[#087F70]/25 transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                              className="px-2.5 py-1 text-[11px] font-semibold text-[#1D4ED8] dark:text-[#60A5FA] bg-[#1D4ED8]/10 hover:bg-[#1D4ED8]/15 rounded-lg border border-[#1D4ED8]/25 dark:border-[#60A5FA]/35 transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
                               title={`Settle total (${formatBDT(due.amount_due + bd.fineDue)})`}
                             >
                               <CheckCircle2 className="w-3 h-3" />
@@ -466,7 +466,7 @@ export const AdminPayments: React.FC = () => {
 
                           <button
                             onClick={() => handleOpenEdit(due)}
-                            className="p-1.5 text-[#64748B] hover:text-[#087F70] rounded-lg hover:bg-[#F5F6F3] dark:hover:bg-[#203650] cursor-pointer"
+                            className="p-1.5 text-[#4E5E78] hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] rounded-lg hover:bg-[#EFF3F9] dark:hover:bg-[#18294A] cursor-pointer"
                             title={due.isVirtual ? 'Record Payment Details' : 'Edit Payment Amount or Date'}
                           >
                             <Edit2 className="w-3.5 h-3.5" />
@@ -486,7 +486,7 @@ export const AdminPayments: React.FC = () => {
                                 </button>
                                 <button
                                   onClick={() => setDeleteConfirmId(null)}
-                                  className="px-1.5 py-0.5 text-[#64748B] text-[11px] cursor-pointer"
+                                  className="px-1.5 py-0.5 text-[#4E5E78] text-[11px] cursor-pointer"
                                 >
                                   Cancel
                                 </button>
@@ -494,7 +494,7 @@ export const AdminPayments: React.FC = () => {
                             ) : (
                               <button
                                 onClick={() => setDeleteConfirmId(due.id)}
-                                className="p-1.5 text-[#64748B] hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
+                                className="p-1.5 text-[#4E5E78] hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
                                 title="Delete Record"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -528,7 +528,7 @@ export const AdminPayments: React.FC = () => {
             <div
               className={`p-3 rounded-xl text-xs flex items-center gap-2 border ${
                 genMessage.type === 'success'
-                  ? 'bg-[#087F70]/10 text-[#087F70] dark:text-[#34D399] border-[#087F70]/25'
+                  ? 'bg-[#1D4ED8]/10 text-[#1D4ED8] dark:text-[#60A5FA] border-[#1D4ED8]/25 dark:border-[#60A5FA]/35'
                   : 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300'
               }`}
             >
@@ -544,19 +544,19 @@ export const AdminPayments: React.FC = () => {
           <form onSubmit={handleExecuteGenerate} className="space-y-4 text-xs">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+                <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                   Month
                 </label>
                 <select
                   value={targetGenMonth}
                   onChange={(e) => setTargetGenMonth(Number(e.target.value))}
-                  className="w-full px-3 py-2 text-sm bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70] cursor-pointer"
+                  className="w-full px-3 py-2 text-sm bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8] cursor-pointer"
                 >
                   {MONTH_NAMES.map((name, idx) => (
                     <option
                       key={idx + 1}
                       value={idx + 1}
-                      className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                      className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100"
                     >
                       {name}
                     </option>
@@ -565,19 +565,19 @@ export const AdminPayments: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-semibold text-[#172435] dark:text-slate-200 mb-1.5">
+                <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
                   Fiscal Year
                 </label>
                 <select
                   value={targetGenYear}
                   onChange={(e) => setTargetGenYear(Number(e.target.value))}
-                  className="w-full px-3 py-2 text-sm font-mono tabular-nums bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl text-[#172435] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#087F70] cursor-pointer"
+                  className="w-full px-3 py-2 text-sm font-mono tabular-nums bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8] cursor-pointer"
                 >
                   {FISCAL_YEARS.map((yr) => (
                     <option
                       key={yr}
                       value={yr}
-                      className="bg-white text-[#172435] dark:bg-[#111C2D] dark:text-slate-100"
+                      className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100"
                     >
                       {yr}
                     </option>
@@ -586,23 +586,23 @@ export const AdminPayments: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-3.5 bg-[#F5F6F3] dark:bg-[#162438] border border-[#E8EDF3] dark:border-[#1F2F46] rounded-xl space-y-1 text-xs text-[#64748B] dark:text-slate-400">
+            <div className="p-3.5 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl space-y-1 text-xs text-[#4E5E78] dark:text-slate-400">
               <p>Creates monthly dues entries (৳500/share) for all active members without duplicating existing records.</p>
               <p>Collection window ends on the 12th of the following month (৳50/share late fine thereafter).</p>
             </div>
 
-            <div className="flex justify-end gap-2.5 pt-3 border-t border-[#E8EDF3] dark:border-[#1F2F46]">
+            <div className="flex justify-end gap-2.5 pt-3 border-t border-[#DFE6F0] dark:border-[#233452]">
               <button
                 type="button"
                 onClick={() => setGenerateModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-[#64748B] hover:bg-slate-100 dark:hover:bg-[#162438] rounded-xl cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-[#4E5E78] hover:bg-slate-100 dark:hover:bg-[#17243C] rounded-xl cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={genLoading}
-                className="px-5 py-2 text-xs font-bold text-white bg-[#087F70] hover:bg-[#06675B] rounded-xl disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                className="px-5 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl disabled:opacity-50 cursor-pointer whitespace-nowrap"
               >
                 {genLoading ? 'Processing...' : 'Run Dues Generation'}
               </button>
