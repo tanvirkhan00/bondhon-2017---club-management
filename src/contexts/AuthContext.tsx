@@ -17,6 +17,8 @@ interface AuthResult {
   success: boolean;
   user?: User | null;
   isFirstActivation?: boolean;
+  needsEmailConfirmation?: boolean;
+  unconfirmedEmail?: string;
   error?: string;
 }
 
@@ -29,10 +31,15 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   isConfigured: boolean;
+  isPasswordRecovery: boolean;
   error: string | null;
   signInWithPassword: (email: string, pass: string) => Promise<AuthResult>;
   memberSignIn: (params: MemberLoginParams) => Promise<AuthResult>;
+  resendConfirmationEmail: (
+    email: string
+  ) => Promise<{ success: boolean; message?: string; error?: string }>;
   updatePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
+  clearPasswordRecovery: () => void;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ success: boolean; message?: string; error?: string }>;
   switchDemoRole: (role: UserRole) => void;
@@ -53,6 +60,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.location.hash.includes('type=recovery');
+  });
   const [error, setError] = useState<string | null>(null);
 
   const configured = isSupabaseConfigured();
@@ -127,7 +138,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       const { data: { subscription } } = client.auth.onAuthStateChange(
-        async (_event, newSession) => {
+        async (event, newSession) => {
+          if (event === 'PASSWORD_RECOVERY') {
+            setIsPasswordRecovery(true);
+          } else if (event === 'SIGNED_OUT') {
+            setIsPasswordRecovery(false);
+          }
+
           setSession(newSession);
           setUser(newSession?.user ?? null);
           if (newSession?.user) {
@@ -150,6 +167,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signInWithPassword = async (email: string, pass: string): Promise<AuthResult> => {
     setError(null);
     const client = getSupabaseClient();
+    const cleanEmail = email.trim().toLowerCase();
 
     if (!client) {
       const msg = 'অথেনটিকেশন সার্ভিস সংযুক্ত নয়। অনুগ্রহ করে অ্যাডমিনের সাথে যোগাযোগ করুন।';
@@ -159,7 +177,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       const { data, error: authErr } = await client.auth.signInWithPassword({
-        email: email.trim(),
+        email: cleanEmail,
         password: pass,
       });
 
@@ -169,12 +187,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (lower.includes('invalid login credentials')) {
           friendlyMsg = 'ইমেইল বা পাসওয়ার্ড সঠিক নয়। অনুগ্রহ করে সঠিক তথ্য দিন।';
         } else if (lower.includes('email not confirmed')) {
-          friendlyMsg = 'আপনার ইমেইল এখনো ভেরিফাই করা হয়নি। ইমেইলের ইনবক্স চেক করুন।';
+          friendlyMsg =
+            'আপনার ইমেইল এখনো কনফার্ম করা হয়নি। Gmail-এর Inbox বা Spam ফোল্ডার চেক করে লিংকে ক্লিক করুন অথবা নিচ থেকে নতুন কনফার্মেশন মেইল পাঠান।';
+          setError(friendlyMsg);
+          return {
+            success: false,
+            needsEmailConfirmation: true,
+            unconfirmedEmail: cleanEmail,
+            error: friendlyMsg,
+          };
         }
         setError(friendlyMsg);
         return { success: false, error: friendlyMsg };
       }
 
+      setIsPasswordRecovery(false);
       setSession(data.session);
       setUser(data.user);
       if (data.user) {
@@ -278,6 +305,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // ignore metadata sync error
         }
 
+        setIsPasswordRecovery(false);
         setSession(data.session);
         setUser(data.user);
         await fetchSupabaseProfile(data.user);
@@ -287,9 +315,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const errLower = (signInErr?.message || '').toLowerCase();
 
       if (errLower.includes('email not confirmed')) {
-        const msg = 'আপনার ইমেইল এখনো কনফার্ম করা হয়নি। ইমেইলের ইনবক্স বা স্প্যাম ফোল্ডার চেক করে ভেরিফিকেশন লিঙ্কে ক্লিক করুন।';
+        const msg =
+          'আপনার ইমেইল এখনো কনফার্ম করা হয়নি। Gmail-এর Inbox বা Spam ফোল্ডারে পাঠানো ভেরিফিকেশন লিংকে ক্লিক করুন অথবা নিচের বাটন থেকে মেইলটি আবার পাঠান।';
         setError(msg);
-        return { success: false, error: msg };
+        return {
+          success: false,
+          needsEmailConfirmation: true,
+          unconfirmedEmail: cleanEmail,
+          error: msg,
+        };
       }
 
       // 3. First-time activation using default password "123456" when name & email matched
@@ -298,6 +332,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: cleanEmail,
           password: '123456',
           options: {
+            emailRedirectTo: `${window.location.origin}/login`,
             data: {
               full_name: params.memberName,
               member_code: params.memberCode,
@@ -320,6 +355,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } catch {
             // ignore
           }
+          setIsPasswordRecovery(false);
           setSession(signUpData.session);
           setUser(signUpData.user);
           await fetchSupabaseProfile(signUpData.user);
@@ -327,9 +363,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         const confirmMsg =
-          'আপনার সদস্য অ্যাকাউন্ট চালু করা হয়েছে! অনুগ্রহ করে আপনার ইমেইলে পাঠানো কনফার্মেশন লিঙ্কে ক্লিক করে তারপর 123456 দিয়ে লগইন করুন।';
+          'আপনার সদস্য অ্যাকাউন্ট চালু করা হয়েছে! অনুগ্রহ করে এখনই আপনার Gmail-এ পাঠানো কনফার্মেশন লিংকে ক্লিক করে তারপর 123456 দিয়ে লগইন করুন।';
         setError(confirmMsg);
-        return { success: false, error: confirmMsg };
+        return {
+          success: false,
+          needsEmailConfirmation: true,
+          unconfirmedEmail: cleanEmail,
+          error: confirmMsg,
+        };
       }
 
       const fallbackMsg =
@@ -345,6 +386,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const resendConfirmationEmail = async (
+    email: string
+  ): Promise<{ success: boolean; message?: string; error?: string }> => {
+    const client = getSupabaseClient();
+    const cleanEmail = email.trim().toLowerCase();
+    if (!client) {
+      return { success: false, error: 'অথেনটিকেশন সার্ভিস সংযুক্ত নয়।' };
+    }
+    if (!cleanEmail) {
+      return { success: false, error: 'সঠিক ইমেইল ঠিকানা প্রদান করুন।' };
+    }
+
+    try {
+      const { error: resendErr } = await client.auth.resend({
+        type: 'signup',
+        email: cleanEmail,
+        options: {
+          emailRedirectTo: `${window.location.origin}/login`,
+        },
+      });
+
+      if (resendErr) {
+        const lower = resendErr.message.toLowerCase();
+        if (lower.includes('rate limit') || lower.includes('security purposes') || lower.includes('seconds')) {
+          return {
+            success: false,
+            error: 'নিরাপত্তার জন্য কিছুক্ষণ (প্রায় ৬০ সেকেন্ড) অপেক্ষা করে আবার কনফার্মেশন মেইল পাঠান।',
+          };
+        }
+        return { success: false, error: resendErr.message };
+      }
+
+      return {
+        success: true,
+        message: `${cleanEmail} ঠিকানায় নতুন কনফার্মেশন লিংক পাঠানো হয়েছে! অনুগ্রহ করে Gmail-এর Inbox বা Spam ফোল্ডার চেক করুন।`,
+      };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return { success: false, error: msg };
+    }
+  };
+
   const updatePassword = async (newPassword: string): Promise<{ success: boolean; error?: string }> => {
     const client = getSupabaseClient();
     if (!client) {
@@ -356,13 +439,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const { error: updErr } = await client.auth.updateUser({ password: newPassword });
+      const { data, error: updErr } = await client.auth.updateUser({ password: newPassword });
       if (updErr) throw updErr;
+
+      if (data.user) {
+        try {
+          await client.rpc('link_my_member_by_auth');
+        } catch {
+          // ignore if RPC not installed
+        }
+        await fetchSupabaseProfile(data.user);
+      }
+
+      setIsPasswordRecovery(false);
       return { success: true };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       return { success: false, error: msg };
     }
+  };
+
+  const clearPasswordRecovery = () => {
+    setIsPasswordRecovery(false);
   };
 
   const resetPassword = async (email: string) => {
@@ -372,7 +470,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const { error: resetErr } = await client.auth.resetPasswordForEmail(email.trim(), {
+      const { error: resetErr } = await client.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
         redirectTo: `${window.location.origin}/login`,
       });
       if (resetErr) throw resetErr;
@@ -388,6 +486,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (client) {
       await client.auth.signOut();
     }
+    setIsPasswordRecovery(false);
     setSession(null);
     setUser(null);
     setProfile(null);
@@ -422,16 +521,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isAuthenticated,
       isLoading,
       isConfigured: configured,
+      isPasswordRecovery,
       error,
       signInWithPassword,
       memberSignIn,
+      resendConfirmationEmail,
       updatePassword,
+      clearPasswordRecovery,
       signOut,
       resetPassword,
       switchDemoRole,
       refreshProfile,
     }),
-    [user, session, profile, role, isAdmin, isMember, isAuthenticated, isLoading, configured, error]
+    [
+      user,
+      session,
+      profile,
+      role,
+      isAdmin,
+      isMember,
+      isAuthenticated,
+      isLoading,
+      configured,
+      isPasswordRecovery,
+      error,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

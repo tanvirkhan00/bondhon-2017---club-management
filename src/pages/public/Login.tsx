@@ -23,6 +23,7 @@ import {
   ArrowLeft,
   Loader2,
   ChevronDown,
+  RefreshCw,
 } from 'lucide-react';
 import crestImage from '../../assets/images/bondhon_club_crest_1793703027252.jpg';
 
@@ -35,7 +36,16 @@ interface RememberedLoginPrefs {
 }
 
 export const Login: React.FC = () => {
-  const { signInWithPassword, memberSignIn, resetPassword } = useAuth();
+  const {
+    signInWithPassword,
+    memberSignIn,
+    resetPassword,
+    resendConfirmationEmail,
+    updatePassword,
+    clearPasswordRecovery,
+    isPasswordRecovery,
+    user,
+  } = useAuth();
   const { publicMembers, members, logMemberActivity } = useClubData();
   const navigate = useNavigate();
 
@@ -48,12 +58,34 @@ export const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [authState, setAuthState] = useState<LoginAuthState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
-  // Smooth inline switch between Sign In and Password Reset
-  const [formView, setFormView] = useState<'login' | 'reset'>('login');
+  // Resend Confirmation Email state (for unconfirmed accounts)
+  const [unconfirmedEmail, setUnconfirmedEmail] = useState<string | null>(null);
+  const [resendingEmail, setResendingEmail] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendFeedback, setResendFeedback] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
+
+  // Smooth inline switch between Sign In, Password Reset Request, and Password Recovery Set-New-Password
+  const [formView, setFormView] = useState<'login' | 'reset' | 'recovery'>(() =>
+    isPasswordRecovery ? 'recovery' : 'login'
+  );
   const [resetEmail, setResetEmail] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const [resetFeedback, setResetFeedback] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
+
+  // New Password state (when returning from Password Reset email link)
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
+  const [recoveryFeedback, setRecoveryFeedback] = useState<{
     type: 'success' | 'error';
     text: string;
   } | null>(null);
@@ -76,6 +108,49 @@ export const Login: React.FC = () => {
       }
     } catch {
       // Ignore malformed storage
+    }
+  }, []);
+
+  // Sync recovery state when Supabase fires PASSWORD_RECOVERY after link redirect
+  useEffect(() => {
+    if (isPasswordRecovery) {
+      setFormView('recovery');
+      setRecoveryFeedback(null);
+      setErrorMessage(null);
+      setUnconfirmedEmail(null);
+    }
+  }, [isPasswordRecovery]);
+
+  // Cooldown countdown for Resend Confirmation button
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = window.setTimeout(() => setResendCooldown((c) => Math.max(0, c - 1)), 1000);
+    return () => window.clearTimeout(timer);
+  }, [resendCooldown]);
+
+  // Handle redirect status/errors from Gmail confirmation or expired reset links
+  useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const searchParams = new URLSearchParams(window.location.search);
+    const errDesc = hashParams.get('error_description') || searchParams.get('error_description');
+    const errCode = hashParams.get('error_code') || searchParams.get('error_code');
+    const linkType = hashParams.get('type') || searchParams.get('type');
+
+    if (errDesc || errCode) {
+      const lower = `${errCode || ''} ${errDesc || ''}`.toLowerCase();
+      if (lower.includes('expired') || lower.includes('otp_expired')) {
+        setAuthState('error');
+        setErrorMessage(
+          'ইমেইল ভেরিফিকেশন বা রিসেট লিংকটির মেয়াদ শেষ হয়ে গেছে। আপনার Gmail লিখে নিচের লগইন বা ফরগট পাসওয়ার্ড থেকে নতুন লিংক পাঠান।'
+        );
+      } else {
+        setAuthState('error');
+        setErrorMessage(errDesc || 'লিংকটি যাচাই করা যায়নি। অনুগ্রহ করে নতুন করে চেষ্টা করুন।');
+      }
+      window.history.replaceState(null, '', window.location.pathname);
+    } else if (linkType === 'signup' || linkType === 'email') {
+      setInfoMessage('আপনার ইমেইল সফলভাবে কনফার্ম হয়েছে! এখন নাম, ইমেইল ও পাসওয়ার্ড দিয়ে লগইন করুন।');
+      window.history.replaceState(null, '', window.location.pathname);
     }
   }, []);
 
@@ -103,6 +178,9 @@ export const Login: React.FC = () => {
   const handleMemberLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+    setInfoMessage(null);
+    setUnconfirmedEmail(null);
+    setResendFeedback(null);
 
     if (!selectedMemberId) {
       setAuthState('error');
@@ -160,12 +238,18 @@ export const Login: React.FC = () => {
     } else {
       setAuthState('error');
       setErrorMessage(res.error || 'নাম, ইমেইল বা পাসওয়ার্ড সঠিক নয়।');
+      if (res.needsEmailConfirmation && res.unconfirmedEmail) {
+        setUnconfirmedEmail(res.unconfirmedEmail);
+      }
     }
   };
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+    setInfoMessage(null);
+    setUnconfirmedEmail(null);
+    setResendFeedback(null);
     const trimmedEmail = email.trim();
 
     setLoading(true);
@@ -184,6 +268,32 @@ export const Login: React.FC = () => {
     } else {
       setAuthState('error');
       setErrorMessage(res.error || 'ভুল ইমেইল বা পাসওয়ার্ড। পুনরায় চেষ্টা করুন।');
+      if (res.needsEmailConfirmation && res.unconfirmedEmail) {
+        setUnconfirmedEmail(res.unconfirmedEmail);
+      }
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    const targetEmail = unconfirmedEmail || email.trim();
+    if (!targetEmail || resendingEmail || resendCooldown > 0) return;
+
+    setResendingEmail(true);
+    setResendFeedback(null);
+    const res = await resendConfirmationEmail(targetEmail);
+    setResendingEmail(false);
+
+    if (res.success) {
+      setResendFeedback({
+        type: 'success',
+        text: res.message || 'কনফার্মেশন মেইল আবার পাঠানো হয়েছে। Gmail চেক করুন।',
+      });
+      setResendCooldown(60);
+    } else {
+      setResendFeedback({
+        type: 'error',
+        text: res.error || 'কনফার্মেশন মেইল পাঠানো যায়নি।',
+      });
     }
   };
 
@@ -210,6 +320,64 @@ export const Login: React.FC = () => {
       setResetFeedback({
         type: 'error',
         text: res.error || 'পাসওয়ার্ড রিসেট করতে ব্যর্থ হয়েছে।',
+      });
+    }
+  };
+
+  const handleCompletePasswordRecovery = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRecoveryFeedback(null);
+
+    if (newPassword.length < 6) {
+      setRecoveryFeedback({
+        type: 'error',
+        text: 'নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।',
+      });
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setRecoveryFeedback({
+        type: 'error',
+        text: 'দুটি পাসওয়ার্ড এক হয়নি। অনুগ্রহ করে একই পাসওয়ার্ড লিখুন।',
+      });
+      return;
+    }
+
+    setRecoveryLoading(true);
+    const res = await updatePassword(newPassword);
+    setRecoveryLoading(false);
+
+    if (res.success) {
+      const recoveryEmail = (user?.email || '').toLowerCase();
+      const matchedMember = members.find(
+        (m) => m.email?.toLowerCase().trim() === recoveryEmail || m.auth_user_id === user?.id
+      );
+
+      if (matchedMember) {
+        await logMemberActivity({
+          actorUserId: user?.id || null,
+          memberId: matchedMember.id,
+          memberCode: matchedMember.member_code,
+          memberName: matchedMember.full_name,
+          eventType: 'password_changed',
+          title: 'পাসওয়ার্ড রিসেট সম্পন্ন',
+          message: `${matchedMember.full_name} (${matchedMember.member_code}) ইমেইল রিকভারি লিংকের মাধ্যমে নতুন পাসওয়ার্ড সেট করেছেন।`,
+        });
+      }
+
+      setRecoveryFeedback({
+        type: 'success',
+        text: 'আপনার নতুন পাসওয়ার্ড সফলভাবে সেট হয়েছে! পোর্টালে প্রবেশ করছেন...',
+      });
+
+      const targetPath =
+        recoveryEmail === 'kmtanvir1111@gmail.com' ? '/admin/dashboard' : '/member/profile';
+      setTimeout(() => navigate(targetPath), 950);
+    } else {
+      setRecoveryFeedback({
+        type: 'error',
+        text: res.error || 'পাসওয়ার্ড আপডেট করা যায়নি। আবার চেষ্টা করুন।',
       });
     }
   };
@@ -327,6 +495,9 @@ export const Login: React.FC = () => {
                     onClick={() => {
                       setLoginRole('member');
                       setErrorMessage(null);
+                      setInfoMessage(null);
+                      setUnconfirmedEmail(null);
+                      setResendFeedback(null);
                       setAuthState('idle');
                     }}
                     className={`min-h-[40px] px-3 rounded-lg text-xs sm:text-[13px] font-semibold transition-all duration-150 flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
@@ -345,6 +516,9 @@ export const Login: React.FC = () => {
                     onClick={() => {
                       setLoginRole('admin');
                       setErrorMessage(null);
+                      setInfoMessage(null);
+                      setUnconfirmedEmail(null);
+                      setResendFeedback(null);
                       setAuthState('idle');
                     }}
                     className={`min-h-[40px] px-3 rounded-lg text-xs sm:text-[13px] font-semibold transition-all duration-150 flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
@@ -358,8 +532,23 @@ export const Login: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Error & Success Feedback */}
+                {/* Error, Info, Resend Confirmation & Success Feedback */}
                 <AnimatePresence mode="wait">
+                  {infoMessage && !errorMessage && authState !== 'success' && (
+                    <motion.div
+                      key="login-info"
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.16 }}
+                      role="status"
+                      className="p-3.5 bg-[#087F70]/10 border border-[#087F70]/30 text-[#087F70] dark:text-[#34D399] rounded-xl text-xs sm:text-[13px] flex items-start gap-2.5 font-medium leading-relaxed"
+                    >
+                      <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span>{infoMessage}</span>
+                    </motion.div>
+                  )}
+
                   {errorMessage && (
                     <motion.div
                       key="login-error"
@@ -368,10 +557,48 @@ export const Login: React.FC = () => {
                       exit={{ opacity: 0, y: -6 }}
                       transition={{ duration: 0.16 }}
                       role="alert"
-                      className="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/70 text-rose-700 dark:text-rose-300 rounded-xl text-xs sm:text-[13px] flex items-start gap-2.5 leading-relaxed"
+                      className="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/70 text-rose-700 dark:text-rose-300 rounded-xl text-xs sm:text-[13px] space-y-2.5 leading-relaxed"
                     >
-                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                      <span>{errorMessage}</span>
+                      <div className="flex items-start gap-2.5">
+                        <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                        <span>{errorMessage}</span>
+                      </div>
+
+                      {unconfirmedEmail && (
+                        <div className="pl-6 space-y-2">
+                          <button
+                            type="button"
+                            onClick={handleResendConfirmation}
+                            disabled={resendingEmail || resendCooldown > 0}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-[#111C2D] text-[#087F70] dark:text-[#34D399] border border-[#087F70]/35 hover:bg-[#087F70]/10 disabled:opacity-60 transition-colors cursor-pointer whitespace-nowrap"
+                          >
+                            {resendingEmail ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <RefreshCw className="w-3.5 h-3.5" />
+                            )}
+                            <span>
+                              {resendingEmail
+                                ? 'পাঠানো হচ্ছে...'
+                                : resendCooldown > 0
+                                ? `পুনরায় পাঠান (${resendCooldown}s)`
+                                : 'কনফার্মেশন মেইল আবার পাঠান'}
+                            </span>
+                          </button>
+
+                          {resendFeedback && (
+                            <p
+                              className={`text-xs font-medium ${
+                                resendFeedback.type === 'success'
+                                  ? 'text-[#087F70] dark:text-[#34D399]'
+                                  : 'text-rose-600 dark:text-rose-400'
+                              }`}
+                            >
+                              {resendFeedback.text}
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </motion.div>
                   )}
 
@@ -636,7 +863,7 @@ export const Login: React.FC = () => {
                   </Link>
                 </div>
               </motion.div>
-            ) : (
+            ) : formView === 'reset' ? (
               /* Smooth Inline Password Reset Panel */
               <motion.div
                 key="reset-panel"
@@ -744,6 +971,139 @@ export const Login: React.FC = () => {
                       <span>{resetLoading ? 'পাঠানো হচ্ছে...' : 'রিসেট লিঙ্ক পাঠান'}</span>
                     </motion.button>
                   </div>
+                </form>
+              </motion.div>
+            ) : (
+              /* Password Recovery Set-New-Password View (after clicking Gmail reset link) */
+              <motion.div
+                key="recovery-panel"
+                initial={{ opacity: 0, x: 8 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -8 }}
+                transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                className="space-y-5"
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearPasswordRecovery();
+                    setFormView('login');
+                    setRecoveryFeedback(null);
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#64748B] hover:text-[#14243A] dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Back to Sign In</span>
+                </button>
+
+                <div className="space-y-1.5">
+                  <div className="w-10 h-10 rounded-xl bg-[#087F70]/10 border border-[#087F70]/25 text-[#087F70] dark:text-[#34D399] flex items-center justify-center">
+                    <KeyRound className="w-5 h-5" />
+                  </div>
+                  <h1 className="text-2xl font-bold tracking-tight text-[#14243A] dark:text-white pt-1">
+                    নতুন পাসওয়ার্ড সেট করুন
+                  </h1>
+                  <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400 leading-relaxed">
+                    {user?.email
+                      ? `${user.email} অ্যাকাউন্টের জন্য কমপক্ষে ৬ অক্ষরের নতুন পাসওয়ার্ড সেট করুন।`
+                      : 'আপনার অ্যাকাউন্টের জন্য কমপক্ষে ৬ অক্ষরের নতুন পাসওয়ার্ড সেট করুন।'}
+                  </p>
+                </div>
+
+                <AnimatePresence mode="wait">
+                  {recoveryFeedback && (
+                    <motion.div
+                      key="recovery-feedback"
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.16 }}
+                      role="status"
+                      className={`p-3.5 rounded-xl text-xs sm:text-[13px] flex items-start gap-2.5 border ${
+                        recoveryFeedback.type === 'success'
+                          ? 'bg-[#087F70]/10 text-[#087F70] dark:text-[#34D399] border-[#087F70]/30'
+                          : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/70'
+                      }`}
+                    >
+                      {recoveryFeedback.type === 'success' ? (
+                        <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      )}
+                      <span>{recoveryFeedback.text}</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <form onSubmit={handleCompletePasswordRecovery} className="space-y-4">
+                  <div>
+                    <label
+                      htmlFor="recovery-new-password"
+                      className="block text-xs font-semibold text-[#172435] dark:text-slate-300 mb-1.5"
+                    >
+                      New Password
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        id="recovery-new-password"
+                        type={showNewPassword ? 'text' : 'password'}
+                        required
+                        minLength={6}
+                        autoComplete="new-password"
+                        placeholder="কমপক্ষে ৬ অক্ষরের পাসওয়ার্ড"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className={`${inputBaseClass} pr-11`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword((prev) => !prev)}
+                        aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-lg text-[#64748B] hover:text-[#14243A] dark:hover:text-white transition-colors cursor-pointer"
+                      >
+                        {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="recovery-confirm-password"
+                      className="block text-xs font-semibold text-[#172435] dark:text-slate-300 mb-1.5"
+                    >
+                      Confirm New Password
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        id="recovery-confirm-password"
+                        type={showNewPassword ? 'text' : 'password'}
+                        required
+                        minLength={6}
+                        autoComplete="new-password"
+                        placeholder="পুনরায় নতুন পাসওয়ার্ড লিখুন"
+                        value={confirmNewPassword}
+                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        className={inputBaseClass}
+                      />
+                    </div>
+                  </div>
+
+                  <motion.button
+                    type="submit"
+                    disabled={recoveryLoading}
+                    whileHover={recoveryLoading ? undefined : { y: -1 }}
+                    whileTap={recoveryLoading ? undefined : { scale: 0.99 }}
+                    className="w-full min-h-[44px] px-5 py-2.5 text-xs sm:text-sm font-semibold bg-[#087F70] hover:bg-[#06675B] text-white rounded-xl shadow-xs transition-all disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
+                  >
+                    {recoveryLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="w-4 h-4" />
+                    )}
+                    <span>{recoveryLoading ? 'সংরক্ষণ হচ্ছে...' : 'নতুন পাসওয়ার্ড সংরক্ষণ করুন'}</span>
+                  </motion.button>
                 </form>
               </motion.div>
             )}
