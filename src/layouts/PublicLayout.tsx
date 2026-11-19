@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useAuth } from '../hooks/useAuth';
 import { Menu, X, LogIn, ShieldCheck, User as UserIcon, LogOut, MapPin } from 'lucide-react';
 import crestImage from '../assets/images/bondhon_club_crest_1793703027252.jpg';
+import { WebsiteWelcomePreloader } from '../components/WebsiteWelcomePreloader';
 
 export const PublicLayout: React.FC = () => {
   const { isAuthenticated, isAdmin, signOut } = useAuth();
@@ -23,6 +24,7 @@ export const PublicLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F6F7FB] dark:bg-[#09101D] text-[#0F1B2E] dark:text-[#F3F6FC]">
+      <WebsiteWelcomePreloader />
       {/* Top Bar Contract (3 cleanly separated zones) */}
       <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#111B2E]/95 backdrop-blur-md border-b border-[#DFE6F0] dark:border-[#233452] print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
