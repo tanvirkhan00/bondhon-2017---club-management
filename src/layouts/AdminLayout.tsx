@@ -27,15 +27,12 @@ import {
   AlertTriangle,
   PanelLeftClose,
   PanelLeftOpen,
-  Sun,
-  Moon,
   Landmark,
 } from 'lucide-react';
 import crestImage from '../assets/images/bondhon_club_crest_1793703027252.jpg';
 import { WelcomePreloader } from '../components/WelcomePreloader';
 
 const SIDEBAR_COLLAPSED_KEY = 'bondhon_admin_sidebar_collapsed';
-const ADMIN_THEME_KEY = 'bondhon_admin_theme';
 
 export const AdminLayout: React.FC = () => {
   const { profile, signOut } = useAuth();
@@ -54,14 +51,6 @@ export const AdminLayout: React.FC = () => {
       return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
     } catch {
       return false;
-    }
-  });
-  // Admin Dashboard defaults to sleek Dark Color Scheme
-  const [isDark, setIsDark] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem(ADMIN_THEME_KEY) !== 'light';
-    } catch {
-      return true;
     }
   });
   const [notifOpen, setNotifOpen] = useState(false);
@@ -83,25 +72,13 @@ export const AdminLayout: React.FC = () => {
     });
   };
 
-  const toggleTheme = () => {
-    setIsDark((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem(ADMIN_THEME_KEY, next ? 'dark' : 'light');
-      } catch {
-        // Ignore storage error
-      }
-      return next;
-    });
-  };
-
   useEffect(() => {
     const prevScheme = document.documentElement.style.colorScheme;
-    document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+    document.documentElement.style.colorScheme = 'dark';
     return () => {
       document.documentElement.style.colorScheme = prevScheme || 'light';
     };
-  }, [isDark]);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -317,7 +294,7 @@ export const AdminLayout: React.FC = () => {
   };
 
   return (
-    <div className={isDark ? 'dark' : ''}>
+    <div className="dark">
       <WelcomePreloader />
       <div className="min-h-screen flex bg-[#F6F7FB] dark:bg-[#09101D] text-[#0F1B2E] dark:text-[#F3F6FC]">
         {/* Mobile Sidebar Overlay & Slide-out Drawer */}
@@ -393,17 +370,6 @@ export const AdminLayout: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              {/* Theme Switcher (Dark Color Scheme default) */}
-              <button
-                type="button"
-                onClick={toggleTheme}
-                aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
-                title={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
-                className="p-2 rounded-xl text-[#4E5E78] dark:text-[#F0C56E] hover:bg-[#EFF3F9] dark:hover:bg-[#17243C] border border-transparent hover:border-[#DFE6F0] dark:hover:border-[#233452] transition-colors cursor-pointer"
-              >
-                {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </button>
-
               {/* Notification Bell Icon & Animated Dropdown */}
               <div className="relative" ref={notifRef}>
                 <button

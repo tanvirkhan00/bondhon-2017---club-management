@@ -9,15 +9,15 @@ import { MapPin, RefreshCw } from 'lucide-react';
 
 const CLOCK_FORMAT_KEY = 'bondhon_clock_24h';
 
-const DIAL_GLOW_MAP: Record<DhakaPeriodKey, string> = {
+const CLOCK_BADGE_THEME: Record<DhakaPeriodKey, string> = {
   morning:
-    'from-[#D6AC62]/25 via-[#EFF3F9] to-[#D6AC62]/10 dark:from-[#D6AC62]/20 dark:via-[#17243C] dark:to-[#0D1726] border-[#D6AC62]/45',
+    'from-[#D6AC62]/25 via-[#17243C]/10 to-[#1D4ED8]/15 border-[#D6AC62]/45 dark:from-[#D6AC62]/20 dark:via-[#17243C] dark:to-[#0D1726]',
   afternoon:
-    'from-[#38BDF8]/20 via-[#EFF3F9] to-[#1D4ED8]/10 dark:from-[#38BDF8]/20 dark:via-[#17243C] dark:to-[#0D1726] border-[#0369A1]/30 dark:border-[#38BDF8]/35',
+    'from-[#38BDF8]/20 via-[#EFF3F9] to-[#1D4ED8]/15 border-[#0369A1]/30 dark:from-[#38BDF8]/20 dark:via-[#17243C] dark:to-[#0D1726] dark:border-[#38BDF8]/35',
   evening:
-    'from-[#1D4ED8]/20 via-[#EFF3F9] to-[#D6AC62]/15 dark:from-[#1D4ED8]/25 dark:via-[#17243C] dark:to-[#D6AC62]/15 border-[#1D4ED8]/35 dark:border-[#60A5FA]/35',
+    'from-[#1D4ED8]/20 via-[#EFF3F9] to-[#D6AC62]/20 border-[#1D4ED8]/35 dark:from-[#1D4ED8]/25 dark:via-[#17243C] dark:to-[#D6AC62]/15 dark:border-[#60A5FA]/35',
   night:
-    'from-[#0F1B33] via-[#17243C] to-[#09101D] border-[#2B4066]',
+    'from-[#18294A] via-[#111B2E] to-[#09101D] border-[#2B4066]',
 };
 
 export const DashboardClock: React.FC = memo(() => {
@@ -75,7 +75,6 @@ export const DashboardClock: React.FC = memo(() => {
     const controller = new AbortController();
     loadWeather(false, controller.signal);
 
-    // Background refresh every 20 minutes
     const refreshInterval = window.setInterval(() => {
       loadWeather(false);
     }, 20 * 60 * 1000);
@@ -99,18 +98,8 @@ export const DashboardClock: React.FC = memo(() => {
   };
 
   const parts = useMemo(() => getDhakaClockParts(now), [now]);
-
-  // SVG outer second-sweep dial (r = 25)
-  const radius = 25;
-  const circumference = 2 * Math.PI * radius;
-  const secProgress = parts.secondsNum / 60;
-  const dashOffset = circumference * (1 - secProgress);
-  const orbAngleRad = ((parts.secondsNum * 6 - 90) * Math.PI) / 180;
-  const orbX = 29 + radius * Math.cos(orbAngleRad);
-  const orbY = 29 + radius * Math.sin(orbAngleRad);
-
   const displayHours = is24Hour ? parts.hours24Str : parts.hours12;
-  const dialGlow = DIAL_GLOW_MAP[parts.periodKey];
+  const badgeTheme = CLOCK_BADGE_THEME[parts.periodKey];
   const compactCity = weather?.cityName ? weather.cityName.split(',')[0] : 'Dhaka';
 
   return (
@@ -120,69 +109,45 @@ export const DashboardClock: React.FC = memo(() => {
         is24Hour ? '' : ` ${parts.dayPeriod}`
       }, ${parts.dateLabel}`}
     >
-      {/* Left + Center: Emoji Clock Dial & Crisp Digital Time */}
+      {/* Left + Center: Animated ⏰ Emoji Clock & Crisp Digital Readout */}
       <div className="flex items-center gap-3 min-w-0">
-        {/* Animated Emoji Clock Chronometer */}
+        {/* Animated ⏰ Alarm Clock Badge (No broken progress ring) */}
         <div
-          className="relative w-14.5 h-14.5 shrink-0 flex items-center justify-center"
+          className={`relative w-12 h-12 rounded-2xl bg-gradient-to-br border flex items-center justify-center shrink-0 shadow-xs select-none ${badgeTheme}`}
           title={`Bangladesh Standard Time · ${parts.greeting}`}
         >
-          {/* Second Sweep Progress Track */}
-          <svg className="w-14.5 h-14.5 -rotate-90" viewBox="0 0 58 58" aria-hidden="true">
-            <circle
-              cx="29"
-              cy="29"
-              r={radius}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              className="text-[#DFE6F0] dark:text-[#233452]"
-            />
-            <circle
-              cx="29"
-              cy="29"
-              r={radius}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.75"
-              strokeLinecap="round"
-              strokeDasharray={circumference}
-              strokeDashoffset={dashOffset}
-              className="text-[#1D4ED8] dark:text-[#38BDF8] transition-[stroke-dashoffset] duration-300 ease-out"
-            />
-          </svg>
-
-          {/* Orbiting Gold Second Dot */}
-          <svg
-            className="absolute inset-0 w-14.5 h-14.5 pointer-events-none"
-            viewBox="0 0 58 58"
+          {/* Ambient Subtle Pulse Halo */}
+          <motion.span
             aria-hidden="true"
-          >
-            <circle cx={orbX} cy={orbY} r="2.7" fill="#D6AC62" />
-          </svg>
+            animate={{ scale: [1, 1.08, 1], opacity: [0.3, 0.55, 0.3] }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+            className="absolute inset-1 rounded-xl bg-[#1D4ED8]/15 dark:bg-[#38BDF8]/15 pointer-events-none"
+          />
 
-          {/* Center Dynamic Clock-Face Emoji */}
-          <motion.div
-            key={parts.clockEmoji}
-            initial={{ scale: 0.85, rotate: -10 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className={`w-10 h-10 rounded-full bg-gradient-to-br border flex items-center justify-center shadow-inner select-none ${dialGlow}`}
+          {/* Animated ⏰ Emoji */}
+          <motion.span
+            role="img"
+            aria-label="Live alarm clock"
+            animate={{
+              rotate: [0, -10, 10, -7, 7, 0],
+              scale: [1, 1.08, 1.08, 1.04, 1.04, 1],
+            }}
+            transition={{
+              duration: 1.15,
+              repeat: Infinity,
+              repeatDelay: 2.2,
+              ease: 'easeInOut',
+            }}
+            className="relative text-[25px] leading-none drop-shadow-xs origin-center"
           >
-            <span
-              role="img"
-              aria-label={`Analog clock emoji showing ${parts.hours12}:${parts.minutes}`}
-              className="text-[22px] leading-none drop-shadow-xs"
-            >
-              {parts.clockEmoji}
-            </span>
-          </motion.div>
+            ⏰
+          </motion.span>
 
-          {/* Corner Day/Night Celestial Emoji Orb */}
+          {/* Corner Day/Night Celestial Indicator */}
           <span
             role="img"
             aria-label={parts.periodLabel}
-            className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] shadow-xs flex items-center justify-center text-[11px] leading-none select-none"
+            className="absolute -bottom-1 -right-1 w-4.5 h-4.5 rounded-full bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] shadow-xs flex items-center justify-center text-[10px] leading-none"
           >
             {parts.celestialEmoji}
           </span>
@@ -241,7 +206,7 @@ export const DashboardClock: React.FC = memo(() => {
         </div>
       </div>
 
-      {/* Right: Organized Live Temperature & Weather Condition Compartment */}
+      {/* Right: Organized Live Temperature & Weather Condition */}
       <div className="pt-2.5 sm:pt-0 border-t sm:border-t-0 sm:border-l border-[#DFE6F0] dark:border-[#233452] sm:pl-4 flex items-center justify-between gap-2.5 min-w-0">
         {weatherLoading && !weather ? (
           <div className="flex items-center gap-2.5 animate-pulse">

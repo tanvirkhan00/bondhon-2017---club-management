@@ -1,9 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useClubData } from '../../hooks/useClubData';
+import { useAuth } from '../../hooks/useAuth';
 import { BankDeposit, BankEntryType, ClubExpense, MonthlyDue } from '../../types';
 import { FISCAL_YEARS, formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/formatters';
 import { calculateDueBreakdown, parseLocalDate } from '../../utils/fineCalculator';
+import { getDhakaGreeting } from '../../utils/dhakaTime';
 import { MetricCard } from '../../components/MetricCard';
 import { DashboardClock } from '../../components/DashboardClock';
 import {
@@ -35,9 +37,11 @@ import { BankEntryModal } from '../../components/BankEntryModal';
 import { ClubExpenseModal } from '../../components/ClubExpenseModal';
 
 export const AdminDashboard: React.FC = () => {
+  const { user, profile } = useAuth();
   const {
     stats,
     members,
+    myMemberRecord,
     selectedMonth,
     setSelectedMonth,
     selectedYear,
@@ -60,6 +64,22 @@ export const AdminDashboard: React.FC = () => {
     deleteBankDeposit,
     deleteClubExpense,
   } = useClubData();
+
+  const [greetingNow, setGreetingNow] = useState<Date>(() => new Date());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setGreetingNow(new Date());
+    }, 60 * 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const greetingInfo = useMemo(() => getDhakaGreeting(greetingNow), [greetingNow]);
+  const adminDisplayName =
+    myMemberRecord?.full_name ||
+    profile?.full_name ||
+    (typeof user?.user_metadata?.full_name === 'string' && user.user_metadata.full_name) ||
+    (user?.email ? user.email.split('@')[0] : 'Admin');
 
   const [recordPaymentModalOpen, setRecordPaymentModalOpen] = useState(false);
   const [selectedMemberForPayment, setSelectedMemberForPayment] = useState<string | undefined>(undefined);
@@ -267,11 +287,20 @@ export const AdminDashboard: React.FC = () => {
       {/* 1. UNIFIED COMMAND HEADER WITH LIVE DHAKA CLOCK */}
       <div className="space-y-4 pb-5 border-b border-[#DFE6F0] dark:border-[#233452]">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0F1B2E] dark:text-[#F3F6FC]">
-              Financial Overview
+          <div className="min-w-0 space-y-1">
+            <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#38BDF8]">
+              <span role="img" aria-hidden="true">
+                {greetingInfo.celestialEmoji}
+              </span>
+              <span>{greetingInfo.periodLabel} · Bangladesh Time</span>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#F3F6FC] truncate">
+              {greetingInfo.greeting},{' '}
+              <span className="text-[#38BDF8]">{adminDisplayName}!</span>
             </h1>
-            <p className="text-xs sm:text-sm text-[#4E5E78] dark:text-[#9BB0CD] mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <p className="text-xs sm:text-sm text-[#9BB0CD] flex flex-wrap items-center gap-x-2 gap-y-0.5">
+              <span className="font-semibold text-slate-200">Financial Overview</span>
+              <span aria-hidden="true">·</span>
               <span>Bondhon 2017</span>
               <span aria-hidden="true">·</span>
               <span>
