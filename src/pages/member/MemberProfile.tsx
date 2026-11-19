@@ -226,7 +226,7 @@ export const MemberProfile: React.FC = () => {
             Member Overview
           </h2>
           <p className="text-xs sm:text-sm text-[#4E5E78] dark:text-[#9BB0CD] mt-0.5">
-            Live Bangladesh time, weather &amp; your verified contribution ledger
+            Live local time, weather &amp; your verified contribution ledger
           </p>
         </div>
         <DashboardClock />

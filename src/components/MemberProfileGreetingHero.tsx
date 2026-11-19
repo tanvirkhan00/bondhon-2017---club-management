@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Member } from '../types';
-import { getDhakaGreeting } from '../utils/dhakaTime';
+import { useLiveLocalGreeting } from '../hooks/useLocalTimeZone';
 import { formatBDT, formatDate } from '../utils/formatters';
 import { StatusBadge } from './StatusBadge';
 import { Calendar, CreditCard, Mail, Phone, User } from 'lucide-react';
@@ -17,23 +17,14 @@ export const MemberProfileGreetingHero: React.FC<MemberProfileGreetingHeroProps>
   monthlyContribution,
   showEmail = false,
 }) => {
-  const [now, setNow] = useState<Date>(() => new Date());
   const [imgFailed, setImgFailed] = useState(false);
+  const greetingInfo = useLiveLocalGreeting();
 
   // Reset image error state if navigated to a different member
   useEffect(() => {
     setImgFailed(false);
   }, [member.id, member.profile_image_url]);
 
-  // Refresh time-based greeting automatically every 60 seconds
-  useEffect(() => {
-    const interval = window.setInterval(() => {
-      setNow(new Date());
-    }, 60 * 1000);
-    return () => window.clearInterval(interval);
-  }, []);
-
-  const greetingInfo = getDhakaGreeting(now);
   const avatarUrl = !imgFailed ? member.profile_image_url : null;
   const initials =
     member.full_name
@@ -87,7 +78,9 @@ export const MemberProfileGreetingHero: React.FC<MemberProfileGreetingHeroProps>
               <span role="img" aria-hidden="true">
                 {greetingInfo.celestialEmoji}
               </span>
-              <span>{greetingInfo.periodLabel} · Bangladesh Time</span>
+              <span>
+                {greetingInfo.periodLabel} · {greetingInfo.zoneCity} Time ({greetingInfo.shortZone})
+              </span>
             </span>
             <span className="text-[#DFE6F0] dark:text-[#233452]" aria-hidden="true">
               |

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useAuth } from '../hooks/useAuth';
 import { useClubData } from '../hooks/useClubData';
-import { getDhakaGreeting } from '../utils/dhakaTime';
+import { useLiveLocalGreeting } from '../hooks/useLocalTimeZone';
 import { ArrowRight } from 'lucide-react';
 import crestImage from '../assets/images/bondhon_club_crest_1793703027252.jpg';
 
@@ -66,7 +66,7 @@ export const WelcomePreloader: React.FC = () => {
     };
   }, [visible]);
 
-  const greetingInfo = useMemo(() => getDhakaGreeting(), []);
+  const greetingInfo = useLiveLocalGreeting();
 
   const displayName =
     myMemberRecord?.full_name ||
@@ -132,7 +132,7 @@ export const WelcomePreloader: React.FC = () => {
                 <span className="font-semibold text-white tracking-wide">Bondhon 2017</span>
                 <span aria-hidden="true">·</span>
                 <span className="font-mono text-[#F0C56E]">
-                  {greetingInfo.celestialEmoji} Dhaka
+                  {greetingInfo.celestialEmoji} {greetingInfo.zoneCity}
                 </span>
               </div>
 

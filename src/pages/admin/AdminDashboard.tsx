@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useClubData } from '../../hooks/useClubData';
 import { useAuth } from '../../hooks/useAuth';
 import { BankDeposit, BankEntryType, ClubExpense, MonthlyDue } from '../../types';
 import { FISCAL_YEARS, formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/formatters';
 import { calculateDueBreakdown, parseLocalDate } from '../../utils/fineCalculator';
-import { getDhakaGreeting } from '../../utils/dhakaTime';
+import { useLiveLocalGreeting } from '../../hooks/useLocalTimeZone';
 import { MetricCard } from '../../components/MetricCard';
 import { DashboardClock } from '../../components/DashboardClock';
 import {
@@ -65,16 +65,7 @@ export const AdminDashboard: React.FC = () => {
     deleteClubExpense,
   } = useClubData();
 
-  const [greetingNow, setGreetingNow] = useState<Date>(() => new Date());
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setGreetingNow(new Date());
-    }, 60 * 1000);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  const greetingInfo = useMemo(() => getDhakaGreeting(greetingNow), [greetingNow]);
+  const greetingInfo = useLiveLocalGreeting();
   const adminDisplayName =
     myMemberRecord?.full_name ||
     profile?.full_name ||
@@ -292,7 +283,9 @@ export const AdminDashboard: React.FC = () => {
               <span role="img" aria-hidden="true">
                 {greetingInfo.celestialEmoji}
               </span>
-              <span>{greetingInfo.periodLabel} · Bangladesh Time</span>
+              <span>
+                {greetingInfo.periodLabel} · {greetingInfo.zoneCity} Time ({greetingInfo.shortZone})
+              </span>
             </div>
             <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#F3F6FC] truncate">
               {greetingInfo.greeting},{' '}
