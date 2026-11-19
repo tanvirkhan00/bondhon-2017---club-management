@@ -6,12 +6,12 @@ import { formatBDT, formatDate, getMonthName } from '../../utils/formatters';
 import { calculateDueBreakdown } from '../../utils/fineCalculator';
 import { StatusBadge } from '../../components/StatusBadge';
 import { MetricCard } from '../../components/MetricCard';
+import { MemberProfileGreetingHero } from '../../components/MemberProfileGreetingHero';
+import { MemberAnalyticsChart } from '../../components/MemberAnalyticsChart';
+import { DashboardClock } from '../../components/DashboardClock';
 import { PageTransition } from '../../components/ui/MotionPrimitives';
 import {
   User,
-  Phone,
-  Calendar,
-  CreditCard,
   CheckCircle2,
   AlertCircle,
   ArrowRight,
@@ -218,63 +218,26 @@ export const MemberProfile: React.FC = () => {
   }
 
   return (
-    <PageTransition className="space-y-8">
-      {/* Member Identity Card */}
-      <div className="surface-card rounded-3xl overflow-hidden">
-        <div className="h-2 bg-gradient-to-r from-[#0F1B33] via-[#1D4ED8] to-[#D6AC62]" />
-        <div className="p-6 sm:p-8 flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
-          <div className="w-24 h-24 rounded-full bg-[#EFF3F9] dark:bg-[#17243C] ring-3 ring-[#D6AC62]/70 flex items-center justify-center text-[#0F1B33] dark:text-slate-200 font-bold text-3xl shrink-0 overflow-hidden shadow-sm">
-            {myMemberRecord.profile_image_url ? (
-              <img
-                src={myMemberRecord.profile_image_url}
-                alt={myMemberRecord.full_name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              myMemberRecord.full_name.substring(0, 2).toUpperCase()
-            )}
-          </div>
-
-          <div className="flex-1 space-y-2 min-w-0">
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5 text-xs">
-              <span className="font-mono font-bold text-[#0F1B33] dark:text-slate-200">
-                {myMemberRecord.member_code}
-              </span>
-              <span className="text-[#4E5E78]">·</span>
-              <span className="font-semibold text-[#1D4ED8] dark:text-[#60A5FA]">
-                {myMemberRecord.designation || 'Active Member'}
-              </span>
-              <StatusBadge status={myMemberRecord.status} size="sm" />
-            </div>
-
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0F1B33] dark:text-white">
-              {myMemberRecord.full_name}
-            </h1>
-
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-5 gap-y-2 text-xs text-[#4E5E78] pt-1">
-              {myMemberRecord.father_name && (
-                <span className="flex items-center gap-1.5 text-[#0F1B2E]/80 dark:text-slate-300">
-                  <User className="w-3.5 h-3.5 text-[#4E5E78]" />
-                  {myMemberRecord.father_name}
-                </span>
-              )}
-              <span className="flex items-center gap-1.5 font-mono text-[#0F1B2E] dark:text-slate-200">
-                <Phone className="w-3.5 h-3.5 text-[#4E5E78]" />
-                {myMemberRecord.phone || '—'}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-[#4E5E78]" />
-                Joined {formatDate(myMemberRecord.join_date)}
-              </span>
-              <span className="flex items-center gap-1.5 font-semibold text-[#0369A1] dark:text-[#38BDF8] font-mono">
-                <CreditCard className="w-3.5 h-3.5" />
-                {formatBDT(myFinancialSummary.monthlyContribution)}/mo
-                {myMemberRecord.shares_count > 1 ? ` (${myMemberRecord.shares_count} shares)` : ''}
-              </span>
-            </div>
-          </div>
+    <PageTransition className="space-y-6 sm:space-y-8">
+      {/* Member Portal Top Overview Bar with Live Clock & Weather */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="text-lg sm:text-xl font-extrabold tracking-tight text-[#0F1B33] dark:text-white">
+            Member Overview
+          </h2>
+          <p className="text-xs sm:text-sm text-[#4E5E78] dark:text-[#9BB0CD] mt-0.5">
+            Live Bangladesh time, weather &amp; your verified contribution ledger
+          </p>
         </div>
+        <DashboardClock />
       </div>
+
+      {/* Personalized Greeting & Member Identity Card */}
+      <MemberProfileGreetingHero
+        member={myMemberRecord}
+        monthlyContribution={myFinancialSummary.monthlyContribution}
+        showEmail
+      />
 
       {/* Personal Financial Summary */}
       <div className="space-y-3">
@@ -337,6 +300,13 @@ export const MemberProfile: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Interactive Member Profile Analytics */}
+      <MemberAnalyticsChart
+        member={myMemberRecord}
+        ledger={myDues}
+        summary={myFinancialSummary}
+      />
 
       {/* Member Security & Communication */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

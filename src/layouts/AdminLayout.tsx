@@ -32,6 +32,7 @@ import {
   Landmark,
 } from 'lucide-react';
 import crestImage from '../assets/images/bondhon_club_crest_1793703027252.jpg';
+import { WelcomePreloader } from '../components/WelcomePreloader';
 
 const SIDEBAR_COLLAPSED_KEY = 'bondhon_admin_sidebar_collapsed';
 const ADMIN_THEME_KEY = 'bondhon_admin_theme';
@@ -317,6 +318,7 @@ export const AdminLayout: React.FC = () => {
 
   return (
     <div className={isDark ? 'dark' : ''}>
+      <WelcomePreloader />
       <div className="min-h-screen flex bg-[#F6F7FB] dark:bg-[#09101D] text-[#0F1B2E] dark:text-[#F3F6FC]">
         {/* Mobile Sidebar Overlay & Slide-out Drawer */}
         <AnimatePresence>

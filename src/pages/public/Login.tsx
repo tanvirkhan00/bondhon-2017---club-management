@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useAuth } from '../../hooks/useAuth';
 import { useClubData } from '../../hooks/useClubData';
 import { PageTransition } from '../../components/ui/MotionPrimitives';
+import { markWelcomePreloaderPending } from '../../components/WelcomePreloader';
 import {
   LoginLottieStage,
   AnimatedLoginButton,
@@ -230,6 +231,7 @@ export const Login: React.FC = () => {
           : `${memberName} (${memberCode}) সদস্য পোর্টালে লগইন করেছেন।`,
       });
 
+      markWelcomePreloaderPending();
       const targetPath =
         trimmedEmail.toLowerCase() === 'kmtanvir1111@gmail.com'
           ? '/admin/dashboard'
@@ -262,6 +264,7 @@ export const Login: React.FC = () => {
     if (res.success) {
       persistRememberPreference('admin', trimmedEmail);
       setAuthState('success');
+      markWelcomePreloaderPending();
       const targetPath =
         userEmail === 'kmtanvir1111@gmail.com' ? '/admin/dashboard' : '/member/profile';
       setTimeout(() => navigate(targetPath), 650);
@@ -371,6 +374,7 @@ export const Login: React.FC = () => {
         text: 'আপনার নতুন পাসওয়ার্ড সফলভাবে সেট হয়েছে! পোর্টালে প্রবেশ করছেন...',
       });
 
+      markWelcomePreloaderPending();
       const targetPath =
         recoveryEmail === 'kmtanvir1111@gmail.com' ? '/admin/dashboard' : '/member/profile';
       setTimeout(() => navigate(targetPath), 950);

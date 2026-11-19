@@ -3,6 +3,15 @@ import { User, Session } from '@supabase/supabase-js';
 import { Profile, UserRole } from '../types';
 import { getSupabaseClient, isSupabaseConfigured } from '../services/supabase/client';
 import { INITIAL_PROFILES } from '../lib/mockData';
+import {
+  clearWelcomePreloaderSession,
+  markWelcomePreloaderPending,
+} from '../components/WelcomePreloader';
+
+const PRODUCTION_SITE_URL = (
+  (import.meta.env.VITE_SITE_URL as string | undefined)?.trim() ||
+  'https://bondon2017.netlify.app'
+).replace(/\/+$/, '');
 
 interface MemberLoginParams {
   memberId: string;
@@ -212,6 +221,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         await fetchSupabaseProfile(data.user);
       }
+      markWelcomePreloaderPending();
       return { success: true, user: data.user };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -309,6 +319,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(data.session);
         setUser(data.user);
         await fetchSupabaseProfile(data.user);
+        markWelcomePreloaderPending();
         return { success: true, user: data.user };
       }
 
@@ -332,7 +343,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: cleanEmail,
           password: '123456',
           options: {
-            emailRedirectTo: `${window.location.origin}/login`,
+            emailRedirectTo: `${PRODUCTION_SITE_URL}/login`,
             data: {
               full_name: params.memberName,
               member_code: params.memberCode,
@@ -359,6 +370,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(signUpData.session);
           setUser(signUpData.user);
           await fetchSupabaseProfile(signUpData.user);
+          markWelcomePreloaderPending();
           return { success: true, user: signUpData.user, isFirstActivation: true };
         }
 
@@ -403,7 +415,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         type: 'signup',
         email: cleanEmail,
         options: {
-          emailRedirectTo: `${window.location.origin}/login`,
+          emailRedirectTo: `${PRODUCTION_SITE_URL}/login`,
         },
       });
 
@@ -471,7 +483,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       const { error: resetErr } = await client.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-        redirectTo: `${window.location.origin}/login`,
+        redirectTo: `${PRODUCTION_SITE_URL}/login`,
       });
       if (resetErr) throw resetErr;
       return { success: true, message: 'পাসওয়ার্ড রিসেট লিঙ্ক আপনার ইমেইলে পাঠানো হয়েছে।' };
@@ -490,6 +502,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSession(null);
     setUser(null);
     setProfile(null);
+    clearWelcomePreloaderSession();
     localStorage.removeItem('bondhon_demo_profile');
   };
 

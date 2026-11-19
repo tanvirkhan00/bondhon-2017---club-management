@@ -1,110 +1,23 @@
-import React, { memo, useEffect, useMemo, useState } from 'react';
-
-interface ClockParts {
-  hours12: string;
-  hours24Str: string;
-  minutes: string;
-  seconds: string;
-  dayPeriod: string;
-  hours24: number;
-  minutesNum: number;
-  secondsNum: number;
-  dateLabel: string;
-  celestialEmoji: string;
-  periodLabel: string;
-  auraClass: string;
-}
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { motion } from 'motion/react';
+import { DhakaPeriodKey, getDhakaClockParts } from '../utils/dhakaTime';
+import {
+  fetchLiveWeatherForecast,
+  WeatherForecastPayload,
+} from '../services/weather/openMeteo';
+import { MapPin, RefreshCw } from 'lucide-react';
 
 const CLOCK_FORMAT_KEY = 'bondhon_clock_24h';
 
-const getDhakaClockParts = (now: Date): ClockParts => {
-  const timeParts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Dhaka',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: true,
-  }).formatToParts(now);
-
-  const hour24Parts = new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Asia/Dhaka',
-    hour: '2-digit',
-    hour12: false,
-  }).formatToParts(now);
-
-  const dateParts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Dhaka',
-    weekday: 'short',
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).formatToParts(now);
-
-  const pick = (parts: Intl.DateTimeFormatPart[], type: string) =>
-    parts.find((p) => p.type === type)?.value || '';
-
-  const hours12 = pick(timeParts, 'hour').padStart(2, '0');
-  const minutes = pick(timeParts, 'minute').padStart(2, '0');
-  const seconds = pick(timeParts, 'second').padStart(2, '0');
-  const dayPeriod = pick(timeParts, 'dayPeriod').toUpperCase() || 'AM';
-
-  const h24Raw = Number(pick(hour24Parts, 'hour') || '0');
-  const hours24 = h24Raw === 24 ? 0 : h24Raw;
-  const hours24Str = String(hours24).padStart(2, '0');
-  const minutesNum = Number(minutes);
-  const secondsNum = Number(seconds);
-
-  const weekday = pick(dateParts, 'weekday');
-  const day = pick(dateParts, 'day');
-  const month = pick(dateParts, 'month');
-  const year = pick(dateParts, 'year');
-
-  let celestialEmoji = '🌙';
-  let periodLabel = 'Night';
-  let auraClass =
-    'bg-[#0F1B33] text-[#F0C56E] border-[#233452]';
-
-  if (hours24 >= 5 && hours24 < 7) {
-    celestialEmoji = '🌅';
-    periodLabel = 'Dawn';
-    auraClass =
-      'bg-[#D6AC62]/15 text-[#92600A] dark:bg-[#D6AC62]/15 dark:text-[#F0C56E] border-[#D6AC62]/40';
-  } else if (hours24 >= 7 && hours24 < 12) {
-    celestialEmoji = '☀️';
-    periodLabel = 'Morning';
-    auraClass =
-      'bg-[#D6AC62]/18 text-[#92600A] dark:bg-[#D6AC62]/15 dark:text-[#F0C56E] border-[#D6AC62]/40';
-  } else if (hours24 >= 12 && hours24 < 17) {
-    celestialEmoji = '🌤️';
-    periodLabel = 'Afternoon';
-    auraClass =
-      'bg-[#0369A1]/10 text-[#0369A1] dark:bg-[#38BDF8]/15 dark:text-[#38BDF8] border-[#0369A1]/25 dark:border-[#38BDF8]/30';
-  } else if (hours24 >= 17 && hours24 < 19) {
-    celestialEmoji = '🌇';
-    periodLabel = 'Evening';
-    auraClass =
-      'bg-[#D6AC62]/15 text-[#92600A] dark:bg-[#D6AC62]/15 dark:text-[#F0C56E] border-[#D6AC62]/40';
-  } else if (hours24 >= 19 && hours24 < 21) {
-    celestialEmoji = '🌆';
-    periodLabel = 'Dusk';
-    auraClass =
-      'bg-[#1D4ED8]/10 text-[#1D4ED8] dark:bg-[#60A5FA]/15 dark:text-[#60A5FA] border-[#1D4ED8]/25 dark:border-[#60A5FA]/30';
-  }
-
-  return {
-    hours12,
-    hours24Str,
-    minutes,
-    seconds,
-    dayPeriod,
-    hours24,
-    minutesNum,
-    secondsNum,
-    dateLabel: `${weekday}, ${day} ${month} ${year}`,
-    celestialEmoji,
-    periodLabel,
-    auraClass,
-  };
+const DIAL_GLOW_MAP: Record<DhakaPeriodKey, string> = {
+  morning:
+    'from-[#D6AC62]/25 via-[#EFF3F9] to-[#D6AC62]/10 dark:from-[#D6AC62]/20 dark:via-[#17243C] dark:to-[#0D1726] border-[#D6AC62]/45',
+  afternoon:
+    'from-[#38BDF8]/20 via-[#EFF3F9] to-[#1D4ED8]/10 dark:from-[#38BDF8]/20 dark:via-[#17243C] dark:to-[#0D1726] border-[#0369A1]/30 dark:border-[#38BDF8]/35',
+  evening:
+    'from-[#1D4ED8]/20 via-[#EFF3F9] to-[#D6AC62]/15 dark:from-[#1D4ED8]/25 dark:via-[#17243C] dark:to-[#D6AC62]/15 border-[#1D4ED8]/35 dark:border-[#60A5FA]/35',
+  night:
+    'from-[#0F1B33] via-[#17243C] to-[#09101D] border-[#2B4066]',
 };
 
 export const DashboardClock: React.FC = memo(() => {
@@ -117,6 +30,11 @@ export const DashboardClock: React.FC = memo(() => {
     }
   });
 
+  const [weather, setWeather] = useState<WeatherForecastPayload | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState<boolean>(true);
+  const [weatherError, setWeatherError] = useState<boolean>(false);
+
+  // Live second-synced Asia/Dhaka clock tick
   useEffect(() => {
     let intervalId: number | undefined;
     const msToNextSecond = 1000 - (Date.now() % 1000);
@@ -134,6 +52,40 @@ export const DashboardClock: React.FC = memo(() => {
     };
   }, []);
 
+  // Load current temperature & weather condition (geolocation -> Dhaka fallback, 20-min cached)
+  const loadWeather = useCallback(async (forceRefresh = false, signal?: AbortSignal) => {
+    setWeatherError(false);
+    if (forceRefresh) setWeatherLoading(true);
+
+    try {
+      const data = await fetchLiveWeatherForecast({ forceRefresh, signal });
+      if (!signal?.aborted) {
+        setWeather(data);
+        setWeatherLoading(false);
+      }
+    } catch {
+      if (!signal?.aborted) {
+        setWeatherError(true);
+        setWeatherLoading(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    loadWeather(false, controller.signal);
+
+    // Background refresh every 20 minutes
+    const refreshInterval = window.setInterval(() => {
+      loadWeather(false);
+    }, 20 * 60 * 1000);
+
+    return () => {
+      controller.abort();
+      window.clearInterval(refreshInterval);
+    };
+  }, [loadWeather]);
+
   const toggleFormat = () => {
     setIs24Hour((prev) => {
       const next = !prev;
@@ -148,137 +100,205 @@ export const DashboardClock: React.FC = memo(() => {
 
   const parts = useMemo(() => getDhakaClockParts(now), [now]);
 
-  // SVG Radial Second Sweep Ring (r = 21)
-  const radius = 21;
+  // SVG outer second-sweep dial (r = 25)
+  const radius = 25;
   const circumference = 2 * Math.PI * radius;
   const secProgress = parts.secondsNum / 60;
   const dashOffset = circumference * (1 - secProgress);
   const orbAngleRad = ((parts.secondsNum * 6 - 90) * Math.PI) / 180;
-  const orbX = 26 + radius * Math.cos(orbAngleRad);
-  const orbY = 26 + radius * Math.sin(orbAngleRad);
+  const orbX = 29 + radius * Math.cos(orbAngleRad);
+  const orbY = 29 + radius * Math.sin(orbAngleRad);
 
   const displayHours = is24Hour ? parts.hours24Str : parts.hours12;
+  const dialGlow = DIAL_GLOW_MAP[parts.periodKey];
+  const compactCity = weather?.cityName ? weather.cityName.split(',')[0] : 'Dhaka';
 
   return (
     <div
-      className="surface-card rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 flex items-center gap-3.5 shrink-0 w-full md:w-auto"
-      aria-label={`Dhaka live clock: ${displayHours}:${parts.minutes}:${parts.seconds}${is24Hour ? '' : ` ${parts.dayPeriod}`}, ${parts.dateLabel}`}
+      className="surface-card rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 shrink-0 w-full lg:w-auto"
+      aria-label={`Dhaka live clock: ${displayHours}:${parts.minutes}:${parts.seconds}${
+        is24Hour ? '' : ` ${parts.dayPeriod}`
+      }, ${parts.dateLabel}`}
     >
-      {/* Celestial Emoji Chronometer Dial with Orbiting Second Sweep */}
-      <div className="relative w-13 h-13 shrink-0 flex items-center justify-center">
-        <svg className="w-13 h-13 -rotate-90" viewBox="0 0 52 52" aria-hidden="true">
-          {/* Subtle Ring Track */}
-          <circle
-            cx="26"
-            cy="26"
-            r={radius}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            className="text-[#DFE6F0] dark:text-[#233452]"
-          />
-          {/* 60-Second Sapphire Progress Sweep */}
-          <circle
-            cx="26"
-            cy="26"
-            r={radius}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.75"
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={dashOffset}
-            className="text-[#1D4ED8] dark:text-[#38BDF8] transition-[stroke-dashoffset] duration-300 ease-out"
-          />
-        </svg>
-
-        {/* Orbiting Burnished Brass Second Bead */}
-        <svg
-          className="absolute inset-0 w-13 h-13 pointer-events-none"
-          viewBox="0 0 52 52"
-          aria-hidden="true"
-        >
-          <circle cx={orbX} cy={orbY} r="2.6" fill="#D6AC62" />
-        </svg>
-
-        {/* Centered Atmospheric Emoji Disc */}
+      {/* Left + Center: Emoji Clock Dial & Crisp Digital Time */}
+      <div className="flex items-center gap-3 min-w-0">
+        {/* Animated Emoji Clock Chronometer */}
         <div
-          className={`w-8.5 h-8.5 rounded-full border flex items-center justify-center text-base leading-none select-none shadow-2xs ${parts.auraClass}`}
-          title={`Dhaka Time · ${parts.periodLabel}`}
+          className="relative w-14.5 h-14.5 shrink-0 flex items-center justify-center"
+          title={`Bangladesh Standard Time · ${parts.greeting}`}
         >
-          <span role="img" aria-label={parts.periodLabel}>
+          {/* Second Sweep Progress Track */}
+          <svg className="w-14.5 h-14.5 -rotate-90" viewBox="0 0 58 58" aria-hidden="true">
+            <circle
+              cx="29"
+              cy="29"
+              r={radius}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              className="text-[#DFE6F0] dark:text-[#233452]"
+            />
+            <circle
+              cx="29"
+              cy="29"
+              r={radius}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.75"
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={dashOffset}
+              className="text-[#1D4ED8] dark:text-[#38BDF8] transition-[stroke-dashoffset] duration-300 ease-out"
+            />
+          </svg>
+
+          {/* Orbiting Gold Second Dot */}
+          <svg
+            className="absolute inset-0 w-14.5 h-14.5 pointer-events-none"
+            viewBox="0 0 58 58"
+            aria-hidden="true"
+          >
+            <circle cx={orbX} cy={orbY} r="2.7" fill="#D6AC62" />
+          </svg>
+
+          {/* Center Dynamic Clock-Face Emoji */}
+          <motion.div
+            key={parts.clockEmoji}
+            initial={{ scale: 0.85, rotate: -10 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className={`w-10 h-10 rounded-full bg-gradient-to-br border flex items-center justify-center shadow-inner select-none ${dialGlow}`}
+          >
+            <span
+              role="img"
+              aria-label={`Analog clock emoji showing ${parts.hours12}:${parts.minutes}`}
+              className="text-[22px] leading-none drop-shadow-xs"
+            >
+              {parts.clockEmoji}
+            </span>
+          </motion.div>
+
+          {/* Corner Day/Night Celestial Emoji Orb */}
+          <span
+            role="img"
+            aria-label={parts.periodLabel}
+            className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] shadow-xs flex items-center justify-center text-[11px] leading-none select-none"
+          >
             {parts.celestialEmoji}
           </span>
         </div>
-      </div>
 
-      {/* Executive Split-Flip Digital Readout */}
-      <div className="min-w-0 flex-1 md:flex-initial">
-        <div className="flex items-center justify-between gap-2.5">
-          <div className="inline-flex items-center gap-1">
-            {/* Hours Flip Tile */}
-            <span className="relative inline-flex items-center justify-center min-w-[2.05rem] px-1.5 py-0.5 rounded-lg bg-[#EFF3F9] dark:bg-[#0D1726] border border-[#DFE6F0] dark:border-[#233452] font-mono tabular-nums text-base sm:text-lg font-extrabold text-[#0F1B2E] dark:text-[#F3F6FC] leading-tight overflow-hidden">
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-x-0 top-1/2 h-px bg-[#DFE6F0]/80 dark:bg-[#233452]/90"
-              />
-              <span className="relative">{displayHours}</span>
-            </span>
-
-            <span
-              aria-hidden="true"
-              className={`font-mono font-bold text-[#1D4ED8] dark:text-[#60A5FA] text-sm transition-opacity duration-200 ${
-                parts.secondsNum % 2 === 0 ? 'opacity-100' : 'opacity-45'
-              }`}
-            >
-              :
-            </span>
-
-            {/* Minutes Flip Tile */}
-            <span className="relative inline-flex items-center justify-center min-w-[2.05rem] px-1.5 py-0.5 rounded-lg bg-[#EFF3F9] dark:bg-[#0D1726] border border-[#DFE6F0] dark:border-[#233452] font-mono tabular-nums text-base sm:text-lg font-extrabold text-[#0F1B2E] dark:text-[#F3F6FC] leading-tight overflow-hidden">
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-x-0 top-1/2 h-px bg-[#DFE6F0]/80 dark:bg-[#233452]/90"
-              />
-              <span className="relative">{parts.minutes}</span>
-            </span>
-
-            {/* Seconds Accent Chip */}
-            <span className="inline-flex items-center justify-center min-w-[1.85rem] px-1.5 py-0.5 rounded-lg bg-[#1D4ED8]/10 dark:bg-[#60A5FA]/15 border border-[#1D4ED8]/20 dark:border-[#60A5FA]/30 font-mono tabular-nums text-xs sm:text-sm font-bold text-[#1D4ED8] dark:text-[#60A5FA] leading-tight ml-0.5">
-              {parts.seconds}
-            </span>
-
-            {!is24Hour && (
-              <span className="font-mono text-[10px] font-extrabold text-[#92600A] dark:text-[#F0C56E] tracking-wider ml-1">
-                {parts.dayPeriod}
+        {/* Time + Date Block */}
+        <div className="min-w-0 flex-1 sm:flex-initial">
+          <div className="flex items-center justify-between sm:justify-start gap-2">
+            <div className="inline-flex items-baseline gap-0.5 font-mono tabular-nums">
+              <span className="text-lg sm:text-xl font-extrabold tracking-tight text-[#0F1B2E] dark:text-white leading-none">
+                {displayHours}
               </span>
-            )}
+              <span
+                aria-hidden="true"
+                className={`font-bold text-[#1D4ED8] dark:text-[#60A5FA] text-base leading-none mx-0.5 transition-opacity duration-200 ${
+                  parts.secondsNum % 2 === 0 ? 'opacity-100' : 'opacity-35'
+                }`}
+              >
+                :
+              </span>
+              <span className="text-lg sm:text-xl font-extrabold tracking-tight text-[#0F1B2E] dark:text-white leading-none">
+                {parts.minutes}
+              </span>
+              <span className="ml-1 px-1.5 py-0.5 rounded-md bg-[#1D4ED8]/10 dark:bg-[#60A5FA]/15 border border-[#1D4ED8]/20 dark:border-[#60A5FA]/25 text-[11px] font-bold text-[#1D4ED8] dark:text-[#60A5FA] leading-none">
+                {parts.seconds}
+              </span>
+              {!is24Hour && (
+                <span className="ml-1 text-[10px] font-extrabold text-[#92600A] dark:text-[#F0C56E] tracking-wider">
+                  {parts.dayPeriod}
+                </span>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={toggleFormat}
+              title={is24Hour ? 'Switch to 12-hour format' : 'Switch to 24-hour format'}
+              className="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-[#EFF3F9] dark:bg-[#17243C] text-[#4E5E78] dark:text-[#9BB0CD] hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] border border-[#DFE6F0] dark:border-[#233452] transition-colors cursor-pointer shrink-0 whitespace-nowrap"
+            >
+              {is24Hour ? '24H' : '12H'}
+            </button>
           </div>
 
-          {/* Interactive 12H / 24H Mode Switch */}
+          <div className="flex items-center gap-1.5 mt-1 text-[11px] text-[#4E5E78] dark:text-[#9BB0CD] whitespace-nowrap">
+            <span role="img" aria-hidden="true" className="text-[11px] leading-none">
+              📅
+            </span>
+            <span className="font-semibold text-[#0F1B2E] dark:text-slate-200">{parts.dateLabel}</span>
+            <span aria-hidden="true" className="text-[#DFE6F0] dark:text-[#233452]">
+              ·
+            </span>
+            <span className="font-mono text-[10px] font-semibold text-[#0369A1] dark:text-[#38BDF8]">
+              BST
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Right: Organized Live Temperature & Weather Condition Compartment */}
+      <div className="pt-2.5 sm:pt-0 border-t sm:border-t-0 sm:border-l border-[#DFE6F0] dark:border-[#233452] sm:pl-4 flex items-center justify-between gap-2.5 min-w-0">
+        {weatherLoading && !weather ? (
+          <div className="flex items-center gap-2.5 animate-pulse">
+            <div className="w-8 h-8 rounded-xl bg-[#EFF3F9] dark:bg-[#17243C]" />
+            <div className="space-y-1.5">
+              <div className="h-3.5 w-16 rounded bg-[#EFF3F9] dark:bg-[#17243C]" />
+              <div className="h-2.5 w-20 rounded bg-[#EFF3F9] dark:bg-[#17243C]" />
+            </div>
+          </div>
+        ) : weatherError && !weather ? (
           <button
             type="button"
-            onClick={toggleFormat}
-            title={is24Hour ? 'Switch to 12-hour format' : 'Switch to 24-hour format'}
-            className="px-2 py-1 rounded-md text-[10px] font-mono font-bold bg-[#EFF3F9] dark:bg-[#17243C] text-[#4E5E78] dark:text-[#9BB0CD] hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] border border-[#DFE6F0] dark:border-[#233452] transition-colors cursor-pointer shrink-0 whitespace-nowrap"
+            onClick={() => loadWeather(true)}
+            className="flex items-center gap-1.5 text-[11px] font-semibold text-[#4E5E78] dark:text-[#9BB0CD] hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] cursor-pointer"
           >
-            {is24Hour ? '24H' : '12H'}
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Retry Weather</span>
           </button>
-        </div>
+        ) : weather ? (
+          <>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div
+                className="w-9 h-9 rounded-xl bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] flex items-center justify-center text-lg leading-none shrink-0 select-none"
+                title={weather.current.condition.label}
+              >
+                <span role="img" aria-label={weather.current.condition.label}>
+                  {weather.current.condition.emoji}
+                </span>
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                  <span className="text-base sm:text-lg font-extrabold font-mono tabular-nums text-[#0F1B2E] dark:text-white leading-none">
+                    {weather.current.temperature}°C
+                  </span>
+                  <span className="text-xs font-semibold text-[#0369A1] dark:text-[#38BDF8] truncate max-w-[115px]">
+                    {weather.current.condition.shortLabel}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 mt-0.5 text-[11px] text-[#4E5E78] dark:text-[#9BB0CD] whitespace-nowrap">
+                  <MapPin className="w-3 h-3 text-[#D6AC62] shrink-0" />
+                  <span className="truncate max-w-[125px] font-medium">{compactCity}</span>
+                </div>
+              </div>
+            </div>
 
-        {/* Clean Unboxed Date & Timezone Line */}
-        <div className="flex items-center gap-1.5 mt-1.5 text-[11px] text-[#4E5E78] dark:text-[#9BB0CD] whitespace-nowrap">
-          <span role="img" aria-hidden="true" className="text-[11px] leading-none">
-            📅
-          </span>
-          <span className="font-semibold text-[#0F1B2E] dark:text-slate-200">{parts.dateLabel}</span>
-          <span aria-hidden="true" className="text-[#DFE6F0] dark:text-[#233452]">
-            ·
-          </span>
-          <span className="font-mono text-[10px] font-semibold text-[#0369A1] dark:text-[#38BDF8]">
-            Dhaka · {parts.periodLabel}
-          </span>
-        </div>
+            <button
+              type="button"
+              onClick={() => loadWeather(true)}
+              disabled={weatherLoading}
+              aria-label="Refresh weather"
+              title="Refresh live temperature"
+              className="p-1.5 rounded-lg text-[#4E5E78] dark:text-[#9BB0CD] hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] hover:bg-[#EFF3F9] dark:hover:bg-[#17243C] transition-colors cursor-pointer disabled:opacity-50 shrink-0"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${weatherLoading ? 'animate-spin' : ''}`} />
+            </button>
+          </>
+        ) : null}
       </div>
     </div>
   );

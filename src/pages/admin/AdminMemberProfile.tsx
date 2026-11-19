@@ -11,16 +11,13 @@ import {
 } from '../../utils/fineCalculator';
 import { StatusBadge } from '../../components/StatusBadge';
 import { MetricCard } from '../../components/MetricCard';
+import { MemberProfileGreetingHero } from '../../components/MemberProfileGreetingHero';
+import { MemberAnalyticsChart } from '../../components/MemberAnalyticsChart';
 import { PageTransition } from '../../components/ui/MotionPrimitives';
 import { RecordPaymentModal } from '../../components/RecordPaymentModal';
 import { EditPaymentModal } from '../../components/EditPaymentModal';
 import {
   ArrowLeft,
-  Phone,
-  Calendar,
-  CreditCard,
-  Mail,
-  User,
   Edit2,
   Trash2,
   PlusCircle,
@@ -176,71 +173,12 @@ export const AdminMemberProfile: React.FC = () => {
         </div>
       </div>
 
-      {/* Member Identity Card */}
-      <div className="surface-card rounded-2xl overflow-hidden">
-        <div className="h-1.5 bg-gradient-to-r from-[#0F1B33] via-[#1D4ED8] to-[#D6AC62]" />
-        <div className="p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
-          <div className="w-20 h-20 rounded-full bg-[#EFF3F9] dark:bg-[#17243C] ring-3 ring-[#1D4ED8]/25 dark:ring-[#60A5FA]/30 flex items-center justify-center font-bold text-2xl text-[#1D4ED8] dark:text-[#60A5FA] overflow-hidden shrink-0">
-            {member.profile_image_url ? (
-              <img
-                src={member.profile_image_url}
-                alt={member.full_name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              member.full_name.substring(0, 2).toUpperCase()
-            )}
-          </div>
-
-          <div className="flex-1 space-y-2 min-w-0">
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs">
-              <span className="font-mono font-bold text-[#0F1B33] dark:text-[#F0C56E]">
-                {member.member_code}
-              </span>
-              <span className="text-[#4E5E78]">·</span>
-              <span className="font-semibold text-[#1D4ED8] dark:text-[#60A5FA]">
-                {member.designation || 'Member'}
-              </span>
-              <span className="text-[#4E5E78]">·</span>
-              <StatusBadge status={member.status} size="sm" />
-            </div>
-
-            <h1 className="text-2xl font-bold tracking-tight text-[#0F1B2E] dark:text-slate-100">
-              {member.full_name}
-            </h1>
-
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1.5 text-xs text-[#4E5E78] dark:text-slate-400 pt-0.5">
-              {member.father_name && (
-                <span className="flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
-                  <span>{member.father_name}</span>
-                </span>
-              )}
-              <span className="flex items-center gap-1.5 font-mono text-[#0F1B2E] dark:text-slate-200">
-                <Phone className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
-                <span>{member.phone || '—'}</span>
-              </span>
-              {member.email && (
-                <span className="flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
-                  <span>{member.email}</span>
-                </span>
-              )}
-              <span className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
-                <span>Joined {formatDate(member.join_date)}</span>
-              </span>
-              <span className="flex items-center gap-1.5 font-semibold text-[#0369A1] dark:text-[#38BDF8] tabular-nums">
-                <CreditCard className="w-3.5 h-3.5" />
-                <span>
-                  {formatBDT(summary.monthlyContribution)}/month ({member.shares_count}{' '}
-                  {member.shares_count > 1 ? 'shares' : 'share'})
-                </span>
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Personalized Greeting & Member Identity Card */}
+      <MemberProfileGreetingHero
+        member={member}
+        monthlyContribution={summary.monthlyContribution}
+        showEmail
+      />
 
       {/* Real-Time Financial Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -282,6 +220,13 @@ export const AdminMemberProfile: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Interactive Member Profile Analytics */}
+      <MemberAnalyticsChart
+        member={member}
+        ledger={completeLedger}
+        summary={summary}
+      />
 
       {/* Filters & Month-by-Month Ledger */}
       <div className="surface-card rounded-2xl overflow-hidden">

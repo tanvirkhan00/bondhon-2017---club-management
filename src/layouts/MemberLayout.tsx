@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useClubData } from '../hooks/useClubData';
 import { User, History, LogOut, ArrowLeft, ShieldCheck } from 'lucide-react';
 import crestImage from '../assets/images/bondhon_club_crest_1793703027252.jpg';
+import { WelcomePreloader } from '../components/WelcomePreloader';
 
 export const MemberLayout: React.FC = () => {
   const { user, profile, isAdmin, signOut } = useAuth();
@@ -28,6 +29,7 @@ export const MemberLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F6F7FB] dark:bg-[#09101D] text-[#0F1B2E] dark:text-[#F3F6FC]">
+      <WelcomePreloader />
       {/* Top Banner & Header */}
       <header className="bg-white/95 dark:bg-[#111B2E]/95 backdrop-blur-md border-b border-[#DFE6F0] dark:border-[#233452] sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -266,7 +266,7 @@ export const AdminDashboard: React.FC = () => {
     <PageTransition className="space-y-6">
       {/* 1. UNIFIED COMMAND HEADER WITH LIVE DHAKA CLOCK */}
       <div className="space-y-4 pb-5 border-b border-[#DFE6F0] dark:border-[#233452]">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="min-w-0">
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0F1B2E] dark:text-[#F3F6FC]">
               Financial Overview

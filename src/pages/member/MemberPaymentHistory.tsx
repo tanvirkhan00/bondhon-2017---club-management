@@ -4,6 +4,7 @@ import { FISCAL_YEARS, formatBDT, formatDate, getMonthName, MONTH_NAMES } from '
 import { calculateDueBreakdown } from '../../utils/fineCalculator';
 import { StatusBadge } from '../../components/StatusBadge';
 import { MetricCard } from '../../components/MetricCard';
+import { DashboardClock } from '../../components/DashboardClock';
 import { PageTransition } from '../../components/ui/MotionPrimitives';
 import { History, Search, Receipt, CheckCircle2, Coins, AlertCircle } from 'lucide-react';
 
@@ -66,16 +67,17 @@ export const MemberPaymentHistory: React.FC = () => {
   return (
     <PageTransition className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#DFE6F0] dark:border-[#233452]">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-[#DFE6F0] dark:border-[#233452]">
         <div>
           <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#0F1B33] dark:text-white flex items-center gap-2.5">
             <History className="w-6 h-6 text-[#1D4ED8] dark:text-[#60A5FA]" />
             <span>Payment Ledger</span>
           </h1>
-          <p className="text-xs sm:text-sm text-[#4E5E78] mt-0.5 font-mono">
+          <p className="text-xs sm:text-sm text-[#4E5E78] dark:text-[#9BB0CD] mt-0.5 font-mono">
             {myMemberRecord?.full_name} · {myMemberRecord?.member_code}
           </p>
         </div>
+        <DashboardClock />
       </div>
 
       {/* Summary KPI Strip */}
