@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useAuth } from '../hooks/useAuth';
 import { useClubData } from '../hooks/useClubData';
@@ -6,31 +6,23 @@ import { getDhakaGreeting } from '../utils/dhakaTime';
 import { ArrowRight } from 'lucide-react';
 import crestImage from '../assets/images/bondhon_club_crest_1793703027252.jpg';
 
-const WELCOME_SESSION_PREFIX = 'bondhon_welcome_shown:';
-const WELCOME_PENDING_KEY = 'bondhon_welcome_pending';
+/**
+ * In-memory page-load tracker:
+ * - Resets automatically on EVERY full browser refresh / page reload.
+ * - Resets explicitly on sign-out and new login via clearWelcomePreloaderSession / markWelcomePreloaderPending.
+ * - Prevents unnecessary replay during internal SPA route switches (e.g., Admin <-> Member Portal).
+ */
+let shownInCurrentPageLoadForUserId: string | null = null;
+let pendingLoginWelcome = false;
 
 export function markWelcomePreloaderPending(): void {
-  try {
-    sessionStorage.setItem(WELCOME_PENDING_KEY, '1');
-  } catch {
-    // Ignore sessionStorage errors
-  }
+  pendingLoginWelcome = true;
+  shownInCurrentPageLoadForUserId = null;
 }
 
 export function clearWelcomePreloaderSession(): void {
-  try {
-    sessionStorage.removeItem(WELCOME_PENDING_KEY);
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < sessionStorage.length; i += 1) {
-      const k = sessionStorage.key(i);
-      if (k && k.startsWith(WELCOME_SESSION_PREFIX)) {
-        keysToRemove.push(k);
-      }
-    }
-    keysToRemove.forEach((k) => sessionStorage.removeItem(k));
-  } catch {
-    // Ignore sessionStorage errors
-  }
+  pendingLoginWelcome = false;
+  shownInCurrentPageLoadForUserId = null;
 }
 
 export const WelcomePreloader: React.FC = () => {
@@ -39,50 +31,30 @@ export const WelcomePreloader: React.FC = () => {
 
   const [visible, setVisible] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
-  const triggeredForUserRef = useRef<string | null>(null);
 
   const userId = user?.id || '';
-  const storageKey = userId ? `${WELCOME_SESSION_PREFIX}${userId}` : '';
 
-  // Wait until auth & profile/member identity settle before triggering so real name & photo appear cleanly
+  // Wait for both auth profile and club member record (so real avatar & full name are ready)
   const identityReady = useMemo(() => {
     if (!isAuthenticated || authLoading || !userId) return false;
-    if (isAdmin) return Boolean(profile) && (!dataLoading || Boolean(myMemberRecord) || true);
+    if (isAdmin) return Boolean(profile) && (!dataLoading || Boolean(myMemberRecord));
     return !dataLoading || Boolean(myMemberRecord);
   }, [isAuthenticated, authLoading, userId, isAdmin, profile, dataLoading, myMemberRecord]);
 
   useEffect(() => {
-    if (!identityReady || !storageKey || !userId) return;
-    if (triggeredForUserRef.current === userId) return;
+    if (!identityReady || !userId) return;
 
-    let isPending = false;
-    let alreadyShown = false;
-    try {
-      isPending = sessionStorage.getItem(WELCOME_PENDING_KEY) === '1';
-      alreadyShown = sessionStorage.getItem(storageKey) === '1';
-    } catch {
-      isPending = false;
-      alreadyShown = false;
-    }
-
-    if (!isPending && alreadyShown) {
-      triggeredForUserRef.current = userId;
+    if (!pendingLoginWelcome && shownInCurrentPageLoadForUserId === userId) {
       return;
     }
 
-    try {
-      sessionStorage.removeItem(WELCOME_PENDING_KEY);
-      sessionStorage.setItem(storageKey, '1');
-    } catch {
-      // Ignore storage error
-    }
-
-    triggeredForUserRef.current = userId;
+    pendingLoginWelcome = false;
+    shownInCurrentPageLoadForUserId = userId;
     setImgFailed(false);
     setVisible(true);
-  }, [identityReady, storageKey, userId]);
+  }, [identityReady, userId]);
 
-  // Dedicated auto-dismiss timer isolated from identity dependency changes
+  // Isolated auto-dismiss timer so data updates cannot cancel fade-out
   useEffect(() => {
     if (!visible) return;
     const dismissTimer = window.setTimeout(() => {

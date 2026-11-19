@@ -1,5 +1,4 @@
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { motion } from 'motion/react';
 import { DhakaPeriodKey, getDhakaClockParts } from '../utils/dhakaTime';
 import {
   fetchLiveWeatherForecast,
@@ -9,16 +8,26 @@ import { MapPin, RefreshCw } from 'lucide-react';
 
 const CLOCK_FORMAT_KEY = 'bondhon_clock_24h';
 
-const CLOCK_BADGE_THEME: Record<DhakaPeriodKey, string> = {
-  morning:
-    'from-[#D6AC62]/25 via-[#17243C]/10 to-[#1D4ED8]/15 border-[#D6AC62]/45 dark:from-[#D6AC62]/20 dark:via-[#17243C] dark:to-[#0D1726]',
-  afternoon:
-    'from-[#38BDF8]/20 via-[#EFF3F9] to-[#1D4ED8]/15 border-[#0369A1]/30 dark:from-[#38BDF8]/20 dark:via-[#17243C] dark:to-[#0D1726] dark:border-[#38BDF8]/35',
-  evening:
-    'from-[#1D4ED8]/20 via-[#EFF3F9] to-[#D6AC62]/20 border-[#1D4ED8]/35 dark:from-[#1D4ED8]/25 dark:via-[#17243C] dark:to-[#D6AC62]/15 dark:border-[#60A5FA]/35',
-  night:
-    'from-[#18294A] via-[#111B2E] to-[#09101D] border-[#2B4066]',
+const DIAL_RING_ACCENT: Record<DhakaPeriodKey, string> = {
+  morning: 'border-[#D6AC62]/55 bg-[#EFF3F9] dark:bg-[#0D1726]',
+  afternoon: 'border-[#0369A1]/40 dark:border-[#38BDF8]/45 bg-[#EFF3F9] dark:bg-[#0D1726]',
+  evening: 'border-[#1D4ED8]/45 dark:border-[#60A5FA]/45 bg-[#EFF3F9] dark:bg-[#0D1726]',
+  night: 'border-[#2B4066] bg-[#EFF3F9] dark:bg-[#0A1221]',
 };
+
+const HOUR_TICKS = Array.from({ length: 12 }, (_, idx) => {
+  const angleRad = ((idx * 30 - 90) * Math.PI) / 180;
+  const isCardinal = idx % 3 === 0;
+  const innerR = isCardinal ? 22.5 : 24.5;
+  const outerR = 27.5;
+  return {
+    x1: 32 + innerR * Math.cos(angleRad),
+    y1: 32 + innerR * Math.sin(angleRad),
+    x2: 32 + outerR * Math.cos(angleRad),
+    y2: 32 + outerR * Math.sin(angleRad),
+    isCardinal,
+  };
+});
 
 export const DashboardClock: React.FC = memo(() => {
   const [now, setNow] = useState<Date>(() => new Date());
@@ -99,8 +108,13 @@ export const DashboardClock: React.FC = memo(() => {
 
   const parts = useMemo(() => getDhakaClockParts(now), [now]);
   const displayHours = is24Hour ? parts.hours24Str : parts.hours12;
-  const badgeTheme = CLOCK_BADGE_THEME[parts.periodKey];
+  const dialAccent = DIAL_RING_ACCENT[parts.periodKey];
   const compactCity = weather?.cityName ? weather.cityName.split(',')[0] : 'Dhaka';
+
+  // Exact analog hand angles (in degrees, 0° = 12 o'clock)
+  const secondDeg = parts.secondsNum * 6;
+  const minuteDeg = parts.minutesNum * 6 + parts.secondsNum * 0.1;
+  const hourDeg = ((parts.hours24 % 12) + parts.minutesNum / 60 + parts.secondsNum / 3600) * 30;
 
   return (
     <div
@@ -109,51 +123,108 @@ export const DashboardClock: React.FC = memo(() => {
         is24Hour ? '' : ` ${parts.dayPeriod}`
       }, ${parts.dateLabel}`}
     >
-      {/* Left + Center: Animated ⏰ Emoji Clock & Crisp Digital Readout */}
+      {/* Left + Center: Running Analog Clock (Hour, Minute & Second Hands) + Digital Readout */}
       <div className="flex items-center gap-3 min-w-0">
-        {/* Animated ⏰ Alarm Clock Badge (No broken progress ring) */}
+        {/* Precision Live Analog Watch Dial */}
         <div
-          className={`relative w-12 h-12 rounded-2xl bg-gradient-to-br border flex items-center justify-center shrink-0 shadow-xs select-none ${badgeTheme}`}
-          title={`Bangladesh Standard Time · ${parts.greeting}`}
+          className={`relative w-14 h-14 rounded-full border-2 shadow-inner shrink-0 flex items-center justify-center ${dialAccent}`}
+          title={`Bangladesh Standard Time · ${parts.hours12}:${parts.minutes}:${parts.seconds} ${parts.dayPeriod}`}
         >
-          {/* Ambient Subtle Pulse Halo */}
-          <motion.span
-            aria-hidden="true"
-            animate={{ scale: [1, 1.08, 1], opacity: [0.3, 0.55, 0.3] }}
-            transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute inset-1 rounded-xl bg-[#1D4ED8]/15 dark:bg-[#38BDF8]/15 pointer-events-none"
-          />
-
-          {/* Animated ⏰ Emoji */}
-          <motion.span
+          <svg
+            viewBox="0 0 64 64"
+            className="w-full h-full block"
             role="img"
-            aria-label="Live alarm clock"
-            animate={{
-              rotate: [0, -10, 10, -7, 7, 0],
-              scale: [1, 1.08, 1.08, 1.04, 1.04, 1],
-            }}
-            transition={{
-              duration: 1.15,
-              repeat: Infinity,
-              repeatDelay: 2.2,
-              ease: 'easeInOut',
-            }}
-            className="relative text-[25px] leading-none drop-shadow-xs origin-center"
+            aria-label={`Analog clock showing ${parts.hours12}:${parts.minutes}:${parts.seconds} ${parts.dayPeriod}`}
           >
-            ⏰
-          </motion.span>
+            {/* Inner Subtle Dial Ring */}
+            <circle
+              cx="32"
+              cy="32"
+              r="29"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="0.75"
+              className="text-[#DFE6F0] dark:text-[#233452]"
+            />
 
-          {/* Corner Day/Night Celestial Indicator */}
+            {/* 12 Hour Markers */}
+            {HOUR_TICKS.map((t, idx) => (
+              <line
+                key={idx}
+                x1={t.x1}
+                y1={t.y1}
+                x2={t.x2}
+                y2={t.y2}
+                stroke="currentColor"
+                strokeWidth={t.isCardinal ? '1.8' : '1'}
+                strokeLinecap="round"
+                className={
+                  t.isCardinal
+                    ? 'text-[#1D4ED8] dark:text-[#D6AC62]'
+                    : 'text-[#4E5E78]/60 dark:text-[#9BB0CD]/55'
+                }
+              />
+            ))}
+
+            {/* Hour Hand */}
+            <line
+              x1="32"
+              y1="35"
+              x2="32"
+              y2="17"
+              stroke="currentColor"
+              strokeWidth="2.8"
+              strokeLinecap="round"
+              transform={`rotate(${hourDeg.toFixed(2)} 32 32)`}
+              className="text-[#0F1B2E] dark:text-white"
+            />
+
+            {/* Minute Hand */}
+            <line
+              x1="32"
+              y1="36"
+              x2="32"
+              y2="11"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              transform={`rotate(${minuteDeg.toFixed(2)} 32 32)`}
+              className="text-[#1D4ED8] dark:text-[#38BDF8]"
+            />
+
+            {/* Live Running Second Hand + Counterweight */}
+            <line
+              x1="32"
+              y1="39"
+              x2="32"
+              y2="8"
+              stroke="#D6AC62"
+              strokeWidth="1.25"
+              strokeLinecap="round"
+              transform={`rotate(${secondDeg} 32 32)`}
+            />
+
+            {/* Center Jewel Pivot */}
+            <circle cx="32" cy="32" r="2.5" fill="#D6AC62" />
+            <circle
+              cx="32"
+              cy="32"
+              r="1"
+              className="fill-[#0F1B2E] dark:fill-[#09101D]"
+            />
+          </svg>
+
+          {/* Subtle Corner Time-of-Day Emoji Badge */}
           <span
             role="img"
             aria-label={parts.periodLabel}
-            className="absolute -bottom-1 -right-1 w-4.5 h-4.5 rounded-full bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] shadow-xs flex items-center justify-center text-[10px] leading-none"
+            className="absolute -bottom-0.5 -right-0.5 w-4.5 h-4.5 rounded-full bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] shadow-xs flex items-center justify-center text-[10px] leading-none select-none"
           >
             {parts.celestialEmoji}
           </span>
         </div>
 
-        {/* Time + Date Block */}
+        {/* Digital Readout + Date */}
         <div className="min-w-0 flex-1 sm:flex-initial">
           <div className="flex items-center justify-between sm:justify-start gap-2">
             <div className="inline-flex items-baseline gap-0.5 font-mono tabular-nums">
