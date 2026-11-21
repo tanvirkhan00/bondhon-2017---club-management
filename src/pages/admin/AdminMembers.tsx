@@ -8,6 +8,7 @@ import { StatusBadge } from '../../components/StatusBadge';
 import { Modal } from '../../components/ui/Modal';
 import { PageTransition } from '../../components/ui/MotionPrimitives';
 import { uploadMemberAvatar } from '../../services/supabase/storage';
+import { BLOOD_GROUPS } from '../../utils/birthdayUtils';
 import {
   Users,
   Search,
@@ -20,6 +21,8 @@ import {
   Upload,
   Image as ImageIcon,
   UserPlus,
+  Droplets,
+  Lock,
 } from 'lucide-react';
 
 export const AdminMembers: React.FC = () => {
@@ -40,6 +43,8 @@ export const AdminMembers: React.FC = () => {
   const [email, setEmail] = useState('');
   const [designation, setDesignation] = useState('Member');
   const [joinDate, setJoinDate] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [bloodGroup, setBloodGroup] = useState('');
   const [monthlyContribution, setMonthlyContribution] = useState<number>(defaultDueAmount);
   const [status, setStatus] = useState<MemberStatus>('active');
   const [authUserId, setAuthUserId] = useState('');
@@ -90,6 +95,8 @@ export const AdminMembers: React.FC = () => {
     setEmail('');
     setDesignation('Member');
     setJoinDate(new Date().toISOString().substring(0, 10));
+    setDateOfBirth('');
+    setBloodGroup('');
     setMonthlyContribution(defaultDueAmount);
     setStatus('active');
     setAuthUserId('');
@@ -110,6 +117,8 @@ export const AdminMembers: React.FC = () => {
     setEmail(m.email || '');
     setDesignation(m.designation || 'Member');
     setJoinDate(m.join_date);
+    setDateOfBirth(m.date_of_birth || '');
+    setBloodGroup(m.blood_group || '');
     setMonthlyContribution(m.monthly_contribution || (m.shares_count || 1) * defaultDueAmount);
     setStatus(m.status);
     setAuthUserId(m.auth_user_id || '');
@@ -156,6 +165,8 @@ export const AdminMembers: React.FC = () => {
         email: email.trim() || null,
         designation: designation.trim() || 'Member',
         join_date: joinDate,
+        date_of_birth: dateOfBirth || null,
+        blood_group: bloodGroup || null,
         monthly_contribution: Number(monthlyContribution),
         status,
         auth_user_id: authUserId.trim() || null,
@@ -178,6 +189,8 @@ export const AdminMembers: React.FC = () => {
         email: email.trim() || null,
         designation: designation.trim() || 'Member',
         join_date: joinDate,
+        date_of_birth: dateOfBirth || null,
+        blood_group: bloodGroup || null,
         monthly_contribution: Number(monthlyContribution),
         status,
         auth_user_id: authUserId.trim() || null,
@@ -321,6 +334,11 @@ export const AdminMembers: React.FC = () => {
                               {(member.shares_count || 1) > 1 && (
                                 <span className="text-[11px] font-semibold text-[#92600A] dark:text-[#F0C56E] tabular-nums">
                                   · {member.shares_count} Shares
+                                </span>
+                              )}
+                              {member.blood_group && (
+                                <span className="text-[11px] font-mono font-bold text-rose-500 dark:text-rose-400">
+                                  · {member.blood_group}
                                 </span>
                               )}
                             </div>
@@ -619,6 +637,46 @@ export const AdminMembers: React.FC = () => {
                 >
                   <option value="active" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">Active</option>
                   <option value="inactive" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">Inactive</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1">
+                  <Lock className="w-3 h-3 text-[#D6AC62]" />
+                  <span>Date of Birth (Private)</span>
+                </label>
+                <input
+                  type="date"
+                  value={dateOfBirth}
+                  onChange={(e) => setDateOfBirth(e.target.value)}
+                  className="w-full px-3 py-2 text-sm bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
+                />
+              </div>
+
+              <div>
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1">
+                  <Droplets className="w-3 h-3 text-rose-500" />
+                  <span>Blood Group</span>
+                </label>
+                <select
+                  value={bloodGroup}
+                  onChange={(e) => setBloodGroup(e.target.value)}
+                  className="w-full px-3 py-2 text-sm bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8] cursor-pointer"
+                >
+                  <option value="" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">
+                    Not specified
+                  </option>
+                  {BLOOD_GROUPS.map((bg) => (
+                    <option
+                      key={bg}
+                      value={bg}
+                      className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100"
+                    >
+                      {bg}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>

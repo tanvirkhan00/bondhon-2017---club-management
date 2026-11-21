@@ -2,9 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { useClubData } from '../../hooks/useClubData';
 import { FISCAL_YEARS, formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/formatters';
 import { calculateDueBreakdown } from '../../utils/fineCalculator';
+import { MonthlyDue } from '../../types';
 import { StatusBadge } from '../../components/StatusBadge';
 import { MetricCard } from '../../components/MetricCard';
 import { DashboardClock } from '../../components/DashboardClock';
+import { PaymentReceiptModal } from '../../components/PaymentReceiptModal';
 import { PageTransition } from '../../components/ui/MotionPrimitives';
 import { History, Search, Receipt, CheckCircle2, Coins, AlertCircle } from 'lucide-react';
 
@@ -16,6 +18,7 @@ export const MemberPaymentHistory: React.FC = () => {
   const [selectedMonthFilter, setSelectedMonthFilter] = useState<string>('all');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('all');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  const [receiptDue, setReceiptDue] = useState<MonthlyDue | null>(null);
 
   const years = useMemo(() => {
     const set = new Set<number>(FISCAL_YEARS);
@@ -189,18 +192,20 @@ export const MemberPaymentHistory: React.FC = () => {
                 <th className="py-3 px-4 font-semibold text-right">Outstanding (৳)</th>
                 <th className="py-3 px-4 font-semibold text-center">Status</th>
                 <th className="py-3 px-4 font-semibold">Payment Date</th>
+                <th className="py-3 px-4 font-semibold text-right">Receipt</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#DFE6F0] dark:divide-[#233452]">
               {filteredRecords.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-[#4E5E78]">
+                  <td colSpan={8} className="py-12 text-center text-[#4E5E78]">
                     No payment records found matching your filters.
                   </td>
                 </tr>
               ) : (
                 filteredRecords.map((d, idx) => {
                   const bd = calculateDueBreakdown(d, myMemberRecord?.shares_count);
+                  const canReceipt = !d.isVirtual && bd.totalPaid > 0;
 
                   return (
                     <tr
@@ -245,6 +250,22 @@ export const MemberPaymentHistory: React.FC = () => {
                       <td className="py-3 px-4 font-mono text-[#4E5E78] whitespace-nowrap">
                         {d.paid_at ? formatDate(d.paid_at) : 'Unpaid'}
                       </td>
+
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        {canReceipt ? (
+                          <button
+                            type="button"
+                            onClick={() => setReceiptDue(d)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-[#1D4ED8] dark:text-[#60A5FA] bg-[#1D4ED8]/10 hover:bg-[#1D4ED8]/18 rounded-lg border border-[#1D4ED8]/25 dark:border-[#60A5FA]/30 cursor-pointer"
+                            title="View & Download Payment Receipt"
+                          >
+                            <Receipt className="w-3 h-3" />
+                            <span>Receipt</span>
+                          </button>
+                        ) : (
+                          <span className="text-[#4E5E78]">—</span>
+                        )}
+                      </td>
                     </tr>
                   );
                 })
@@ -253,6 +274,12 @@ export const MemberPaymentHistory: React.FC = () => {
           </table>
         </div>
       </div>
+
+      <PaymentReceiptModal
+        due={receiptDue}
+        member={myMemberRecord}
+        onClose={() => setReceiptDue(null)}
+      />
     </PageTransition>
   );
 };

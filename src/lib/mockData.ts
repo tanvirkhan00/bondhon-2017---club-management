@@ -293,8 +293,6 @@ export const INITIAL_PUBLIC_MEMBERS: PublicMember[] = INITIAL_MEMBERS.map(m => (
   id: m.id,
   member_code: m.member_code,
   full_name: m.full_name,
-  father_name: m.father_name,
-  shares_count: m.shares_count,
   designation: m.designation,
   profile_image_url: m.profile_image_url,
   status: 'active',

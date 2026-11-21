@@ -1,8 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { useAuth } from '../hooks/useAuth';
-import { useClubData } from '../hooks/useClubData';
 import {
   LayoutDashboard,
   Users,
@@ -16,14 +15,6 @@ import {
   Menu,
   X,
   UserCheck,
-  Bell,
-  CheckCheck,
-  RefreshCw,
-  KeyRound,
-  LogIn,
-  Send,
-  Phone,
-  Trash2,
   AlertTriangle,
   PanelLeftClose,
   PanelLeftOpen,
@@ -31,19 +22,12 @@ import {
 } from 'lucide-react';
 import crestImage from '../assets/images/bondhon_club_crest_1793703027252.jpg';
 import { WelcomePreloader } from '../components/WelcomePreloader';
+import { NotificationCenter } from '../components/NotificationCenter';
 
 const SIDEBAR_COLLAPSED_KEY = 'bondhon_admin_sidebar_collapsed';
 
 export const AdminLayout: React.FC = () => {
   const { profile, signOut } = useAuth();
-  const {
-    notifications,
-    unreadNotificationCount,
-    markNotificationAsRead,
-    markAllNotificationsAsRead,
-    clearNotifications,
-    refreshNotifications,
-  } = useClubData();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
@@ -53,9 +37,6 @@ export const AdminLayout: React.FC = () => {
       return false;
     }
   });
-  const [notifOpen, setNotifOpen] = useState(false);
-  const [refreshingNotif, setRefreshingNotif] = useState(false);
-  const notifRef = useRef<HTMLDivElement>(null);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -81,21 +62,13 @@ export const AdminLayout: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
-        setNotifOpen(false);
-      }
-    };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setNotifOpen(false);
         setSidebarOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('keydown', handleKeyDown);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
@@ -103,37 +76,6 @@ export const AdminLayout: React.FC = () => {
   const handleLogout = async () => {
     await signOut();
     navigate('/login');
-  };
-
-  const handleRefreshNotifs = async () => {
-    setRefreshingNotif(true);
-    await refreshNotifications();
-    setRefreshingNotif(false);
-  };
-
-  const getEventIcon = (eventType: string) => {
-    switch (eventType) {
-      case 'member_login':
-        return <LogIn className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />;
-      case 'member_logout':
-        return <LogOut className="w-3.5 h-3.5 text-rose-500" />;
-      case 'password_changed':
-        return <KeyRound className="w-3.5 h-3.5 text-[#92600A] dark:text-[#F0C56E]" />;
-      case 'payment_notice':
-        return <Send className="w-3.5 h-3.5 text-[#0369A1] dark:text-[#38BDF8]" />;
-      default:
-        return <Phone className="w-3.5 h-3.5 text-[#18294A] dark:text-slate-300" />;
-    }
-  };
-
-  const formatTimeAgo = (iso: string) => {
-    const diffMs = Date.now() - new Date(iso).getTime();
-    const mins = Math.floor(diffMs / 60000);
-    if (mins < 1) return 'এইমাত্র';
-    if (mins < 60) return `${mins} মি. আগে`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours} ঘণ্টা আগে`;
-    return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
   };
 
   const navItems = [
@@ -370,120 +312,7 @@ export const AdminLayout: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              {/* Notification Bell Icon & Animated Dropdown */}
-              <div className="relative" ref={notifRef}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setNotifOpen(!notifOpen);
-                    if (!notifOpen) handleRefreshNotifs();
-                  }}
-                  className="relative p-2 rounded-xl text-[#0F1B2E] dark:text-slate-200 hover:bg-[#EFF3F9] dark:hover:bg-[#17243C] border border-transparent hover:border-[#DFE6F0] dark:hover:border-[#233452] transition-colors cursor-pointer"
-                  aria-label="Member Notifications"
-                  title="Member Activity & Notifications"
-                >
-                  <Bell className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
-                  {unreadNotificationCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 min-w-[17px] h-[17px] px-1 rounded-full bg-rose-600 text-white text-[10px] font-bold flex items-center justify-center shadow-xs tabular-nums">
-                      {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
-                    </span>
-                  )}
-                </button>
-
-                <AnimatePresence>
-                  {notifOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 6, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 4, scale: 0.98 }}
-                      transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-                      className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.45)] z-50 overflow-hidden"
-                    >
-                      <div className="px-4 py-3 border-b border-[#DFE6F0] dark:border-[#233452] flex items-center justify-between bg-[#EFF3F9]/80 dark:bg-[#0F1B33]/75">
-                        <div>
-                          <h3 className="text-xs font-bold text-[#0F1B2E] dark:text-[#F3F6FC] tabular-nums">
-                            Notifications ({unreadNotificationCount} unread)
-                          </h3>
-                          <p className="text-[10px] text-[#4E5E78] dark:text-[#9BB0CD]">
-                            Sign-ins, password updates, and member notices
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={handleRefreshNotifs}
-                            className="p-1.5 rounded-lg text-[#4E5E78] dark:text-[#9BB0CD] hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] hover:bg-white dark:hover:bg-[#18294A] cursor-pointer"
-                            title="Refresh"
-                          >
-                            <RefreshCw className={`w-3.5 h-3.5 ${refreshingNotif ? 'animate-spin' : ''}`} />
-                          </button>
-                          {unreadNotificationCount > 0 && (
-                            <button
-                              type="button"
-                              onClick={markAllNotificationsAsRead}
-                              className="p-1.5 rounded-lg text-[#1D4ED8] dark:text-[#60A5FA] hover:bg-[#1D4ED8]/10 cursor-pointer"
-                              title="Mark all as read"
-                            >
-                              <CheckCheck className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                          {notifications.length > 0 && (
-                            <button
-                              type="button"
-                              onClick={clearNotifications}
-                              className="p-1.5 rounded-lg text-[#4E5E78] dark:text-[#9BB0CD] hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
-                              title="Clear all"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="max-h-80 overflow-y-auto divide-y divide-[#DFE6F0] dark:divide-[#233452]">
-                        {notifications.length === 0 ? (
-                          <div className="py-10 px-4 text-center space-y-1.5">
-                            <Bell className="w-7 h-7 text-slate-300 dark:text-slate-600 mx-auto" />
-                            <p className="text-xs font-medium text-[#4E5E78] dark:text-[#9BB0CD]">
-                              No notifications yet
-                            </p>
-                          </div>
-                        ) : (
-                          notifications.map((n) => (
-                            <div
-                              key={n.id}
-                              onClick={() => markNotificationAsRead(n.id)}
-                              className={`p-3.5 flex items-start gap-3 cursor-pointer transition-colors hover:bg-[#EFF3F9] dark:hover:bg-[#17243C] ${
-                                !n.is_read ? 'bg-[#1D4ED8]/6 dark:bg-[#1D4ED8]/14' : ''
-                              }`}
-                            >
-                              <div className="w-7 h-7 rounded-full bg-white dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] flex items-center justify-center shrink-0 mt-0.5">
-                                {getEventIcon(n.event_type)}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between gap-2">
-                                  <span className="text-xs font-bold text-[#0F1B2E] dark:text-[#F3F6FC] truncate">
-                                    {n.title}
-                                  </span>
-                                  <span className="text-[10px] text-[#4E5E78] dark:text-[#9BB0CD] shrink-0 tabular-nums">
-                                    {formatTimeAgo(n.created_at)}
-                                  </span>
-                                </div>
-                                <p className="text-[11px] text-[#4E5E78] dark:text-slate-300 mt-0.5 leading-relaxed">
-                                  {n.message}
-                                </p>
-                              </div>
-                              {!n.is_read && (
-                                <span className="w-2 h-2 rounded-full bg-[#1D4ED8] dark:bg-[#60A5FA] shrink-0 mt-1.5" />
-                              )}
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+              <NotificationCenter />
 
               <span className="hidden md:inline-flex items-center gap-1.5 text-xs font-medium text-[#1D4ED8] dark:text-[#60A5FA] px-2 whitespace-nowrap">
                 <ShieldCheck className="w-3.5 h-3.5" />

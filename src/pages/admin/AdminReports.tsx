@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useClubData } from '../../hooks/useClubData';
-import { FISCAL_YEARS, formatBDT } from '../../utils/formatters';
-import { computeMemberFinancialSummary } from '../../utils/fineCalculator';
+import { FISCAL_YEARS, formatBDT, formatDate, getMonthName } from '../../utils/formatters';
+import { calculateDueBreakdown, computeMemberFinancialSummary } from '../../utils/fineCalculator';
 import { downloadCsv } from '../../utils/csvExport';
 import { MetricCard } from '../../components/MetricCard';
 import { PageTransition } from '../../components/ui/MotionPrimitives';
+import { PaymentReceiptModal } from '../../components/PaymentReceiptModal';
+import { MonthlyDue } from '../../types';
 import {
   BarChart3,
   Download,
@@ -14,6 +16,7 @@ import {
   Banknote,
   AlertCircle,
   Users,
+  Receipt,
 } from 'lucide-react';
 
 export const AdminReports: React.FC = () => {
@@ -25,7 +28,10 @@ export const AdminReports: React.FC = () => {
     members,
   } = useClubData();
 
-  const [activeTab, setActiveTab] = useState<'monthly' | 'yearly' | 'members'>('monthly');
+  const [activeTab, setActiveTab] = useState<'monthly' | 'members' | 'custom'>('monthly');
+  const [customStartDate, setCustomStartDate] = useState<string>(() => `${new Date().getFullYear()}-01-01`);
+  const [customEndDate, setCustomEndDate] = useState<string>(() => new Date().toISOString().substring(0, 10));
+  const [receiptDue, setReceiptDue] = useState<MonthlyDue | null>(null);
 
   // Yearly aggregates anchored to ৳17,000/month club target via monthSummaries
   const totalYearTarget = monthSummaries.reduce((sum, m) => sum + m.target, 0);
@@ -54,6 +60,29 @@ export const AdminReports: React.FC = () => {
       })
       .sort((a, b) => b.paid - a.paid);
   }, [members, monthlyDues]);
+
+  // Custom Date Range real paid transactions
+  const customRangeTransactions = useMemo(() => {
+    return monthlyDues
+      .filter((d) => {
+        const total = Number(d.amount_paid || 0) + Number(d.fine_paid || 0);
+        if (total <= 0 || !d.paid_at) return false;
+        const iso = d.paid_at.substring(0, 10);
+        return (!customStartDate || iso >= customStartDate) && (!customEndDate || iso <= customEndDate);
+      })
+      .sort((a, b) => (b.paid_at || '').localeCompare(a.paid_at || ''));
+  }, [monthlyDues, customStartDate, customEndDate]);
+
+  const customRangeTotals = useMemo(() => {
+    return customRangeTransactions.reduce(
+      (acc, d) => ({
+        principal: acc.principal + Number(d.amount_paid || 0),
+        fine: acc.fine + Number(d.fine_paid || 0),
+        total: acc.total + Number(d.amount_paid || 0) + Number(d.fine_paid || 0),
+      }),
+      { principal: 0, fine: 0, total: 0 }
+    );
+  }, [customRangeTransactions]);
 
   // Export Yearly Report CSV
   const handleExportYearlyReport = () => {
@@ -122,6 +151,36 @@ export const AdminReports: React.FC = () => {
     ]);
 
     downloadCsv(`Bondhon_2017_Member_Contributions_${new Date().toISOString().substring(0, 10)}.csv`, headers, rows);
+  };
+
+  // Export Custom Date Range CSV
+  const handleExportCustomReport = () => {
+    const headers = [
+      'Payment Date',
+      'Receipt Number',
+      'Member Code',
+      'Member Name',
+      'Billing Cycle',
+      'Principal Paid (BDT)',
+      'Fine Paid (BDT)',
+      'Total Paid (BDT)',
+      'Method',
+    ];
+    const rows = customRangeTransactions.map((d) => {
+      const bd = calculateDueBreakdown(d, d.member?.shares_count);
+      return [
+        d.paid_at ? formatDate(d.paid_at) : '—',
+        d.receipt_number || d.id.slice(0, 12),
+        d.member?.member_code || '',
+        d.member?.full_name || '',
+        `${getMonthName(d.month)} ${d.year}`,
+        bd.principalPaid,
+        bd.finePaid,
+        bd.totalPaid,
+        d.payment_method || 'Ledger',
+      ];
+    });
+    downloadCsv(`Bondhon_2017_Transactions_${customStartDate}_to_${customEndDate}.csv`, headers, rows);
   };
 
   return (
@@ -194,7 +253,7 @@ export const AdminReports: React.FC = () => {
 
       {/* Report Tabs & CSV Action */}
       <div className="surface-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl">
-        <div className="flex items-center gap-1 p-1 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl self-start">
+        <div className="flex flex-wrap items-center gap-1 p-1 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl self-start">
           <button
             onClick={() => setActiveTab('monthly')}
             className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
@@ -215,6 +274,16 @@ export const AdminReports: React.FC = () => {
           >
             Member-Wise Rankings
           </button>
+          <button
+            onClick={() => setActiveTab('custom')}
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'custom'
+                ? 'bg-[#0F1B33] dark:bg-[#1D4ED8] text-white shadow-2xs'
+                : 'text-[#4E5E78] hover:text-[#0F1B2E] dark:hover:text-white'
+            }`}
+          >
+            Custom Date Range
+          </button>
         </div>
 
         <div className="flex items-center gap-2">
@@ -226,13 +295,21 @@ export const AdminReports: React.FC = () => {
               <Download className="w-3.5 h-3.5" />
               <span>Export Monthly Report CSV</span>
             </button>
-          ) : (
+          ) : activeTab === 'members' ? (
             <button
               onClick={handleExportMembersReport}
               className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl transition-colors shadow-2xs cursor-pointer whitespace-nowrap"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export Members Ranking CSV</span>
+            </button>
+          ) : (
+            <button
+              onClick={handleExportCustomReport}
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl transition-colors shadow-2xs cursor-pointer whitespace-nowrap"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Export Range CSV</span>
             </button>
           )}
         </div>
@@ -361,6 +438,121 @@ export const AdminReports: React.FC = () => {
           </div>
         </div>
       )}
+      {/* TAB 3: Custom Date Range Transactions */}
+      {activeTab === 'custom' && (
+        <div className="space-y-4">
+          <div className="surface-card p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="font-semibold text-[#0F1B2E] dark:text-slate-200">Paid Date Range:</span>
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className="px-3 py-1.5 rounded-xl bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] font-mono text-[#0F1B2E] dark:text-slate-100"
+              />
+              <span className="text-[#4E5E78]">to</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className="px-3 py-1.5 rounded-xl bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] font-mono text-[#0F1B2E] dark:text-slate-100"
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4 font-mono tabular-nums">
+              <span>
+                Entries: <strong className="text-[#0F1B2E] dark:text-white">{customRangeTransactions.length}</strong>
+              </span>
+              <span>
+                Dues: <strong className="text-[#0369A1] dark:text-[#38BDF8]">{formatBDT(customRangeTotals.principal)}</strong>
+              </span>
+              <span>
+                Fines: <strong className="text-[#92600A] dark:text-[#F0C56E]">{formatBDT(customRangeTotals.fine)}</strong>
+              </span>
+              <span>
+                Total: <strong className="text-[#1D4ED8] dark:text-[#60A5FA]">{formatBDT(customRangeTotals.total)}</strong>
+              </span>
+            </div>
+          </div>
+
+          <div className="surface-card rounded-2xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#EFF3F9] dark:bg-[#17243C] text-[#4E5E78] dark:text-slate-400 border-b border-[#DFE6F0] dark:border-[#233452]">
+                  <tr>
+                    <th className="py-3 px-4 font-semibold">Paid Date</th>
+                    <th className="py-3 px-4 font-semibold">Code</th>
+                    <th className="py-3 px-4 font-semibold">Member</th>
+                    <th className="py-3 px-4 font-semibold">Billing Cycle</th>
+                    <th className="py-3 px-4 font-semibold text-right">Principal Paid</th>
+                    <th className="py-3 px-4 font-semibold text-right">Fine Paid</th>
+                    <th className="py-3 px-4 font-semibold text-right">Total Paid</th>
+                    <th className="py-3 px-4 font-semibold text-right">Receipt</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#DFE6F0] dark:divide-[#233452]">
+                  {customRangeTransactions.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-10 text-center text-[#4E5E78]">
+                        No settled payments found inside the selected date range.
+                      </td>
+                    </tr>
+                  ) : (
+                    customRangeTransactions.map((d) => {
+                      const bd = calculateDueBreakdown(d, d.member?.shares_count);
+                      return (
+                        <tr
+                          key={d.id}
+                          className="hover:bg-[#EFF3F9]/65 dark:hover:bg-[#17243C]/65 transition-colors"
+                        >
+                          <td className="py-3 px-4 font-mono tabular-nums text-[#4E5E78] dark:text-slate-300">
+                            {d.paid_at ? formatDate(d.paid_at) : '—'}
+                          </td>
+                          <td className="py-3 px-4 font-mono font-bold text-[#0F1B2E] dark:text-slate-100">
+                            {d.member?.member_code}
+                          </td>
+                          <td className="py-3 px-4 font-semibold text-[#0F1B2E] dark:text-slate-100">
+                            <Link
+                              to={`/admin/members/${d.member_id}`}
+                              className="hover:text-[#1D4ED8] dark:hover:text-[#60A5FA]"
+                            >
+                              {d.member?.full_name}
+                            </Link>
+                          </td>
+                          <td className="py-3 px-4 text-[#4E5E78] dark:text-slate-300">
+                            {getMonthName(d.month)} {d.year}
+                          </td>
+                          <td className="py-3 px-4 text-right font-mono tabular-nums text-[#0F1B2E] dark:text-slate-200">
+                            {formatBDT(bd.principalPaid)}
+                          </td>
+                          <td className="py-3 px-4 text-right font-mono tabular-nums text-[#92600A] dark:text-[#F0C56E]">
+                            {bd.finePaid > 0 ? formatBDT(bd.finePaid) : '—'}
+                          </td>
+                          <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#0369A1] dark:text-[#38BDF8]">
+                            {formatBDT(bd.totalPaid)}
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <button
+                              type="button"
+                              onClick={() => setReceiptDue(d)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-[#0369A1] dark:text-[#38BDF8] bg-[#0369A1]/10 rounded-lg cursor-pointer"
+                            >
+                              <Receipt className="w-3 h-3" />
+                              <span>Receipt</span>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <PaymentReceiptModal due={receiptDue} onClose={() => setReceiptDue(null)} />
     </PageTransition>
   );
 };

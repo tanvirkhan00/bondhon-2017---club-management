@@ -26,6 +26,7 @@ import {
   Info,
 } from 'lucide-react';
 import crestImage from '../../assets/images/bondhon_club_crest_1793703027252.jpg';
+import { BirthdayCelebrationCard } from '../../components/BirthdayCelebrationCard';
 
 export const Home: React.FC = () => {
   const { publicMembers, publicClubHighlights } = useClubData();
@@ -54,9 +55,7 @@ export const Home: React.FC = () => {
 
   // Savings projection calculation based on 34 shares across 21 members
   const totalMembers = publicMembers.length || 21;
-  const totalShares = useMemo(() => {
-    return publicMembers.reduce((sum, m) => sum + (m.shares_count || 1), 0);
-  }, [publicMembers]);
+  const totalShares = publicClubHighlights.totalActiveShares || 34;
   const monthlyFeePerShare = 500;
   const monthlyTotal = (totalShares || 34) * monthlyFeePerShare;
   const projectedTotal = monthlyTotal * calcMonths;
@@ -210,6 +209,9 @@ export const Home: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* 1B. CELEBRATION BANNER (Only visible 2 days before through birthday date in BST) */}
+      <BirthdayCelebrationCard />
 
       {/* 2. LIVE FINANCIAL HIGHLIGHTS & TOP FINE CONTRIBUTOR */}
       <RevealSection className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
@@ -429,9 +431,8 @@ export const Home: React.FC = () => {
                 <h3 className="font-bold text-[#0F1B33] dark:text-white text-base truncate group-hover:text-[#1D4ED8] dark:group-hover:text-[#60A5FA] transition-colors">
                   {officer.full_name}
                 </h3>
-                <p className="text-xs text-[#4E5E78] dark:text-slate-400 font-mono tabular-nums">
-                  সঞ্চয়: {formatBDT((officer.shares_count || 1) * 500)}/মাস
-                  {(officer.shares_count || 1) > 1 ? ` · ${officer.shares_count}টি নাম` : ''}
+                <p className="text-xs text-[#4E5E78] dark:text-slate-400">
+                  কার্যনির্বাহী পরিষদ · সক্রিয় সদস্য
                 </p>
               </div>
             </div>

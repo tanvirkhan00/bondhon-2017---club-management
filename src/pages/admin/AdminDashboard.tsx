@@ -2,12 +2,13 @@ import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useClubData } from '../../hooks/useClubData';
 import { useAuth } from '../../hooks/useAuth';
-import { BankDeposit, BankEntryType, ClubExpense, MonthlyDue } from '../../types';
+import { AnnouncementCategory, BankDeposit, BankEntryType, ClubExpense, MonthlyDue } from '../../types';
 import { FISCAL_YEARS, formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/formatters';
-import { calculateDueBreakdown, parseLocalDate } from '../../utils/fineCalculator';
+import { calculateDueBreakdown, computeMemberFinancialSummary, parseLocalDate } from '../../utils/fineCalculator';
 import { useLiveLocalGreeting } from '../../hooks/useLocalTimeZone';
 import { MetricCard } from '../../components/MetricCard';
 import { DashboardClock } from '../../components/DashboardClock';
+import { Modal } from '../../components/ui/Modal';
 import {
   CollectionTrendStudio,
   PeriodStatusDonut,
@@ -31,6 +32,9 @@ import {
   ChevronDown,
   ChevronUp,
   Search,
+  Megaphone,
+  Send,
+  TrendingUp,
 } from 'lucide-react';
 import { RecordPaymentModal } from '../../components/RecordPaymentModal';
 import { BankEntryModal } from '../../components/BankEntryModal';
@@ -63,6 +67,10 @@ export const AdminDashboard: React.FC = () => {
     bankDepositProgress,
     deleteBankDeposit,
     deleteClubExpense,
+    announcements,
+    publishAnnouncement,
+    deleteAnnouncement,
+    clubMonthlyTarget,
   } = useClubData();
 
   const greetingInfo = useLiveLocalGreeting();
@@ -87,6 +95,21 @@ export const AdminDashboard: React.FC = () => {
   const [showCollectionBreakdown, setShowCollectionBreakdown] = useState(false);
   const [activityTab, setActivityTab] = useState<'payments' | 'treasury'>('payments');
   const [pendingSearch, setPendingSearch] = useState('');
+
+  // Date Range / Period Analytics Filter
+  type AnalyticsPreset = 'month' | '6m' | 'year' | 'all' | 'custom';
+  const [analyticsPreset, setAnalyticsPreset] = useState<AnalyticsPreset>('month');
+  const [customStartDate, setCustomStartDate] = useState<string>(() => `${new Date().getFullYear()}-01-01`);
+  const [customEndDate, setCustomEndDate] = useState<string>(() => new Date().toISOString().substring(0, 10));
+
+  // Admin Announcements Publish Modal State
+  const [announcementModalOpen, setAnnouncementModalOpen] = useState(false);
+  const [annTitle, setAnnTitle] = useState('');
+  const [annBody, setAnnBody] = useState('');
+  const [annCategory, setAnnCategory] = useState<AnnouncementCategory>('general');
+  const [annSaving, setAnnSaving] = useState(false);
+  const [annFeedback, setAnnFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [deletingAnnId, setDeletingAnnId] = useState<string | null>(null);
 
   // Yearly cumulative member collections
   const yearlyMemberCollections = useMemo(() => {
@@ -116,6 +139,158 @@ export const AdminDashboard: React.FC = () => {
     });
     return totals;
   }, [monthlyDues, selectedYear]);
+
+  // Real cumulative all-time outstanding dues across all active members
+  const cumulativeOutstandingTotal = useMemo(() => {
+    const now = new Date();
+    return members
+      .filter((m) => m.status === 'active')
+      .reduce((sum, m) => {
+        const mDues = monthlyDues.filter((d) => d.member_id === m.id);
+        return sum + computeMemberFinancialSummary(m, mDues, now).totalOutstanding;
+      }, 0);
+  }, [members, monthlyDues]);
+
+  // Real database period analytics + prior-period growth comparison
+  const periodAnalytics = useMemo(() => {
+    const paidRows = monthlyDues.filter((d) => Number(d.amount_paid || 0) + Number(d.fine_paid || 0) > 0);
+    const sumDues = (rows: MonthlyDue[]) =>
+      rows.reduce((s, d) => s + Number(d.amount_paid || 0) + Number(d.fine_paid || 0), 0);
+
+    if (analyticsPreset === 'month') {
+      const currentRows = paidRows.filter((d) => d.year === selectedYear && d.month === selectedMonth);
+      const prevMonth = selectedMonth === 1 ? 12 : selectedMonth - 1;
+      const prevYear = selectedMonth === 1 ? selectedYear - 1 : selectedYear;
+      const prevRows = paidRows.filter((d) => d.year === prevYear && d.month === prevMonth);
+      const collected = sumDues(currentRows);
+      const prevCollected = sumDues(prevRows);
+      const deltaPct =
+        prevCollected > 0 ? Math.round(((collected - prevCollected) / prevCollected) * 100) : null;
+      const target = clubMonthlyTarget;
+      return {
+        label: `${getMonthName(selectedMonth)} ${selectedYear}`,
+        comparisonLabel: `vs ${getMonthName(prevMonth)} ${prevYear}`,
+        collected,
+        target,
+        rate: target > 0 ? Math.round((collected / target) * 100) : 0,
+        txCount: currentRows.length,
+        deltaPct,
+      };
+    }
+
+    if (analyticsPreset === '6m') {
+      const endKey = selectedYear * 12 + (selectedMonth - 1);
+      const startKey = endKey - 5;
+      const prevStartKey = startKey - 6;
+      const prevEndKey = startKey - 1;
+      const currentRows = paidRows.filter((d) => {
+        const k = d.year * 12 + (d.month - 1);
+        return k >= startKey && k <= endKey;
+      });
+      const prevRows = paidRows.filter((d) => {
+        const k = d.year * 12 + (d.month - 1);
+        return k >= prevStartKey && k <= prevEndKey;
+      });
+      const collected = sumDues(currentRows);
+      const prevCollected = sumDues(prevRows);
+      const deltaPct =
+        prevCollected > 0 ? Math.round(((collected - prevCollected) / prevCollected) * 100) : null;
+      const target = clubMonthlyTarget * 6;
+      return {
+        label: `Last 6 Months (ending ${getMonthName(selectedMonth)} ${selectedYear})`,
+        comparisonLabel: 'vs prior 6 months',
+        collected,
+        target,
+        rate: target > 0 ? Math.round((collected / target) * 100) : 0,
+        txCount: currentRows.length,
+        deltaPct,
+      };
+    }
+
+    if (analyticsPreset === 'year') {
+      const currentRows = paidRows.filter((d) => d.year === selectedYear);
+      const prevRows = paidRows.filter((d) => d.year === selectedYear - 1);
+      const collected = sumDues(currentRows);
+      const prevCollected = sumDues(prevRows);
+      const deltaPct =
+        prevCollected > 0 ? Math.round(((collected - prevCollected) / prevCollected) * 100) : null;
+      const target = monthSummaries.reduce((s, m) => s + m.target, 0);
+      return {
+        label: `Fiscal Year ${selectedYear}`,
+        comparisonLabel: `vs FY ${selectedYear - 1}`,
+        collected,
+        target,
+        rate: target > 0 ? Math.round((collected / target) * 100) : 0,
+        txCount: currentRows.length,
+        deltaPct,
+      };
+    }
+
+    if (analyticsPreset === 'custom') {
+      const currentRows = paidRows.filter((d) => {
+        if (!d.paid_at) return false;
+        const iso = d.paid_at.substring(0, 10);
+        return (!customStartDate || iso >= customStartDate) && (!customEndDate || iso <= customEndDate);
+      });
+      const collected = sumDues(currentRows);
+      return {
+        label: `${customStartDate || '...'} to ${customEndDate || '...'}`,
+        comparisonLabel: 'Custom paid date window',
+        collected,
+        target: 0,
+        rate: 100,
+        txCount: currentRows.length,
+        deltaPct: null as number | null,
+      };
+    }
+
+    // All Time
+    const collected = sumDues(paidRows);
+    return {
+      label: 'All-Time Club Ledger',
+      comparisonLabel: `${yearlyMemberCollections.length} fiscal years`,
+      collected,
+      target: 0,
+      rate: 100,
+      txCount: paidRows.length,
+      deltaPct: null as number | null,
+    };
+  }, [
+    analyticsPreset,
+    monthlyDues,
+    selectedMonth,
+    selectedYear,
+    clubMonthlyTarget,
+    monthSummaries,
+    customStartDate,
+    customEndDate,
+    yearlyMemberCollections.length,
+  ]);
+
+  const handlePublishAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (annSaving) return;
+    setAnnSaving(true);
+    setAnnFeedback(null);
+    const res = await publishAnnouncement({
+      title: annTitle,
+      body: annBody,
+      category: annCategory,
+    });
+    setAnnSaving(false);
+    if (res.success) {
+      setAnnTitle('');
+      setAnnBody('');
+      setAnnCategory('general');
+      setAnnFeedback({ type: 'success', text: 'Announcement published & sent to all members!' });
+      setTimeout(() => {
+        setAnnouncementModalOpen(false);
+        setAnnFeedback(null);
+      }, 900);
+    } else {
+      setAnnFeedback({ type: 'error', text: res.error || 'Failed to publish announcement.' });
+    }
+  };
 
   // Evaluate ALL active members eligible in (selectedYear, selectedMonth)
   const effectiveMonthDues = useMemo<MonthlyDue[]>(() => {
@@ -367,18 +542,32 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Primary Action */}
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedMemberForPayment(undefined);
-              setRecordPaymentModalOpen(true);
-            }}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-xs transition-colors shrink-0 cursor-pointer whitespace-nowrap w-full sm:w-auto"
-          >
-            <CreditCard className="w-3.5 h-3.5" />
-            <span>Record Payment</span>
-          </button>
+          {/* Primary Actions */}
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => {
+                setAnnFeedback(null);
+                setAnnouncementModalOpen(true);
+              }}
+              className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-bold text-[#F0C56E] bg-[#17243C] hover:bg-[#1E314A] border border-[#D6AC62]/35 rounded-xl transition-colors shrink-0 cursor-pointer whitespace-nowrap flex-1 sm:flex-initial"
+            >
+              <Megaphone className="w-3.5 h-3.5" />
+              <span>Publish Notice</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedMemberForPayment(undefined);
+                setRecordPaymentModalOpen(true);
+              }}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-xs transition-colors shrink-0 cursor-pointer whitespace-nowrap flex-1 sm:flex-initial"
+            >
+              <CreditCard className="w-3.5 h-3.5" />
+              <span>Record Payment</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -598,49 +787,127 @@ export const AdminDashboard: React.FC = () => {
         </div>
       </section>
 
-      {/* 3. MONTHLY PERIOD SNAPSHOT (4 Balanced KPI Cards) */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-[#0F1B2E] dark:text-[#F3F6FC]">
-            Period Snapshot — {getMonthName(selectedMonth)} {selectedYear}
-          </h2>
-          <Link
-            to="/admin/reports"
-            className="text-xs font-semibold text-[#1D4ED8] dark:text-[#60A5FA] hover:underline inline-flex items-center gap-1 whitespace-nowrap"
-          >
-            <span>Financial Reports</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
+      {/* 3. PERIOD ANALYTICS & SNAPSHOT (Interactive Date Range + Real Comparison KPIs) */}
+      <section className="space-y-3.5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-[#0F1B2E] dark:text-[#F3F6FC]">
+              Period Snapshot &amp; Financial Analytics — {periodAnalytics.label}
+            </h2>
+            <p className="text-[11px] text-[#4E5E78] dark:text-[#9BB0CD]">
+              Live database figures · Cumulative Active Member Dues Outstanding: <strong className="font-mono text-rose-400 tabular-nums">{formatBDT(cumulativeOutstandingTotal)}</strong>
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex flex-wrap items-center p-1 bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[11px] font-semibold">
+              {(
+                [
+                  { id: 'month', label: 'This Month' },
+                  { id: '6m', label: 'Last 6 Mos' },
+                  { id: 'year', label: `FY ${selectedYear}` },
+                  { id: 'all', label: 'All Time' },
+                  { id: 'custom', label: 'Custom Range' },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setAnalyticsPreset(opt.id)}
+                  className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
+                    analyticsPreset === opt.id
+                      ? 'bg-[#1D4ED8] text-white shadow-2xs'
+                      : 'text-[#4E5E78] dark:text-[#9BB0CD] hover:text-[#0F1B2E] dark:hover:text-white'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            <Link
+              to="/admin/reports"
+              className="text-xs font-semibold text-[#1D4ED8] dark:text-[#60A5FA] hover:underline inline-flex items-center gap-1 whitespace-nowrap ml-1"
+            >
+              <span>Reports</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
+
+        {analyticsPreset === 'custom' && (
+          <div className="surface-card p-3 rounded-xl flex flex-wrap items-center gap-3 text-xs">
+            <span className="font-semibold text-[#0F1B2E] dark:text-slate-200 flex items-center gap-1.5">
+              <TrendingUp className="w-3.5 h-3.5 text-[#38BDF8]" />
+              <span>Filter Paid Transactions By Date:</span>
+            </span>
+            <input
+              type="date"
+              value={customStartDate}
+              onChange={(e) => setCustomStartDate(e.target.value)}
+              className="px-2.5 py-1.5 rounded-lg bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] font-mono text-xs text-[#0F1B2E] dark:text-white"
+            />
+            <span className="text-[#4E5E78] dark:text-[#9BB0CD]">to</span>
+            <input
+              type="date"
+              value={customEndDate}
+              onChange={(e) => setCustomEndDate(e.target.value)}
+              className="px-2.5 py-1.5 rounded-lg bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] font-mono text-xs text-[#0F1B2E] dark:text-white"
+            />
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           <MetricCard
-            label="Monthly Collected"
-            value={formatBDT(stats.totalCollected)}
-            subLabel={`${stats.paidMembersCount} members paid in full`}
+            label={analyticsPreset === 'month' ? 'Monthly Collected' : 'Filtered Collected'}
+            value={formatBDT(periodAnalytics.collected)}
+            subLabel={
+              analyticsPreset === 'month'
+                ? `${stats.paidMembersCount} paid · ${periodAnalytics.comparisonLabel}`
+                : `${periodAnalytics.txCount} settled entries · ${periodAnalytics.comparisonLabel}`
+            }
             icon={Banknote}
             accent="sapphire"
-            trend={{
-              positive: stats.collectionRate >= 70,
-              text: `${stats.collectionRate}% rate`,
-            }}
+            trend={
+              periodAnalytics.deltaPct !== null
+                ? {
+                    positive: periodAnalytics.deltaPct >= 0,
+                    text: `${periodAnalytics.deltaPct >= 0 ? '+' : ''}${periodAnalytics.deltaPct}%`,
+                  }
+                : {
+                    positive: stats.collectionRate >= 70,
+                    text: `${stats.collectionRate}% rate`,
+                  }
+            }
           />
           <MetricCard
-            label="Monthly Target"
-            value={formatBDT(stats.monthlyTarget)}
-            subLabel={`${getMonthName(selectedMonth)} ${selectedYear}`}
+            label={analyticsPreset === 'month' ? 'Monthly Target' : periodAnalytics.target > 0 ? 'Period Target' : 'Avg Per Entry'}
+            value={
+              periodAnalytics.target > 0
+                ? formatBDT(periodAnalytics.target)
+                : formatBDT(periodAnalytics.txCount > 0 ? Math.round(periodAnalytics.collected / periodAnalytics.txCount) : 0)
+            }
+            subLabel={
+              periodAnalytics.target > 0
+                ? `${periodAnalytics.rate}% target attainment`
+                : `${periodAnalytics.txCount} payment transactions`
+            }
             icon={Target}
             accent="gold"
           />
           <MetricCard
-            label="Outstanding Dues"
-            value={formatBDT(stats.totalOutstanding)}
-            subLabel={`${stats.unpaidMembersCount} unpaid · ${stats.partialMembersCount} partial`}
+            label={analyticsPreset === 'month' ? 'Month Outstanding' : 'All-Time Outstanding'}
+            value={formatBDT(analyticsPreset === 'month' ? stats.totalOutstanding : cumulativeOutstandingTotal)}
+            subLabel={
+              analyticsPreset === 'month'
+                ? `${stats.unpaidMembersCount} unpaid · ${stats.partialMembersCount} partial (All-time: ${formatBDT(cumulativeOutstandingTotal)})`
+                : 'Real cumulative unpaid principal + late fines'
+            }
             icon={AlertCircle}
             accent="rose"
             trend={{
-              positive: stats.totalOutstanding === 0,
-              text: stats.totalOutstanding === 0 ? 'Settled' : 'Pending',
+              positive: (analyticsPreset === 'month' ? stats.totalOutstanding : cumulativeOutstandingTotal) === 0,
+              text: (analyticsPreset === 'month' ? stats.totalOutstanding : cumulativeOutstandingTotal) === 0 ? 'Settled' : 'Pending',
             }}
           />
           <MetricCard
@@ -660,6 +927,7 @@ export const AdminDashboard: React.FC = () => {
           monthSummaries={monthSummaries}
           monthlyFinesByMonth={monthlyFinesByMonth}
           yearlyCollections={yearlyMemberCollections}
+          periodLabel={periodAnalytics.label}
         />
 
         <PeriodStatusDonut
@@ -960,6 +1228,99 @@ export const AdminDashboard: React.FC = () => {
         </div>
       </section>
 
+      {/* 6. CLUB ANNOUNCEMENTS MANAGER */}
+      <section className="surface-card rounded-2xl overflow-hidden">
+        <div className="px-5 py-4 border-b border-[#DFE6F0] dark:border-[#233452] flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <Megaphone className="w-4 h-4 text-[#D6AC62]" />
+            <div>
+              <h3 className="text-sm font-bold text-[#0F1B2E] dark:text-[#F3F6FC]">
+                Club Announcements ({announcements.length})
+              </h3>
+              <p className="text-[11px] text-[#4E5E78] dark:text-[#9BB0CD]">
+                Broadcast official notices directly to all authenticated members&apos; notification bells
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setAnnFeedback(null);
+              setAnnouncementModalOpen(true);
+            }}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl transition-colors cursor-pointer whitespace-nowrap"
+          >
+            <PlusCircle className="w-3.5 h-3.5" />
+            <span>New Announcement</span>
+          </button>
+        </div>
+
+        {announcements.length === 0 ? (
+          <div className="py-8 px-5 text-center text-xs text-[#4E5E78] dark:text-[#9BB0CD]">
+            No club announcements published yet.
+          </div>
+        ) : (
+          <div className="divide-y divide-[#DFE6F0] dark:divide-[#233452]">
+            {announcements.slice(0, 5).map((ann) => (
+              <div
+                key={ann.id}
+                className="px-5 py-3.5 flex items-start justify-between gap-3 text-xs hover:bg-[#EFF3F9]/60 dark:hover:bg-[#17243C]/60 transition-colors"
+              >
+                <div className="min-w-0 flex-1 space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#D6AC62]">
+                      {ann.category}
+                    </span>
+                    <span className="text-[#4E5E78] dark:text-[#9BB0CD]">·</span>
+                    <h4 className="font-bold text-[#0F1B2E] dark:text-[#F3F6FC] truncate">
+                      {ann.title}
+                    </h4>
+                  </div>
+                  <p className="text-[11px] text-[#4E5E78] dark:text-[#9BB0CD] line-clamp-2">
+                    {ann.body}
+                  </p>
+                  <div className="text-[10px] font-mono text-[#4E5E78] dark:text-[#9BB0CD]">
+                    {ann.author_name} · {formatDate(ann.created_at)}
+                  </div>
+                </div>
+
+                {deletingAnnId === ann.id ? (
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        deleteAnnouncement(ann.id);
+                        setDeletingAnnId(null);
+                      }}
+                      className="px-2 py-0.5 bg-rose-600 text-white rounded text-[10px] font-bold cursor-pointer"
+                    >
+                      Delete
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeletingAnnId(null)}
+                      className="px-1.5 py-0.5 text-[#9BB0CD] text-[10px] cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setDeletingAnnId(ann.id)}
+                    className="p-1.5 text-[#4E5E78] dark:text-[#9BB0CD] hover:text-rose-500 rounded-lg hover:bg-rose-950/30 cursor-pointer shrink-0"
+                    title="Delete Announcement"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
       {/* Modals */}
       <BankEntryModal
         isOpen={bankModalOpen}
@@ -981,6 +1342,85 @@ export const AdminDashboard: React.FC = () => {
         initialMonth={selectedMonth}
         initialYear={selectedYear}
       />
+
+      <Modal
+        isOpen={announcementModalOpen}
+        onClose={() => setAnnouncementModalOpen(false)}
+        title="Publish Club Announcement"
+        subtitle="Broadcasts an instant notification to all club members"
+        icon={<Megaphone className="w-4 h-4" />}
+        maxWidthClass="max-w-lg"
+      >
+        <form onSubmit={handlePublishAnnouncement} className="space-y-4 text-xs">
+          {annFeedback && (
+            <div
+              className={`p-3 rounded-xl border font-semibold ${
+                annFeedback.type === 'success'
+                  ? 'bg-[#0369A1]/15 text-[#38BDF8] border-[#38BDF8]/30'
+                  : 'bg-rose-950/40 text-rose-300 border-rose-800/40'
+              }`}
+            >
+              {annFeedback.text}
+            </div>
+          )}
+
+          <div>
+            <label className="block font-semibold text-slate-200 mb-1.5">Category</label>
+            <select
+              value={annCategory}
+              onChange={(e) => setAnnCategory(e.target.value as AnnouncementCategory)}
+              className="w-full px-3 py-2 bg-[#17243C] border border-[#233452] rounded-xl text-xs text-[#F3F6FC] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8] cursor-pointer"
+            >
+              <option value="general">General Notice</option>
+              <option value="finance">Financial / Dues Notice</option>
+              <option value="event">Club Event / Gathering</option>
+              <option value="urgent">Urgent Alert</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-200 mb-1.5">Headline</label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Monthly Meeting & November Dues Schedule"
+              value={annTitle}
+              onChange={(e) => setAnnTitle(e.target.value)}
+              className="w-full px-3 py-2 bg-[#17243C] border border-[#233452] rounded-xl text-xs text-[#F3F6FC] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
+            />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-200 mb-1.5">Announcement Message</label>
+            <textarea
+              required
+              rows={4}
+              placeholder="Write the full announcement details for members..."
+              value={annBody}
+              onChange={(e) => setAnnBody(e.target.value)}
+              className="w-full px-3 py-2 bg-[#17243C] border border-[#233452] rounded-xl text-xs text-[#F3F6FC] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-[#233452]">
+            <button
+              type="button"
+              onClick={() => setAnnouncementModalOpen(false)}
+              className="px-4 py-2 font-semibold text-slate-300 hover:bg-[#17243C] rounded-xl cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={annSaving}
+              className="inline-flex items-center gap-1.5 px-4 py-2 font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl disabled:opacity-50 cursor-pointer"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>{annSaving ? 'Publishing...' : 'Publish to All Members'}</span>
+            </button>
+          </div>
+        </form>
+      </Modal>
     </PageTransition>
   );
 };

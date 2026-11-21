@@ -4,18 +4,20 @@ import { Member } from '../types';
 import { useLiveLocalGreeting } from '../hooks/useLocalTimeZone';
 import { formatBDT, formatDate } from '../utils/formatters';
 import { StatusBadge } from './StatusBadge';
-import { Calendar, CreditCard, Mail, Phone, User } from 'lucide-react';
+import { Calendar, CreditCard, Mail, Phone, User, Droplets, Cake, Lock } from 'lucide-react';
 
 interface MemberProfileGreetingHeroProps {
   member: Member;
   monthlyContribution: number;
   showEmail?: boolean;
+  showPrivateDob?: boolean;
 }
 
 export const MemberProfileGreetingHero: React.FC<MemberProfileGreetingHeroProps> = ({
   member,
   monthlyContribution,
   showEmail = false,
+  showPrivateDob = false,
 }) => {
   const [imgFailed, setImgFailed] = useState(false);
   const greetingInfo = useLiveLocalGreeting();
@@ -119,6 +121,22 @@ export const MemberProfileGreetingHero: React.FC<MemberProfileGreetingHeroProps>
               <span className="flex items-center gap-1.5">
                 <Mail className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
                 <span className="truncate max-w-[220px]">{member.email}</span>
+              </span>
+            )}
+            {member.blood_group && (
+              <span className="flex items-center gap-1.5 font-mono font-bold text-rose-600 dark:text-rose-400">
+                <Droplets className="w-3.5 h-3.5" />
+                <span>Blood: {member.blood_group}</span>
+              </span>
+            )}
+            {showPrivateDob && member.date_of_birth && (
+              <span
+                className="flex items-center gap-1.5 font-mono text-[#0F1B2E] dark:text-slate-200"
+                title="Private — visible only to you & admins"
+              >
+                <Cake className="w-3.5 h-3.5 text-[#D6AC62]" />
+                <span>DOB: {formatDate(member.date_of_birth)}</span>
+                <Lock className="w-3 h-3 text-[#4E5E78]" />
               </span>
             )}
             <span className="flex items-center gap-1.5">

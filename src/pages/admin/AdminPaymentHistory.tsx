@@ -21,9 +21,11 @@ import {
   Banknote,
   AlertTriangle,
   AlertCircle,
+  Receipt,
 } from 'lucide-react';
 import { RecordPaymentModal } from '../../components/RecordPaymentModal';
 import { EditPaymentModal } from '../../components/EditPaymentModal';
+import { PaymentReceiptModal } from '../../components/PaymentReceiptModal';
 
 export const AdminPaymentHistory: React.FC = () => {
   const { monthlyDues, members, selectedMonth, selectedYear, clubMonthlyTarget, deleteDueRecord } = useClubData();
@@ -36,6 +38,7 @@ export const AdminPaymentHistory: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [recordModalOpen, setRecordModalOpen] = useState(false);
   const [editDue, setEditDue] = useState<MonthlyDue | null>(null);
+  const [receiptDue, setReceiptDue] = useState<MonthlyDue | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const pageSize = 15;
 
@@ -414,6 +417,17 @@ export const AdminPaymentHistory: React.FC = () => {
 
                       <td className="py-3 px-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
+                          {bd.totalPaid > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setReceiptDue(due)}
+                              className="p-1.5 text-[#0369A1] dark:text-[#38BDF8] hover:bg-[#0369A1]/10 dark:hover:bg-[#38BDF8]/15 rounded-lg cursor-pointer"
+                              title="View / Download Receipt"
+                            >
+                              <Receipt className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+
                           <button
                             type="button"
                             onClick={() => setEditDue(due)}
@@ -502,6 +516,9 @@ export const AdminPaymentHistory: React.FC = () => {
 
       {/* Full Edit Payment Modal */}
       <EditPaymentModal due={editDue} onClose={() => setEditDue(null)} />
+
+      {/* Printable / PDF Official Payment Receipt */}
+      <PaymentReceiptModal due={receiptDue} onClose={() => setReceiptDue(null)} />
     </PageTransition>
   );
 };

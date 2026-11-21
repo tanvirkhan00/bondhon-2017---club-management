@@ -5,6 +5,7 @@ import { useClubData } from '../hooks/useClubData';
 import { User, History, LogOut, ArrowLeft, ShieldCheck } from 'lucide-react';
 import crestImage from '../assets/images/bondhon_club_crest_1793703027252.jpg';
 import { WelcomePreloader } from '../components/WelcomePreloader';
+import { NotificationCenter } from '../components/NotificationCenter';
 
 export const MemberLayout: React.FC = () => {
   const { user, profile, isAdmin, signOut } = useAuth();
@@ -61,6 +62,8 @@ export const MemberLayout: React.FC = () => {
                   {myMemberRecord?.member_code || 'Active'} · {myMemberRecord?.designation || 'Member'}
                 </span>
               </div>
+
+              <NotificationCenter />
 
               {isAdmin && (
                 <Link

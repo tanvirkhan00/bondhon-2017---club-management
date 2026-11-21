@@ -16,6 +16,7 @@ import { MemberAnalyticsChart } from '../../components/MemberAnalyticsChart';
 import { PageTransition } from '../../components/ui/MotionPrimitives';
 import { RecordPaymentModal } from '../../components/RecordPaymentModal';
 import { EditPaymentModal } from '../../components/EditPaymentModal';
+import { PaymentReceiptModal } from '../../components/PaymentReceiptModal';
 import {
   ArrowLeft,
   Edit2,
@@ -26,6 +27,7 @@ import {
   AlertCircle,
   AlertTriangle,
   ShieldCheck,
+  Receipt,
 } from 'lucide-react';
 import { downloadCsv } from '../../utils/csvExport';
 
@@ -37,6 +39,7 @@ export const AdminMemberProfile: React.FC = () => {
   const [yearFilter, setYearFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [editDue, setEditDue] = useState<MonthlyDue | null>(null);
+  const [receiptDue, setReceiptDue] = useState<MonthlyDue | null>(null);
   const [recordTarget, setRecordTarget] = useState<{ month?: number; year?: number } | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
@@ -178,6 +181,7 @@ export const AdminMemberProfile: React.FC = () => {
         member={member}
         monthlyContribution={summary.monthlyContribution}
         showEmail
+        showPrivateDob
       />
 
       {/* Real-Time Financial Summary Cards */}
@@ -348,6 +352,17 @@ export const AdminMemberProfile: React.FC = () => {
                         </button>
                       ) : (
                         <div className="flex items-center justify-end gap-1">
+                          {bd.totalPaid > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setReceiptDue(d)}
+                              className="p-1.5 text-[#0369A1] dark:text-[#38BDF8] hover:bg-[#0369A1]/10 dark:hover:bg-[#38BDF8]/15 rounded-lg cursor-pointer"
+                              title="View / Download Receipt"
+                            >
+                              <Receipt className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+
                           <button
                             type="button"
                             onClick={() => setEditDue(d)}
@@ -409,6 +424,13 @@ export const AdminMemberProfile: React.FC = () => {
 
       {/* Edit Payment Modal */}
       <EditPaymentModal due={editDue} onClose={() => setEditDue(null)} />
+
+      {/* Printable / PDF Official Payment Receipt */}
+      <PaymentReceiptModal
+        due={receiptDue}
+        member={member}
+        onClose={() => setReceiptDue(null)}
+      />
     </PageTransition>
   );
 };

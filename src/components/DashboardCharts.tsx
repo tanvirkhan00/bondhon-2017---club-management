@@ -3,6 +3,7 @@ import {
   ResponsiveContainer,
   ComposedChart,
   BarChart,
+  LineChart,
   Bar,
   Area,
   Line,
@@ -29,6 +30,7 @@ interface CollectionTrendStudioProps {
   monthSummaries: MonthSummary[];
   monthlyFinesByMonth: number[];
   yearlyCollections: YearlyCollectionItem[];
+  periodLabel?: string;
 }
 
 interface TooltipPayloadItem {
@@ -153,8 +155,8 @@ const YearlyCustomTooltip: React.FC<{
 };
 
 export const CollectionTrendStudio: React.FC<CollectionTrendStudioProps> = memo(
-  ({ selectedYear, monthSummaries, monthlyFinesByMonth, yearlyCollections }) => {
-    const [chartView, setChartView] = useState<'monthly' | 'yearly'>('monthly');
+  ({ selectedYear, monthSummaries, monthlyFinesByMonth, yearlyCollections, periodLabel }) => {
+    const [chartView, setChartView] = useState<'monthly' | 'trend' | 'yearly'>('monthly');
 
     const monthlyData = useMemo(
       () =>
@@ -211,12 +213,16 @@ export const CollectionTrendStudio: React.FC<CollectionTrendStudioProps> = memo(
           <div className="min-w-0">
             <h2 className="text-sm sm:text-base font-bold text-[#0F1B2E] dark:text-[#F3F6FC]">
               {chartView === 'monthly'
-                ? `Collection vs Target Analytics (${selectedYear})`
+                ? `Collection vs Target Comparison (${selectedYear})`
+                : chartView === 'trend'
+                ? `Monthly Payment Trend Line (${selectedYear})`
                 : 'Multi-Year Collection History'}
             </h2>
             <p className="text-xs text-[#4E5E78] dark:text-[#9BB0CD] mt-0.5">
               {chartView === 'monthly'
-                ? 'Monthly dues intake benchmarked against club collection horizon'
+                ? `Monthly dues intake benchmarked against club collection horizon${periodLabel ? ` · ${periodLabel}` : ''}`
+                : chartView === 'trend'
+                ? 'Continuous monthly trajectory of collections, targets, and late fines'
                 : 'All-time annual principal dues and late fine comparison across fiscal years'}
             </p>
           </div>
@@ -231,7 +237,18 @@ export const CollectionTrendStudio: React.FC<CollectionTrendStudioProps> = memo(
                   : 'text-[#4E5E78] dark:text-[#9BB0CD] hover:text-[#0F1B2E] dark:hover:text-white'
               }`}
             >
-              Monthly ({selectedYear})
+              Bar ({selectedYear})
+            </button>
+            <button
+              type="button"
+              onClick={() => setChartView('trend')}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
+                chartView === 'trend'
+                  ? 'bg-white dark:bg-[#1D4ED8] text-[#0F1B2E] dark:text-white shadow-2xs'
+                  : 'text-[#4E5E78] dark:text-[#9BB0CD] hover:text-[#0F1B2E] dark:hover:text-white'
+              }`}
+            >
+              Trend Line
             </button>
             <button
               type="button"
@@ -249,7 +266,7 @@ export const CollectionTrendStudio: React.FC<CollectionTrendStudioProps> = memo(
 
         {/* Inline KPI Strip & Legend (Zero-Pill Unboxed Style) */}
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-3 text-xs">
-          {chartView === 'monthly' ? (
+          {chartView !== 'yearly' ? (
             <>
               <div className="flex flex-wrap items-center gap-x-5 gap-y-1 font-mono tabular-nums">
                 <div>
@@ -389,6 +406,58 @@ export const CollectionTrendStudio: React.FC<CollectionTrendStudioProps> = memo(
                   />
                 )}
               </ComposedChart>
+            </ResponsiveContainer>
+          ) : chartView === 'trend' ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <CartesianGrid stroke="var(--border-subtle)" strokeDasharray="3 3" vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  stroke="var(--text-secondary)"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  dy={4}
+                />
+                <YAxis
+                  stroke="var(--text-secondary)"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(val) => `৳${val >= 1000 ? `${Math.round(val / 1000)}k` : val}`}
+                />
+                <Tooltip
+                  cursor={{ stroke: '#1D4ED8', strokeWidth: 1, strokeDasharray: '3 3' }}
+                  content={<MonthlyCustomTooltip />}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="Target"
+                  stroke="#D6AC62"
+                  strokeWidth={2}
+                  strokeDasharray="5 4"
+                  dot={false}
+                  activeDot={{ r: 4, fill: '#D6AC62', strokeWidth: 0 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="Collected"
+                  stroke="#38BDF8"
+                  strokeWidth={3}
+                  dot={{ r: 3.5, fill: '#1D4ED8', stroke: '#38BDF8', strokeWidth: 2 }}
+                  activeDot={{ r: 6, fill: '#38BDF8', stroke: '#0F1B2E', strokeWidth: 2 }}
+                />
+                {annualSummary.hasFines && (
+                  <Line
+                    type="monotone"
+                    dataKey="Fines"
+                    stroke="#F59E0B"
+                    strokeWidth={2}
+                    dot={{ r: 3, fill: '#F59E0B', strokeWidth: 0 }}
+                    activeDot={{ r: 5, fill: '#F0C56E' }}
+                  />
+                )}
+              </LineChart>
             </ResponsiveContainer>
           ) : yearlyData.length === 0 ? (
             <div className="h-full flex items-center justify-center text-xs text-[#4E5E78] dark:text-[#9BB0CD]">

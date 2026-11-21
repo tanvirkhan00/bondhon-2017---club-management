@@ -21,6 +21,8 @@ export interface Member {
   designation?: string | null;
   shares_count: number; // 1, 2, or 3 shares (names)
   join_date: string;
+  date_of_birth?: string | null; // STRICTLY PRIVATE (Own profile + Admin only)
+  blood_group?: string | null; // Public to authenticated members
   status: MemberStatus;
   email?: string | null;
   auth_user_id?: string | null;
@@ -29,16 +31,41 @@ export interface Member {
   updated_at?: string;
 }
 
-// Public Member Directory interface - Strict Privacy (No phone, join_date, private balance)
+// Public Member Directory interface - Strict Privacy
+// Never exposes father_name, shares/fee, DOB, phone, join_date, or private balance
 export interface PublicMember {
   id: string;
   member_code: string;
   full_name: string;
-  father_name?: string | null;
   profile_image_url?: string | null;
   designation?: string | null;
-  shares_count?: number;
   status: 'active';
+}
+
+// Authenticated Club Member Directory (exposes blood_group & birthday month/day ONLY — NEVER birth year/DOB/father/fee)
+export interface AuthenticatedMemberDirectoryItem {
+  id: string;
+  member_code: string;
+  full_name: string;
+  profile_image_url?: string | null;
+  designation?: string | null;
+  status: 'active' | 'inactive';
+  blood_group?: string | null;
+  birth_month?: number | null;
+  birth_day?: number | null;
+}
+
+// Safe Upcoming Birthday Highlight (NEVER contains date_of_birth or birth year)
+export interface BirthdayHighlight {
+  id: string;
+  member_code: string;
+  full_name: string;
+  profile_image_url?: string | null;
+  designation?: string | null;
+  birth_month: number; // 1 - 12
+  birth_day: number; // 1 - 31
+  days_until: number; // 0 = today, 1 = tomorrow, 2 = day after
+  target_year?: number;
 }
 
 export type DueStatus = 'paid' | 'unpaid' | 'partial';
@@ -55,6 +82,9 @@ export interface MonthlyDue {
   fine_paid_at?: string | null;
   fine_waived?: boolean;
   notes?: string | null;
+  receipt_number?: string | null;
+  payment_method?: string | null;
+  recorded_by_name?: string | null;
   status: DueStatus;
   paid_at?: string | null;
   recorded_by?: string | null;
@@ -106,22 +136,45 @@ export interface MonthSummary {
   collectionRate: number;
 }
 
+export type AnnouncementCategory = 'general' | 'finance' | 'event' | 'urgent';
+
+export interface ClubAnnouncement {
+  id: string;
+  title: string;
+  body: string;
+  category: AnnouncementCategory;
+  created_by?: string | null;
+  author_name: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export type NotificationAudience = 'admin' | 'member' | 'all_members';
+
 export type NotificationEventType =
   | 'member_login'
   | 'member_logout'
   | 'password_changed'
   | 'profile_updated'
-  | 'payment_notice';
+  | 'payment_notice'
+  | 'payment_recorded'
+  | 'announcement'
+  | 'birthday_reminder';
 
 export interface ClubNotification {
   id: string;
   actor_user_id?: string | null;
   member_id?: string | null;
+  target_member_id?: string | null;
+  announcement_id?: string | null;
   member_code?: string | null;
   member_name: string;
+  audience?: NotificationAudience;
   event_type: NotificationEventType;
   title: string;
   message: string;
+  metadata?: Record<string, unknown>;
+  dedup_key?: string | null;
   is_read: boolean;
   created_at: string;
 }
@@ -182,6 +235,7 @@ export interface PublicClubHighlights {
   totalPrincipalCollected: number;
   totalFineCollected: number;
   totalCollected: number;
+  totalActiveShares?: number;
   totalBankDeposited: number;
   totalBankInterest: number;
   totalBankCharges: number;

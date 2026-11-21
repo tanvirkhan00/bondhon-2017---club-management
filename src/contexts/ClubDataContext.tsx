@@ -1,7 +1,9 @@
-import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import {
   Member,
   PublicMember,
+  AuthenticatedMemberDirectoryItem,
+  BirthdayHighlight,
   MonthlyDue,
   ClubStats,
   MonthSummary,
@@ -9,6 +11,9 @@ import {
   DueStatus,
   ClubNotification,
   NotificationEventType,
+  NotificationAudience,
+  ClubAnnouncement,
+  AnnouncementCategory,
   BankDeposit,
   BankEntryType,
   ClubExpense,
@@ -24,32 +29,46 @@ import {
   INITIAL_MONTHLY_DUES,
 } from '../lib/mockData';
 import { useAuth } from './AuthContext';
-import { MONTH_NAMES, SHORT_MONTH_NAMES } from '../utils/formatters';
+import { MONTH_NAMES, SHORT_MONTH_NAMES, formatBDT, getMonthName } from '../utils/formatters';
 import {
   buildMemberCompleteLedger,
   computeMemberFinancialSummary,
   getBillingPeriodFromPaymentDate,
   MonthlyDueWithMeta,
 } from '../utils/fineCalculator';
+import {
+  BLOOD_GROUPS,
+  extractMonthDayFromDob,
+  formatBirthdayMonthDay,
+  getUpcomingBirthdayHighlightsFromList,
+} from '../utils/birthdayUtils';
 
 interface LogActivityParams {
   actorUserId?: string | null;
   memberId?: string | null;
+  targetMemberId?: string | null;
+  announcementId?: string | null;
   memberCode?: string | null;
   memberName: string;
+  audience?: NotificationAudience;
   eventType: NotificationEventType;
   title: string;
   message: string;
+  metadata?: Record<string, unknown>;
+  dedupKey?: string | null;
 }
 
 interface ClubDataContextType {
   publicMembers: PublicMember[];
+  memberDirectory: AuthenticatedMemberDirectoryItem[];
+  upcomingBirthdayHighlights: BirthdayHighlight[];
   members: Member[];
   myMemberRecord: Member | null;
   myDues: MonthlyDueWithMeta[];
   myFinancialSummary: MemberFinancialSummary;
   monthlyDues: MonthlyDue[];
   notifications: ClubNotification[];
+  announcements: ClubAnnouncement[];
   unreadNotificationCount: number;
   bankDeposits: BankDeposit[];
   clubExpenses: ClubExpense[];
@@ -87,12 +106,23 @@ interface ClubDataContextType {
   // Member self-service helpers
   linkMyMemberAccount: (memberCode: string) => Promise<{ success: boolean; error?: string }>;
   updateMyContactPhone: (phone: string) => Promise<{ success: boolean; error?: string }>;
+  updateMyMemberProfile: (params: {
+    phone?: string;
+    date_of_birth?: string | null;
+    blood_group?: string | null;
+  }) => Promise<{ success: boolean; error?: string }>;
   logMemberActivity: (params: LogActivityParams) => Promise<void>;
 
-  // Admin notification actions
+  // Notification & Announcement actions
   markNotificationAsRead: (id: string) => Promise<void>;
   markAllNotificationsAsRead: () => Promise<void>;
   clearNotifications: () => Promise<void>;
+  publishAnnouncement: (params: {
+    title: string;
+    body: string;
+    category?: AnnouncementCategory;
+  }) => Promise<{ success: boolean; error?: string }>;
+  deleteAnnouncement: (id: string) => Promise<{ success: boolean; error?: string }>;
 
   // Admin member operations
   addMember: (memberData: Omit<Member, 'id' | 'created_at' | 'updated_at'>) => Promise<{ success: boolean; error?: string }>;
@@ -107,7 +137,7 @@ interface ClubDataContextType {
     amountPaid?: number,
     paidAt?: string,
     fineOptions?: { fineDue?: number; finePaid?: number; fineWaived?: boolean }
-  ) => Promise<{ success: boolean; error?: string }>;
+  ) => Promise<{ success: boolean; due?: MonthlyDue; error?: string }>;
   recordNewPayment: (params: {
     memberId: string;
     month: number;
@@ -118,8 +148,9 @@ interface ClubDataContextType {
     finePaid?: number;
     fineWaived?: boolean;
     paidAt?: string;
+    paymentMethod?: string;
     notes?: string;
-  }) => Promise<{ success: boolean; error?: string }>;
+  }) => Promise<{ success: boolean; due?: MonthlyDue; error?: string }>;
   updateDueRecord: (
     dueId: string,
     updates: {
@@ -205,11 +236,20 @@ const ClubDataContext = createContext<ClubDataContextType | undefined>(undefined
 
 const MEMBERS_STORAGE_KEY = 'bondhon_local_members_v5';
 const DUES_STORAGE_KEY = 'bondhon_local_dues_v5';
-const NOTIFICATIONS_STORAGE_KEY = 'bondhon_local_notifications_v1';
+const NOTIFICATIONS_STORAGE_KEY = 'bondhon_local_notifications_v2';
+const ANNOUNCEMENTS_STORAGE_KEY = 'bondhon_local_announcements_v1';
+const NOTIF_READS_STORAGE_KEY = 'bondhon_local_notif_reads_v1';
 const BANK_DEPOSITS_STORAGE_KEY = 'bondhon_local_bank_deposits_v1';
 const BANK_LOCAL_EXTRAS_KEY = 'bondhon_local_bank_extras_v1';
 const CLUB_EXPENSES_STORAGE_KEY = 'bondhon_local_club_expenses_v1';
 const PUBLIC_HIGHLIGHTS_CACHE_KEY = 'bondhon_public_highlights_v1';
+
+const buildReceiptNumber = (memberCode: string, month: number, year: number, suffix?: string) => {
+  const cleanCode = (memberCode || 'BND').replace(/[^A-Z0-9]/gi, '').replace(/^BND/i, '');
+  const period = `${year}${String(month).padStart(2, '0')}`;
+  const tail = (suffix || Math.random().toString(36).slice(2, 6)).slice(-4).toUpperCase();
+  return `BND-RCT-${period}-${cleanCode || '000'}-${tail}`;
+};
 
 const DEFAULT_PUBLIC_HIGHLIGHTS: PublicClubHighlights = {
   totalPrincipalCollected: 0,
@@ -269,6 +309,9 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return INITIAL_PUBLIC_MEMBERS;
   });
 
+  const [rpcDirectory, setRpcDirectory] = useState<AuthenticatedMemberDirectoryItem[] | null>(null);
+  const [rpcBirthdayHighlights, setRpcBirthdayHighlights] = useState<BirthdayHighlight[] | null>(null);
+
   const [notifications, setNotifications] = useState<ClubNotification[]>(() => {
     const saved = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
     if (saved) {
@@ -278,6 +321,28 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       } catch { /* ignore */ }
     }
     return [];
+  });
+
+  const [announcements, setAnnouncements] = useState<ClubAnnouncement[]>(() => {
+    const saved = localStorage.getItem(ANNOUNCEMENTS_STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch { /* ignore */ }
+    }
+    return [];
+  });
+
+  const [readNotifIds, setReadNotifIds] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem(NOTIF_READS_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return new Set(parsed);
+      }
+    } catch { /* ignore */ }
+    return new Set();
   });
 
   const [bankDeposits, setBankDeposits] = useState<BankDeposit[]>(() => {
@@ -347,12 +412,39 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Tracks whether Supabase actually has seeded rows in `members`
   const [supabaseSyncedMembers, setSupabaseSyncedMembers] = useState<boolean>(false);
   const [supabaseNotificationsAvailable, setSupabaseNotificationsAvailable] = useState<boolean>(false);
+  const [supabaseAnnouncementsAvailable, setSupabaseAnnouncementsAvailable] = useState<boolean>(false);
   const [supabaseBankAvailable, setSupabaseBankAvailable] = useState<boolean>(false);
   const [supabaseExpensesAvailable, setSupabaseExpensesAvailable] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const birthdaySyncedSessionRef = useRef<string | null>(null);
 
   const isConfigured = isSupabaseConfigured();
+
+  const readStorageKey = `${NOTIF_READS_STORAGE_KEY}_${user?.id || 'guest'}`;
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(readStorageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setReadNotifIds(new Set(parsed));
+          return;
+        }
+      }
+    } catch { /* ignore */ }
+    setReadNotifIds(new Set());
+  }, [readStorageKey]);
+
+  const persistReadIds = useCallback(
+    (nextSet: Set<string>) => {
+      try {
+        localStorage.setItem(readStorageKey, JSON.stringify(Array.from(nextSet)));
+      } catch { /* ignore */ }
+    },
+    [readStorageKey]
+  );
 
   // Always keep local backup synced when not using live populated Supabase tables
   useEffect(() => {
@@ -374,6 +466,12 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [notifications, supabaseNotificationsAvailable]);
 
   useEffect(() => {
+    if (!supabaseAnnouncementsAvailable) {
+      localStorage.setItem(ANNOUNCEMENTS_STORAGE_KEY, JSON.stringify(announcements));
+    }
+  }, [announcements, supabaseAnnouncementsAvailable]);
+
+  useEffect(() => {
     if (!supabaseBankAvailable) {
       localStorage.setItem(BANK_DEPOSITS_STORAGE_KEY, JSON.stringify(bankDeposits));
     }
@@ -389,7 +487,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem('bondhon_default_due_amount', String(defaultDueAmount));
   }, [defaultDueAmount]);
 
-  // Keep publicMembers derived from active members unless populated directly from Supabase view
+  // Keep publicMembers derived from active members cleanly WITHOUT father_name or shares_count
   useEffect(() => {
     if (!supabaseSyncedMembers) {
       const activePubs: PublicMember[] = members
@@ -398,8 +496,6 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           id: m.id,
           member_code: m.member_code,
           full_name: m.full_name,
-          father_name: m.father_name,
-          shares_count: m.shares_count,
           profile_image_url: m.profile_image_url,
           designation: m.designation,
           status: 'active',
@@ -410,25 +506,53 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const refreshNotifications = useCallback(async () => {
     const client = getSupabaseClient();
-    if (!client || !isAdmin) return;
+    if (!client || !user) return;
 
     try {
-      const { data, error: notifErr } = await client
-        .from('notifications')
+      const [{ data: notifData, error: notifErr }, { data: readsData }] = await Promise.all([
+        client
+          .from('notifications')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(80),
+        client
+          .from('notification_reads')
+          .select('notification_id')
+          .eq('user_id', user.id),
+      ]);
+
+      if (!notifErr && Array.isArray(notifData)) {
+        setSupabaseNotificationsAvailable(true);
+        setNotifications(notifData as ClubNotification[]);
+      }
+
+      if (Array.isArray(readsData)) {
+        const dbReads = new Set<string>(
+          readsData.map((r: { notification_id: string }) => r.notification_id)
+        );
+        setReadNotifIds((prev) => {
+          const merged = new Set([...prev, ...dbReads]);
+          persistReadIds(merged);
+          return merged;
+        });
+      }
+
+      const { data: annData, error: annErr } = await client
+        .from('announcements')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(40);
 
-      if (!notifErr && Array.isArray(data)) {
-        setSupabaseNotificationsAvailable(true);
-        setNotifications(data as ClubNotification[]);
+      if (!annErr && Array.isArray(annData)) {
+        setSupabaseAnnouncementsAvailable(true);
+        setAnnouncements(annData as ClubAnnouncement[]);
       }
     } catch {
       // keep local fallback
     }
-  }, [isAdmin]);
+  }, [user, persistReadIds]);
 
-  // Load from Supabase (handles both Admin full access & Member single-row RLS access)
+  // Load from Supabase (handles Public, Authenticated Member RLS, and Full Admin access)
   const loadSupabaseData = useCallback(async () => {
     const client = getSupabaseClient();
     if (!client) {
@@ -440,21 +564,58 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setError(null);
 
     try {
-      // 1. Fetch public directory view (all 21 active members)
+      // 1. Fetch public directory view (strictly stripped of father_name, shares/fees, DOB, phone)
       const { data: pubData, error: pubErr } = await client
         .from('public_members')
-        .select('*')
+        .select('id, member_code, full_name, profile_image_url, designation, status')
         .order('member_code', { ascending: true });
 
-      const resolvedPubs = (!pubErr && Array.isArray(pubData) && pubData.length > 0)
-        ? (pubData as PublicMember[])
-        : INITIAL_PUBLIC_MEMBERS;
+      const resolvedPubs: PublicMember[] =
+        !pubErr && Array.isArray(pubData) && pubData.length > 0
+          ? (pubData as PublicMember[]).map((pm) => ({
+              id: pm.id,
+              member_code: pm.member_code,
+              full_name: pm.full_name,
+              profile_image_url: pm.profile_image_url || null,
+              designation: pm.designation || 'Member',
+              status: 'active',
+            }))
+          : INITIAL_PUBLIC_MEMBERS;
 
       if (!pubErr && Array.isArray(pubData) && pubData.length > 0) {
         setPublicMembers(resolvedPubs);
       }
 
-      // 2. Fetch full members table (Admin gets all rows; Member gets their own row via RLS)
+      // 1B. Fetch upcoming birthday highlights (-2..0 days in Asia/Dhaka, zero birth year)
+      try {
+        const { data: bdayData, error: bdayErr } = await client.rpc(
+          'get_upcoming_birthday_highlights',
+          { p_days_ahead: 2 }
+        );
+        if (!bdayErr && Array.isArray(bdayData)) {
+          setRpcBirthdayHighlights(bdayData as BirthdayHighlight[]);
+        }
+      } catch {
+        // RPC may not be migrated yet; client fallback handles it safely
+      }
+
+      // 1C. If authenticated, fetch safe Club Member Directory (blood_group + birth month/day ONLY)
+      if (user) {
+        try {
+          const { data: dirData, error: dirErr } = await client.rpc(
+            'get_authenticated_member_directory'
+          );
+          if (!dirErr && Array.isArray(dirData) && dirData.length > 0) {
+            setRpcDirectory(dirData as AuthenticatedMemberDirectoryItem[]);
+          }
+        } catch {
+          // RPC not deployed yet
+        }
+      } else {
+        setRpcDirectory(null);
+      }
+
+      // 2. Fetch full members table (Admin gets all rows; Member gets ONLY their own row via RLS)
       const { data: membersData, error: membersErr } = await client
         .from('members')
         .select('*')
@@ -464,33 +625,12 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         if (membersData.length > 1 || isAdmin) {
           setMembers(membersData as Member[]);
         } else {
-          // Non-admin member: preserve all 21 directory members and overlay their own private DB row
-          const ownRow = membersData[0] as Member;
-          setMembers(() =>
-            resolvedPubs.map(pm => {
-              if (pm.id === ownRow.id || pm.member_code === ownRow.member_code) {
-                return ownRow;
-              }
-              const fallback = INITIAL_MEMBERS.find(im => im.id === pm.id || im.member_code === pm.member_code);
-              return {
-                id: pm.id,
-                member_code: pm.member_code,
-                full_name: pm.full_name,
-                father_name: pm.father_name || fallback?.father_name || null,
-                phone: fallback?.phone || null,
-                profile_image_url: pm.profile_image_url || fallback?.profile_image_url || null,
-                designation: pm.designation || fallback?.designation || 'Member',
-                shares_count: pm.shares_count || fallback?.shares_count || 1,
-                join_date: fallback?.join_date || '2024-04-01',
-                status: 'active',
-                monthly_contribution: ((pm.shares_count || fallback?.shares_count || 1) * 500),
-              };
-            })
-          );
+          // Non-admin member: store ONLY their own full DB row (never backfill peer private data!)
+          setMembers([membersData[0] as Member]);
         }
         setSupabaseSyncedMembers(true);
 
-        // 3. Fetch monthly dues from Supabase
+        // 3. Fetch monthly dues from Supabase (RLS restricts member to own dues only)
         const { data: duesData, error: duesErr } = await client
           .from('monthly_dues')
           .select('*')
@@ -534,6 +674,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             totalPrincipalCollected: Number(raw.totalPrincipalCollected || 0),
             totalFineCollected: Number(raw.totalFineCollected || 0),
             totalCollected: totalCollectedVal,
+            totalActiveShares: raw.totalActiveShares !== undefined ? Number(raw.totalActiveShares) : undefined,
             totalBankDeposited: totalDepositedVal,
             totalBankInterest: totalInterestVal,
             totalBankCharges: totalChargesVal,
@@ -560,10 +701,13 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         // RPC may not be deployed yet; fallback gracefully
       }
 
-      // 5. Fetch notifications, Sonali Bank ledger & Club Expenses if admin
-      if (isAdmin) {
+      // 5. Fetch notifications & announcements for ANY authenticated user (Admin & Member)
+      if (user) {
         await refreshNotifications();
+      }
 
+      // 6. Fetch Sonali Bank ledger & Club Expenses if admin
+      if (isAdmin) {
         try {
           const { data: bankData, error: bankErr } = await client
             .from('bank_deposits')
@@ -623,7 +767,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } finally {
       setIsLoading(false);
     }
-  }, [isAdmin, refreshNotifications]);
+  }, [isAdmin, user, refreshNotifications]);
 
   useEffect(() => {
     if (isConfigured) {
@@ -633,13 +777,13 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [isConfigured, user?.id, loadSupabaseData]);
 
-  // Subscribe to Realtime notifications + 10s poll + focus refresh when Admin is active
+  // Subscribe to Realtime notifications & announcements + 15s poll + focus refresh when logged in
   useEffect(() => {
     const client = getSupabaseClient();
-    if (!isAdmin || !isConfigured || !client) return;
+    if (!user || !isConfigured || !client) return;
 
     const channel = client
-      .channel('admin-notifications-live')
+      .channel(`portal-notifications-${user.id}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'notifications' },
@@ -648,15 +792,22 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           setSupabaseNotificationsAvailable(true);
           setNotifications(prev => {
             if (prev.some(n => n.id === incoming.id)) return prev;
-            return [incoming, ...prev].slice(0, 50);
+            return [incoming, ...prev].slice(0, 80);
           });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'announcements' },
+        () => {
+          refreshNotifications();
         }
       )
       .subscribe();
 
     const timer = setInterval(() => {
       refreshNotifications();
-    }, 10000);
+    }, 15000);
 
     const handleFocus = () => {
       refreshNotifications();
@@ -668,7 +819,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       window.removeEventListener('focus', handleFocus);
       client.removeChannel(channel);
     };
-  }, [isAdmin, isConfigured, refreshNotifications]);
+  }, [user, isConfigured, refreshNotifications]);
 
   // Combine dues with member details for convenience
   const enrichedDues = useMemo(() => {
@@ -756,24 +907,141 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return { success: true };
   };
 
+  // Authenticated Safe Directory (strips private DOB/birth year/father/phone/fees)
+  const memberDirectory = useMemo<AuthenticatedMemberDirectoryItem[]>(() => {
+    if (rpcDirectory && rpcDirectory.length > 0) {
+      return rpcDirectory;
+    }
+    if (isAdmin || !supabaseSyncedMembers) {
+      return members
+        .filter((m) => m.status === 'active')
+        .map((m) => {
+          const md = extractMonthDayFromDob(m.date_of_birth);
+          return {
+            id: m.id,
+            member_code: m.member_code,
+            full_name: m.full_name,
+            profile_image_url: m.profile_image_url || null,
+            designation: m.designation || 'Member',
+            status: m.status,
+            blood_group: m.blood_group || null,
+            birth_month: md?.month ?? null,
+            birth_day: md?.day ?? null,
+          };
+        });
+    }
+    return publicMembers.map((pm) => {
+      const md =
+        myMemberRecord && myMemberRecord.id === pm.id
+          ? extractMonthDayFromDob(myMemberRecord.date_of_birth)
+          : null;
+      return {
+        id: pm.id,
+        member_code: pm.member_code,
+        full_name: pm.full_name,
+        profile_image_url: pm.profile_image_url || null,
+        designation: pm.designation || 'Member',
+        status: pm.status,
+        blood_group: myMemberRecord && myMemberRecord.id === pm.id ? myMemberRecord.blood_group || null : null,
+        birth_month: md?.month ?? null,
+        birth_day: md?.day ?? null,
+      };
+    });
+  }, [rpcDirectory, isAdmin, supabaseSyncedMembers, members, publicMembers, myMemberRecord]);
+
+  // Upcoming Birthday Highlights (-2 .. 0 days in Asia/Dhaka, ZERO birth year exposed)
+  const upcomingBirthdayHighlights = useMemo<BirthdayHighlight[]>(() => {
+    if (rpcBirthdayHighlights !== null) {
+      return rpcBirthdayHighlights;
+    }
+    if (isAdmin || !supabaseSyncedMembers) {
+      return getUpcomingBirthdayHighlightsFromList(members, 2);
+    }
+    return getUpcomingBirthdayHighlightsFromList(memberDirectory, 2);
+  }, [rpcBirthdayHighlights, isAdmin, supabaseSyncedMembers, members, memberDirectory]);
+
   // Update member's own phone number & notify admin
   const updateMyContactPhone = async (phone: string) => {
+    return updateMyMemberProfile({ phone });
+  };
+
+  // Update member's own phone, private date_of_birth, and blood_group
+  const updateMyMemberProfile = async (params: {
+    phone?: string;
+    date_of_birth?: string | null;
+    blood_group?: string | null;
+  }) => {
     if (!user || !myMemberRecord) {
-      return { success: false, error: 'সদস্য প্রোফাইল পাওয়া যায়নি।' };
+      return { success: false, error: 'Member profile not found.' };
     }
 
-    const cleanPhone = phone.trim();
+    const cleanPhone = params.phone !== undefined ? params.phone.trim() : myMemberRecord.phone || '';
+    const rawBlood =
+      params.blood_group !== undefined
+        ? (params.blood_group || '').trim().toUpperCase()
+        : myMemberRecord.blood_group || '';
+    const cleanBlood = rawBlood || null;
+
+    if (cleanBlood && !BLOOD_GROUPS.includes(cleanBlood as (typeof BLOOD_GROUPS)[number])) {
+      return { success: false, error: 'Invalid blood group selected.' };
+    }
+
+    const clearDob = params.date_of_birth === null || params.date_of_birth === '';
+    const nextDob =
+      params.date_of_birth === undefined
+        ? myMemberRecord.date_of_birth || null
+        : clearDob
+        ? null
+        : params.date_of_birth;
+
     const client = getSupabaseClient();
-    if (client) {
+    if (client && supabaseSyncedMembers) {
       try {
-        await client.rpc('update_my_member_phone', { p_phone: cleanPhone });
+        const { error: rpcErr } = await client.rpc('update_my_member_profile', {
+          p_phone: cleanPhone || null,
+          p_date_of_birth: nextDob,
+          p_blood_group: cleanBlood,
+          p_clear_dob: clearDob,
+        });
+        if (rpcErr) {
+          // Fallback to legacy phone RPC if new migration is pending
+          if (cleanPhone) {
+            await client.rpc('update_my_member_phone', { p_phone: cleanPhone });
+          }
+        }
       } catch {
-        // ignore if RPC not deployed yet
+        // continue with optimistic local update
       }
     }
 
     setMembers(prev =>
-      prev.map(m => (m.id === myMemberRecord.id ? { ...m, phone: cleanPhone } : m))
+      prev.map(m =>
+        m.id === myMemberRecord.id
+          ? {
+              ...m,
+              phone: cleanPhone || null,
+              date_of_birth: nextDob,
+              blood_group: cleanBlood,
+              updated_at: new Date().toISOString(),
+            }
+          : m
+      )
+    );
+
+    const md = extractMonthDayFromDob(nextDob);
+    setRpcDirectory((prev) =>
+      prev
+        ? prev.map((item) =>
+            item.id === myMemberRecord.id
+              ? {
+                  ...item,
+                  blood_group: cleanBlood,
+                  birth_month: md?.month ?? null,
+                  birth_day: md?.day ?? null,
+                }
+              : item
+          )
+        : prev
     );
 
     await logMemberActivity({
@@ -781,15 +1049,16 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       memberId: myMemberRecord.id,
       memberCode: myMemberRecord.member_code,
       memberName: myMemberRecord.full_name,
+      audience: 'admin',
       eventType: 'profile_updated',
-      title: 'মোবাইল নম্বর আপডেট',
-      message: `${myMemberRecord.full_name} (${myMemberRecord.member_code}) তার মোবাইল নম্বর আপডেট করেছেন (${cleanPhone})।`,
+      title: 'Member Profile Updated',
+      message: `${myMemberRecord.full_name} (${myMemberRecord.member_code}) updated their personal profile details.`,
     });
 
     return { success: true };
   };
 
-  // Log member activity notification for Admin Dashboard
+  // Log scoped activity / announcement / payment / birthday notification
   const logMemberActivity = useCallback(async (params: LogActivityParams) => {
     const client = getSupabaseClient();
     let resolvedActorId = params.actorUserId ?? user?.id ?? null;
@@ -803,39 +1072,68 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
     }
 
+    const audience: NotificationAudience = params.audience || 'admin';
     const newNotif: ClubNotification = {
       id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       actor_user_id: resolvedActorId,
       member_id: params.memberId ?? null,
+      target_member_id: params.targetMemberId ?? null,
+      announcement_id: params.announcementId ?? null,
       member_code: params.memberCode ?? null,
       member_name: params.memberName,
+      audience,
       event_type: params.eventType,
       title: params.title,
       message: params.message,
+      metadata: params.metadata || {},
+      dedup_key: params.dedupKey ?? null,
       is_read: false,
       created_at: new Date().toISOString(),
     };
 
     if (client && resolvedActorId) {
       try {
-        // Note: Do NOT chain .select() here because non-admin members insert notifications
-        // and PostgREST .select() requires SELECT policy to return inserted rows.
-        const { error: insErr } = await client
-          .from('notifications')
-          .insert([{
-            actor_user_id: resolvedActorId,
-            member_id: params.memberId ?? null,
-            member_code: params.memberCode ?? null,
-            member_name: params.memberName,
-            event_type: params.eventType,
-            title: params.title,
-            message: params.message,
-            is_read: false,
-          }]);
+        const payload = {
+          actor_user_id: resolvedActorId,
+          member_id: params.memberId ?? null,
+          target_member_id: params.targetMemberId ?? null,
+          announcement_id: params.announcementId ?? null,
+          member_code: params.memberCode ?? null,
+          member_name: params.memberName,
+          audience,
+          event_type: params.eventType,
+          title: params.title,
+          message: params.message,
+          metadata: params.metadata || {},
+          dedup_key: params.dedupKey ?? null,
+          is_read: false,
+        };
+
+        let { error: insErr } = await client.from('notifications').insert([payload]);
+
+        // Graceful fallback if new columns haven't been migrated yet
+        if (insErr && (insErr.code === '42703' || insErr.code === 'PGRST204' || (insErr.message || '').toLowerCase().includes('audience'))) {
+          if (audience === 'admin') {
+            const legacyRetry = await client.from('notifications').insert([{
+              actor_user_id: resolvedActorId,
+              member_id: params.memberId ?? null,
+              member_code: params.memberCode ?? null,
+              member_name: params.memberName,
+              event_type: params.eventType,
+              title: params.title,
+              message: params.message,
+              is_read: false,
+            }]);
+            insErr = legacyRetry.error;
+          }
+        }
 
         if (!insErr) {
           setSupabaseNotificationsAvailable(true);
-          setNotifications(prev => [newNotif, ...prev].slice(0, 50));
+          setNotifications(prev => {
+            if (params.dedupKey && prev.some(n => n.dedup_key === params.dedupKey)) return prev;
+            return [newNotif, ...prev].slice(0, 80);
+          });
           return;
         }
       } catch {
@@ -844,33 +1142,171 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     setNotifications(prev => {
-      const next = [newNotif, ...prev].slice(0, 50);
+      if (params.dedupKey && prev.some(n => n.dedup_key === params.dedupKey)) return prev;
+      const next = [newNotif, ...prev].slice(0, 80);
       localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(next));
       return next;
     });
   }, [user?.id]);
 
+  // Idempotent Birthday Reminder Notification Sync (Upcoming 7 days in Asia/Dhaka, zero birth year)
+  useEffect(() => {
+    if (!user) return;
+    const sessionTag = `${user.id}-${isAdmin ? 'admin' : 'member'}`;
+    if (birthdaySyncedSessionRef.current === sessionTag) return;
+    birthdaySyncedSessionRef.current = sessionTag;
+
+    const runSync = async () => {
+      const client = getSupabaseClient();
+      if (client && isConfigured && supabaseSyncedMembers) {
+        try {
+          const { data: insertedCount, error: rpcErr } = await client.rpc(
+            'sync_upcoming_birthday_notifications',
+            { p_days_ahead: 7 }
+          );
+          if (!rpcErr && Number(insertedCount || 0) > 0) {
+            await refreshNotifications();
+            return;
+          }
+        } catch {
+          // continue to client-side idempotent sync
+        }
+      }
+
+      const sourceList = isAdmin || !supabaseSyncedMembers ? members : memberDirectory;
+      const candidates = getUpcomingBirthdayHighlightsFromList(sourceList, 7);
+      if (candidates.length === 0) return;
+
+      const existingKeys = new Set(notifications.map((n) => n.dedup_key).filter(Boolean));
+      const newLocalNotifs: ClubNotification[] = [];
+
+      candidates.forEach((b) => {
+        const dedupKey = `bday-${b.id}-${b.target_year || new Date().getFullYear()}`;
+        if (existingKeys.has(dedupKey)) return;
+        const dateLabel = formatBirthdayMonthDay(b.birth_month, b.birth_day, false);
+        const title =
+          b.days_until === 0
+            ? `Happy Birthday, ${b.full_name}!`
+            : `Upcoming Birthday: ${b.full_name}`;
+        const message =
+          b.days_until === 0
+            ? `Today (${dateLabel}) is ${b.full_name} (${b.member_code})'s birthday. Warm wishes from Bondhon 2017!`
+            : `${b.full_name} (${b.member_code}) has an upcoming birthday on ${dateLabel}.`;
+
+        newLocalNotifs.push({
+          id: `notif-bday-${b.id}-${b.target_year || new Date().getFullYear()}`,
+          member_id: b.id,
+          member_code: b.member_code,
+          member_name: b.full_name,
+          audience: 'all_members',
+          event_type: 'birthday_reminder',
+          title,
+          message,
+          metadata: {
+            birth_month: b.birth_month,
+            birth_day: b.birth_day,
+            date_label: dateLabel,
+          },
+          dedup_key: dedupKey,
+          is_read: false,
+          created_at: new Date().toISOString(),
+        });
+      });
+
+      if (newLocalNotifs.length > 0) {
+        setNotifications((prev) => {
+          const prevKeys = new Set(prev.map((n) => n.dedup_key).filter(Boolean));
+          const unique = newLocalNotifs.filter((n) => !prevKeys.has(n.dedup_key));
+          if (unique.length === 0) return prev;
+          const next = [...unique, ...prev].slice(0, 80);
+          if (!supabaseNotificationsAvailable) {
+            localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(next));
+          }
+          return next;
+        });
+      }
+    };
+
+    runSync();
+  }, [user, isAdmin, isConfigured, supabaseSyncedMembers, supabaseNotificationsAvailable, members, memberDirectory, notifications, refreshNotifications]);
+
+  // Scoped visible notifications (enforces client-side privacy mirror of PostgreSQL RLS)
+  const scopedNotifications = useMemo<ClubNotification[]>(() => {
+    if (!user) return [];
+    return notifications
+      .filter((n) => {
+        const aud = n.audience || 'admin';
+        if (isAdmin) return true;
+        if (aud === 'all_members') return true;
+        if (aud === 'member' && myMemberRecord && n.target_member_id === myMemberRecord.id) {
+          return true;
+        }
+        return false;
+      })
+      .map((n) => ({
+        ...n,
+        is_read: Boolean(n.is_read) || readNotifIds.has(n.id),
+      }));
+  }, [user, isAdmin, notifications, myMemberRecord, readNotifIds]);
+
   const markNotificationAsRead = async (id: string) => {
+    setReadNotifIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      persistReadIds(next);
+      return next;
+    });
     setNotifications(prev => prev.map(n => (n.id === id ? { ...n, is_read: true } : n)));
+
     const client = getSupabaseClient();
-    if (client && supabaseNotificationsAvailable) {
+    if (client && supabaseNotificationsAvailable && user) {
       try {
-        await client.from('notifications').update({ is_read: true }).eq('id', id);
+        await client
+          .from('notification_reads')
+          .upsert([{ notification_id: id, user_id: user.id }], {
+            onConflict: 'notification_id,user_id',
+          });
       } catch { /* ignore */ }
+      if (isAdmin) {
+        try {
+          await client.from('notifications').update({ is_read: true }).eq('id', id);
+        } catch { /* ignore */ }
+      }
     }
   };
 
   const markAllNotificationsAsRead = async () => {
-    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    const idsToMark = scopedNotifications.filter((n) => !n.is_read).map((n) => n.id);
+    if (idsToMark.length === 0) return;
+
+    setReadNotifIds((prev) => {
+      const next = new Set(prev);
+      idsToMark.forEach((id) => next.add(id));
+      persistReadIds(next);
+      return next;
+    });
+    setNotifications(prev => prev.map(n => (idsToMark.includes(n.id) ? { ...n, is_read: true } : n)));
+
     const client = getSupabaseClient();
-    if (client && supabaseNotificationsAvailable) {
+    if (client && supabaseNotificationsAvailable && user) {
       try {
-        await client.from('notifications').update({ is_read: true }).eq('is_read', false);
+        await client
+          .from('notification_reads')
+          .upsert(
+            idsToMark.map((notification_id) => ({ notification_id, user_id: user.id })),
+            { onConflict: 'notification_id,user_id' }
+          );
       } catch { /* ignore */ }
+      if (isAdmin) {
+        try {
+          await client.from('notifications').update({ is_read: true }).eq('is_read', false);
+        } catch { /* ignore */ }
+      }
     }
   };
 
   const clearNotifications = async () => {
+    if (!isAdmin) return;
     setNotifications([]);
     localStorage.removeItem(NOTIFICATIONS_STORAGE_KEY);
     const client = getSupabaseClient();
@@ -882,9 +1318,105 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const unreadNotificationCount = useMemo(
-    () => notifications.filter(n => !n.is_read).length,
-    [notifications]
+    () => scopedNotifications.filter(n => !n.is_read).length,
+    [scopedNotifications]
   );
+
+  // Admin: Publish Official Club Announcement + Broadcast Notification
+  const publishAnnouncement = async (params: {
+    title: string;
+    body: string;
+    category?: AnnouncementCategory;
+  }) => {
+    if (!isAdmin || !user) {
+      return { success: false, error: 'Unauthorized: Only Admins can publish announcements.' };
+    }
+    const cleanTitle = params.title.trim();
+    const cleanBody = params.body.trim();
+    if (!cleanTitle || !cleanBody) {
+      return { success: false, error: 'Announcement title and description are required.' };
+    }
+
+    const authorName =
+      myMemberRecord?.full_name || profile?.full_name || 'Club Admin';
+    const category: AnnouncementCategory = params.category || 'general';
+    const client = getSupabaseClient();
+
+    let createdAnnouncement: ClubAnnouncement = {
+      id: `ann-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      title: cleanTitle,
+      body: cleanBody,
+      category,
+      created_by: user.id,
+      author_name: authorName,
+      created_at: new Date().toISOString(),
+    };
+
+    if (client && supabaseSyncedMembers) {
+      try {
+        const { data, error: insErr } = await client
+          .from('announcements')
+          .insert([{
+            title: cleanTitle,
+            body: cleanBody,
+            category,
+            created_by: user.id,
+            author_name: authorName,
+          }])
+          .select()
+          .single();
+
+        if (!insErr && data) {
+          setSupabaseAnnouncementsAvailable(true);
+          createdAnnouncement = data as ClubAnnouncement;
+        }
+      } catch {
+        // fallback to local announcement
+      }
+    }
+
+    setAnnouncements((prev) => [createdAnnouncement, ...prev]);
+
+    const excerpt =
+      cleanBody.length > 140 ? `${cleanBody.slice(0, 137)}...` : cleanBody;
+
+    await logMemberActivity({
+      actorUserId: user.id,
+      announcementId: createdAnnouncement.id,
+      memberName: authorName,
+      audience: 'all_members',
+      eventType: 'announcement',
+      title: cleanTitle,
+      message: excerpt,
+      metadata: {
+        announcementId: createdAnnouncement.id,
+        category,
+        fullBody: cleanBody,
+        authorName,
+      },
+    });
+
+    return { success: true };
+  };
+
+  const deleteAnnouncement = async (id: string) => {
+    if (!isAdmin) {
+      return { success: false, error: 'Unauthorized: Only Admins can delete announcements.' };
+    }
+    const client = getSupabaseClient();
+    if (client && supabaseAnnouncementsAvailable) {
+      try {
+        const { error: delErr } = await client.from('announcements').delete().eq('id', id);
+        if (delErr) throw delErr;
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { success: false, error: msg };
+      }
+    }
+    setAnnouncements((prev) => prev.filter((a) => a.id !== id));
+    setNotifications((prev) => prev.filter((n) => n.announcement_id !== id));
+    return { success: true };
+  };
 
   // Complete month-by-month personal ledger (synthesizes unentered months from join_date to current billing cycle)
   const myDues = useMemo<MonthlyDueWithMeta[]>(() => {
@@ -1163,24 +1695,37 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const client = getSupabaseClient();
     if (supabaseSyncedMembers && client) {
       try {
-        const { data, error: insErr } = await client
+        const basePayload = {
+          member_code: memberData.member_code.trim().toUpperCase(),
+          full_name: memberData.full_name.trim(),
+          father_name: memberData.father_name?.trim() || null,
+          shares_count: memberData.shares_count || 1,
+          phone: memberData.phone?.trim() || null,
+          email: memberData.email?.trim() || null,
+          designation: memberData.designation || 'Member',
+          profile_image_url: memberData.profile_image_url || null,
+          join_date: memberData.join_date,
+          status: memberData.status,
+          auth_user_id: memberData.auth_user_id || null,
+          monthly_contribution: memberData.monthly_contribution || defaultDueAmount,
+        };
+        const extPayload = {
+          ...basePayload,
+          date_of_birth: memberData.date_of_birth || null,
+          blood_group: memberData.blood_group || null,
+        };
+
+        let { data, error: insErr } = await client
           .from('members')
-          .insert([{
-            member_code: memberData.member_code.trim().toUpperCase(),
-            full_name: memberData.full_name.trim(),
-            father_name: memberData.father_name?.trim() || null,
-            shares_count: memberData.shares_count || 1,
-            phone: memberData.phone?.trim() || null,
-            email: memberData.email?.trim() || null,
-            designation: memberData.designation || 'Member',
-            profile_image_url: memberData.profile_image_url || null,
-            join_date: memberData.join_date,
-            status: memberData.status,
-            auth_user_id: memberData.auth_user_id || null,
-            monthly_contribution: memberData.monthly_contribution || defaultDueAmount,
-          }])
+          .insert([extPayload])
           .select()
           .single();
+
+        if (insErr && isMissingColumnError(insErr)) {
+          const retry = await client.from('members').insert([basePayload]).select().single();
+          data = retry.data;
+          insErr = retry.error;
+        }
 
         if (insErr) throw insErr;
         setMembers(prev => [...prev, data as Member]);
@@ -1210,10 +1755,16 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const client = getSupabaseClient();
     if (supabaseSyncedMembers && client) {
       try {
-        const { error: updErr } = await client
+        let { error: updErr } = await client
           .from('members')
           .update(updates)
           .eq('id', id);
+
+        if (updErr && isMissingColumnError(updErr)) {
+          const { date_of_birth: _dob, blood_group: _bg, ...legacyUpdates } = updates;
+          const retry = await client.from('members').update(legacyUpdates).eq('id', id);
+          updErr = retry.error;
+        }
 
         if (updErr) throw updErr;
         setMembers(prev => prev.map(m => (m.id === id ? { ...m, ...updates, updated_at: new Date().toISOString() } : m)));
@@ -1349,8 +1900,47 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       msg.includes('fine_paid') ||
       msg.includes('fine_waived') ||
       msg.includes('notes') ||
+      msg.includes('receipt_number') ||
+      msg.includes('payment_method') ||
+      msg.includes('recorded_by_name') ||
+      msg.includes('date_of_birth') ||
+      msg.includes('blood_group') ||
       msg.includes('schema cache')
     );
+  };
+
+  const notifyMemberOfPayment = async (params: {
+    targetMember: Member;
+    due: MonthlyDue;
+    totalPaid: number;
+  }) => {
+    if (params.totalPaid <= 0) return;
+    const periodLabel = `${getMonthName(params.due.month)} ${params.due.year}`;
+    const receiptNo =
+      params.due.receipt_number ||
+      buildReceiptNumber(params.targetMember.member_code, params.due.month, params.due.year, params.due.id);
+
+    await logMemberActivity({
+      actorUserId: user?.id || null,
+      memberId: params.targetMember.id,
+      targetMemberId: params.targetMember.id,
+      memberCode: params.targetMember.member_code,
+      memberName: params.targetMember.full_name,
+      audience: 'member',
+      eventType: 'payment_recorded',
+      title: `Payment Recorded: ${periodLabel}`,
+      message: `Your payment of ${formatBDT(params.totalPaid)} for ${periodLabel} has been confirmed. Receipt #${receiptNo} is ready to download.`,
+      metadata: {
+        dueId: params.due.id,
+        month: params.due.month,
+        year: params.due.year,
+        amountPaid: params.due.amount_paid,
+        finePaid: params.due.fine_paid || 0,
+        totalPaid: params.totalPaid,
+        receiptNumber: receiptNo,
+        paymentMethod: params.due.payment_method || 'Cash',
+      },
+    });
   };
 
   const markAsPaid = async (
@@ -1365,6 +1955,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     const targetDue = monthlyDues.find(d => d.id === dueId);
     if (!targetDue) return { success: false, error: 'Record not found.' };
+    const targetMember = members.find(m => m.id === targetDue.member_id);
 
     const finalPaid = amountPaid !== undefined ? amountPaid : targetDue.amount_due;
     const finalPaidAt = paidAt || new Date().toISOString();
@@ -1382,6 +1973,11 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const finePaidVal = fineOptions?.finePaid !== undefined ? fineOptions.finePaid : Number(targetDue.fine_paid || 0);
     const fineWaivedVal = fineOptions?.fineWaived !== undefined ? fineOptions.fineWaived : Boolean(targetDue.fine_waived);
 
+    const adminName = myMemberRecord?.full_name || profile?.full_name || 'Admin';
+    const receiptNo =
+      targetDue.receipt_number ||
+      buildReceiptNumber(targetMember?.member_code || 'BND', targetDue.month, targetDue.year, targetDue.id);
+
     const baseUpdates = {
       amount_paid: finalPaid,
       status: finalStatus,
@@ -1396,7 +1992,12 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       fine_paid: finePaidVal,
       fine_paid_at: finePaidVal > 0 ? (targetDue.fine_paid_at || finalPaidAt) : null,
       fine_waived: fineWaivedVal,
+      receipt_number: receiptNo,
+      payment_method: targetDue.payment_method || 'Cash',
+      recorded_by_name: adminName,
     };
+
+    const updatedRecord: MonthlyDue = { ...targetDue, ...extendedUpdates, member: targetMember || targetDue.member };
 
     const client = getSupabaseClient();
     if (supabaseSyncedMembers && client) {
@@ -1407,24 +2008,40 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           .eq('id', dueId);
 
         if (updErr && isMissingColumnError(updErr)) {
-          const retry = await client
-            .from('monthly_dues')
-            .update(baseUpdates)
-            .eq('id', dueId);
-          updErr = retry.error;
+          const { receipt_number: _r, payment_method: _pm, recorded_by_name: _rbn, ...compatUpdates } = extendedUpdates;
+          const retry1 = await client.from('monthly_dues').update(compatUpdates).eq('id', dueId);
+          updErr = retry1.error;
+          if (updErr && isMissingColumnError(updErr)) {
+            const retry2 = await client.from('monthly_dues').update(baseUpdates).eq('id', dueId);
+            updErr = retry2.error;
+          }
         }
 
         if (updErr) throw updErr;
-        setMonthlyDues(prev => prev.map(d => (d.id === dueId ? { ...d, ...extendedUpdates } : d)));
-        return { success: true };
+        setMonthlyDues(prev => prev.map(d => (d.id === dueId ? updatedRecord : d)));
+        if (targetMember && finalPaid + finePaidVal > 0) {
+          await notifyMemberOfPayment({
+            targetMember,
+            due: updatedRecord,
+            totalPaid: finalPaid + finePaidVal,
+          });
+        }
+        return { success: true, due: updatedRecord };
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         return { success: false, error: msg };
       }
     }
 
-    setMonthlyDues(prev => prev.map(d => (d.id === dueId ? { ...d, ...extendedUpdates } : d)));
-    return { success: true };
+    setMonthlyDues(prev => prev.map(d => (d.id === dueId ? updatedRecord : d)));
+    if (targetMember && finalPaid + finePaidVal > 0) {
+      await notifyMemberOfPayment({
+        targetMember,
+        due: updatedRecord,
+        totalPaid: finalPaid + finePaidVal,
+      });
+    }
+    return { success: true, due: updatedRecord };
   };
 
   const recordNewPayment = async (params: {
@@ -1437,6 +2054,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     finePaid?: number;
     fineWaived?: boolean;
     paidAt?: string;
+    paymentMethod?: string;
     notes?: string;
   }) => {
     if (!isAdmin) {
@@ -1465,6 +2083,14 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const finePaidVal = Number(params.finePaid || 0);
     const fineWaivedVal = Boolean(params.fineWaived);
     const finePaidAtVal = finePaidVal > 0 ? (params.paidAt || new Date().toISOString()) : null;
+    const adminName = myMemberRecord?.full_name || profile?.full_name || 'Admin';
+    const methodLabel = params.paymentMethod || (params.notes?.split(' - ')[0]) || 'Cash';
+    const existingDue = monthlyDues.find(
+      d => d.member_id === params.memberId && d.month === params.month && d.year === params.year
+    );
+    const receiptNo =
+      existingDue?.receipt_number ||
+      buildReceiptNumber(targetMember.member_code, params.month, params.year);
 
     const client = getSupabaseClient();
     if (supabaseSyncedMembers && client) {
@@ -1480,13 +2106,20 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           recorded_by: user?.id || null,
         };
 
-        const fullPayload = {
+        const compatPayload = {
           ...basePayload,
           fine_due: fineDueVal,
           fine_paid: finePaidVal,
           fine_paid_at: finePaidAtVal,
           fine_waived: fineWaivedVal,
           notes: params.notes || null,
+        };
+
+        const fullPayload = {
+          ...compatPayload,
+          receipt_number: receiptNo,
+          payment_method: methodLabel,
+          recorded_by_name: adminName,
         };
 
         let { data, error: upsertErr } = await client
@@ -1496,13 +2129,23 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           .single();
 
         if (upsertErr && isMissingColumnError(upsertErr)) {
-          const retryCols = await client
+          const retryCompat = await client
             .from('monthly_dues')
-            .upsert(basePayload, { onConflict: 'member_id,month,year' })
+            .upsert(compatPayload, { onConflict: 'member_id,month,year' })
             .select()
             .single();
-          data = retryCols.data;
-          upsertErr = retryCols.error;
+          data = retryCompat.data;
+          upsertErr = retryCompat.error;
+
+          if (upsertErr && isMissingColumnError(upsertErr)) {
+            const retryCols = await client
+              .from('monthly_dues')
+              .upsert(basePayload, { onConflict: 'member_id,month,year' })
+              .select()
+              .single();
+            data = retryCols.data;
+            upsertErr = retryCols.error;
+          }
         }
 
         // Retry with recorded_by = null if profiles FK has not been created yet
@@ -1525,6 +2168,10 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           fine_paid_at: (data as MonthlyDue).fine_paid_at ?? finePaidAtVal,
           fine_waived: (data as MonthlyDue).fine_waived ?? fineWaivedVal,
           notes: (data as MonthlyDue).notes ?? params.notes ?? null,
+          receipt_number: (data as MonthlyDue).receipt_number ?? receiptNo,
+          payment_method: (data as MonthlyDue).payment_method ?? methodLabel,
+          recorded_by_name: (data as MonthlyDue).recorded_by_name ?? adminName,
+          member: targetMember,
         };
         setMonthlyDues(prev => {
           const idx = prev.findIndex(d => d.member_id === params.memberId && d.month === params.month && d.year === params.year);
@@ -1536,7 +2183,15 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           return [updated, ...prev];
         });
 
-        return { success: true };
+        if (finalPaid + finePaidVal > 0) {
+          await notifyMemberOfPayment({
+            targetMember,
+            due: updated,
+            totalPaid: finalPaid + finePaidVal,
+          });
+        }
+
+        return { success: true, due: updated };
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         return { success: false, error: msg };
@@ -1547,26 +2202,32 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       d => d.member_id === params.memberId && d.month === params.month && d.year === params.year
     );
 
+    let savedLocalDue: MonthlyDue;
     if (existingIdx >= 0) {
+      savedLocalDue = {
+        ...monthlyDues[existingIdx],
+        amount_due: calculatedDue,
+        amount_paid: finalPaid,
+        fine_due: fineDueVal,
+        fine_paid: finePaidVal,
+        fine_paid_at: finePaidAtVal,
+        fine_waived: fineWaivedVal,
+        notes: params.notes || monthlyDues[existingIdx].notes || null,
+        receipt_number: receiptNo,
+        payment_method: methodLabel,
+        recorded_by_name: adminName,
+        status,
+        paid_at: finalPaidAt,
+        updated_at: new Date().toISOString(),
+        member: targetMember,
+      };
       setMonthlyDues(prev => {
         const next = [...prev];
-        next[existingIdx] = {
-          ...next[existingIdx],
-          amount_due: calculatedDue,
-          amount_paid: finalPaid,
-          fine_due: fineDueVal,
-          fine_paid: finePaidVal,
-          fine_paid_at: finePaidAtVal,
-          fine_waived: fineWaivedVal,
-          notes: params.notes || next[existingIdx].notes || null,
-          status,
-          paid_at: finalPaidAt,
-          updated_at: new Date().toISOString(),
-        };
+        next[existingIdx] = savedLocalDue;
         return next;
       });
     } else {
-      const newDue: MonthlyDue = {
+      savedLocalDue = {
         id: `due-${params.year}-${params.month}-${params.memberId}-${Date.now()}`,
         member_id: params.memberId,
         month: params.month,
@@ -1578,15 +2239,27 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         fine_paid_at: finePaidAtVal,
         fine_waived: fineWaivedVal,
         notes: params.notes || null,
+        receipt_number: receiptNo,
+        payment_method: methodLabel,
+        recorded_by_name: adminName,
         status,
         paid_at: finalPaidAt,
         recorded_by: user?.id || 'admin',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        member: targetMember,
       };
-      setMonthlyDues(prev => [newDue, ...prev]);
+      setMonthlyDues(prev => [savedLocalDue, ...prev]);
     }
-    return { success: true };
+
+    if (finalPaid + finePaidVal > 0) {
+      await notifyMemberOfPayment({
+        targetMember,
+        due: savedLocalDue,
+        totalPaid: finalPaid + finePaidVal,
+      });
+    }
+    return { success: true, due: savedLocalDue };
   };
 
   const updateDueRecord = async (
@@ -2249,12 +2922,15 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const value = useMemo(
     () => ({
       publicMembers,
+      memberDirectory,
+      upcomingBirthdayHighlights,
       members,
       myMemberRecord,
       myDues,
       myFinancialSummary,
       monthlyDues: enrichedDues,
-      notifications,
+      notifications: scopedNotifications,
+      announcements,
       unreadNotificationCount,
       bankDeposits,
       clubExpenses,
@@ -2290,10 +2966,13 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       refreshNotifications,
       linkMyMemberAccount,
       updateMyContactPhone,
+      updateMyMemberProfile,
       logMemberActivity,
       markNotificationAsRead,
       markAllNotificationsAsRead,
       clearNotifications,
+      publishAnnouncement,
+      deleteAnnouncement,
       addMember,
       updateMember,
       toggleMemberStatus,
@@ -2315,12 +2994,15 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }),
     [
       publicMembers,
+      memberDirectory,
+      upcomingBirthdayHighlights,
       members,
       myMemberRecord,
       myDues,
       myFinancialSummary,
       enrichedDues,
-      notifications,
+      scopedNotifications,
+      announcements,
       unreadNotificationCount,
       bankDeposits,
       clubExpenses,

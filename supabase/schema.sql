@@ -9,9 +9,11 @@ create extension if not exists "uuid-ossp";
 
 -- 2. Drop existing objects for clean deployment if needed
 drop view if exists public.public_members cascade;
+drop table if exists public.notification_reads cascade;
 drop table if exists public.club_expenses cascade;
 drop table if exists public.bank_deposits cascade;
 drop table if exists public.notifications cascade;
+drop table if exists public.announcements cascade;
 drop table if exists public.monthly_dues cascade;
 drop table if exists public.members cascade;
 drop table if exists public.profiles cascade;
@@ -44,6 +46,8 @@ create table public.members (
   designation text default 'Member', -- e.g. 'President', 'General Secretary', 'Executive Member', 'Member'
   shares_count smallint not null default 1 check (shares_count >= 1),
   join_date date not null default '2024-04-01',
+  date_of_birth date,
+  blood_group text check (blood_group is null or blood_group in ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')),
   status text not null default 'active' check (status in ('active', 'inactive')),
   auth_user_id uuid unique references auth.users(id) on delete set null,
   monthly_contribution numeric(12, 2) not null default 500.00 check (monthly_contribution >= 0),
@@ -61,7 +65,7 @@ create index idx_members_name on public.members(full_name);
 
 -- ==============================================================================
 -- VIEW: PUBLIC MEMBER DIRECTORY (Strict Privacy Rules)
--- Never exposes phone numbers, join dates, auth IDs, or financial history.
+-- Never exposes father's name, monthly shares/fees, DOB, phone, join dates, or auth IDs.
 -- Accessible to anyone browsing the public site.
 -- ==============================================================================
 create or replace view public.public_members as
@@ -69,15 +73,13 @@ select
   id,
   member_code,
   full_name,
-  father_name,
   profile_image_url,
   designation,
-  shares_count,
   status
 from public.members
 where status = 'active';
 
-comment on view public.public_members is 'Publicly accessible member directory view with private contact/financial details stripped out';
+comment on view public.public_members is 'Publicly accessible member directory view with sensitive personal and financial details stripped out';
 
 -- ==============================================================================
 -- TABLE 3: MONTHLY_DUES (Monthly Membership Contributions in BDT ৳)
@@ -94,6 +96,9 @@ create table public.monthly_dues (
   fine_paid_at timestamp with time zone,
   fine_waived boolean not null default false,
   notes text,
+  receipt_number text,
+  payment_method text,
+  recorded_by_name text,
   status text not null default 'unpaid' check (status in ('paid', 'unpaid', 'partial')),
   paid_at timestamp with time zone,
   recorded_by uuid references public.profiles(id) on delete set null,
@@ -252,23 +257,63 @@ end;
 $$;
 
 -- ==============================================================================
--- TABLE 4: NOTIFICATIONS (Member Activity Feed for Admin Dashboard)
+-- TABLE 4A: ANNOUNCEMENTS (Admin Club Notices & Updates)
+-- ==============================================================================
+create table public.announcements (
+  id uuid default gen_random_uuid() primary key,
+  title text not null,
+  body text not null,
+  category text not null default 'general' check (category in ('general', 'finance', 'event', 'urgent')),
+  created_by uuid references public.profiles(id) on delete set null,
+  author_name text not null default 'Admin',
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+create index idx_announcements_created on public.announcements(created_at desc);
+
+-- ==============================================================================
+-- TABLE 4B: NOTIFICATIONS (Scoped Admin Activity, Member Payments, Announcements & Birthdays)
 -- ==============================================================================
 create table public.notifications (
   id uuid default gen_random_uuid() primary key,
   actor_user_id uuid references auth.users(id) on delete set null,
   member_id uuid references public.members(id) on delete cascade,
+  target_member_id uuid references public.members(id) on delete cascade,
+  announcement_id uuid references public.announcements(id) on delete cascade,
   member_code text,
   member_name text not null,
-  event_type text not null default 'profile_updated' check (event_type in ('member_login', 'member_logout', 'password_changed', 'profile_updated', 'payment_notice')),
+  audience text not null default 'admin' check (audience in ('admin', 'member', 'all_members')),
+  event_type text not null default 'profile_updated' check (event_type in (
+    'member_login',
+    'member_logout',
+    'password_changed',
+    'profile_updated',
+    'payment_notice',
+    'payment_recorded',
+    'announcement',
+    'birthday_reminder'
+  )),
   title text not null,
   message text not null,
+  metadata jsonb not null default '{}'::jsonb,
+  dedup_key text,
   is_read boolean not null default false,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
 create index idx_notifications_created on public.notifications(created_at desc);
 create index idx_notifications_read on public.notifications(is_read);
+create index idx_notifications_audience on public.notifications(audience, target_member_id, created_at desc);
+create unique index idx_notifications_dedup_key on public.notifications(dedup_key) where dedup_key is not null;
+
+-- Per-user read status for broadcast announcements & birthday reminders
+create table public.notification_reads (
+  notification_id uuid not null references public.notifications(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  read_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  primary key (notification_id, user_id)
+);
 
 -- Safe RPC: Verify Member Name/ID + Email match before Member Login (never exposes email list)
 create or replace function public.verify_member_login_match(
@@ -350,6 +395,294 @@ $$;
 
 grant execute on function public.update_my_member_phone(text) to authenticated;
 
+-- Safe RPC: Member can update their own phone, private date_of_birth, and blood_group
+create or replace function public.update_my_member_profile(
+  p_phone text default null,
+  p_date_of_birth date default null,
+  p_blood_group text default null,
+  p_clear_dob boolean default false
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_email text;
+  v_blood text;
+begin
+  if auth.uid() is null then
+    raise exception 'Unauthorized';
+  end if;
+
+  v_blood := nullif(upper(trim(coalesce(p_blood_group, ''))), '');
+  if v_blood is not null and v_blood not in ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-') then
+    raise exception 'Invalid blood group value.';
+  end if;
+
+  v_email := lower(trim(coalesce(auth.jwt()->>'email', '')));
+  update public.members
+  set
+    phone = case when p_phone is not null then nullif(trim(p_phone), '') else phone end,
+    date_of_birth = case
+      when p_clear_dob then null
+      when p_date_of_birth is not null then p_date_of_birth
+      else date_of_birth
+    end,
+    blood_group = v_blood,
+    updated_at = timezone('utc'::text, now())
+  where auth_user_id = auth.uid()
+     or (v_email <> '' and lower(trim(coalesce(email, ''))) = v_email);
+end;
+$$;
+
+revoke all on function public.update_my_member_profile(text, date, text, boolean) from public;
+grant execute on function public.update_my_member_profile(text, date, text, boolean) to authenticated;
+
+-- Authenticated Member Directory RPC (Exposes blood_group & birth month/day ONLY — NEVER birth year/DOB/father/fee)
+create or replace function public.get_authenticated_member_directory()
+returns table (
+  id uuid,
+  member_code text,
+  full_name text,
+  profile_image_url text,
+  designation text,
+  status text,
+  blood_group text,
+  birth_month int,
+  birth_day int
+)
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select
+    m.id,
+    m.member_code,
+    m.full_name,
+    m.profile_image_url,
+    m.designation,
+    m.status,
+    m.blood_group,
+    case when m.date_of_birth is not null then extract(month from m.date_of_birth)::int else null end as birth_month,
+    case when m.date_of_birth is not null then extract(day from m.date_of_birth)::int else null end as birth_day
+  from public.members m
+  where auth.uid() is not null
+    and m.status = 'active'
+  order by m.member_code asc;
+$$;
+
+revoke all on function public.get_authenticated_member_directory() from public;
+grant execute on function public.get_authenticated_member_directory() to authenticated;
+
+-- Leap-Year Safe Birthday Helper & Timezone-Aware (Asia/Dhaka) Upcoming Birthday Highlights
+create or replace function public.resolve_birthday_for_year(
+  p_month int,
+  p_day int,
+  p_year int
+)
+returns date
+language plpgsql
+immutable
+as $$
+declare
+  v_is_leap boolean;
+begin
+  if p_month = 2 and p_day = 29 then
+    v_is_leap := (p_year % 4 = 0 and p_year % 100 <> 0) or (p_year % 400 = 0);
+    if v_is_leap then
+      return make_date(p_year, 2, 29);
+    else
+      return make_date(p_year, 3, 1);
+    end if;
+  end if;
+  return make_date(p_year, p_month, p_day);
+end;
+$$;
+
+create or replace function public.get_upcoming_birthday_highlights(
+  p_days_ahead int default 2
+)
+returns table (
+  id uuid,
+  member_code text,
+  full_name text,
+  profile_image_url text,
+  designation text,
+  birth_month int,
+  birth_day int,
+  days_until int
+)
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  with dhaka_now as (
+    select (now() at time zone 'Asia/Dhaka')::date as today
+  ),
+  candidates as (
+    select
+      m.id,
+      m.member_code,
+      m.full_name,
+      m.profile_image_url,
+      m.designation,
+      extract(month from m.date_of_birth)::int as birth_month,
+      extract(day from m.date_of_birth)::int as birth_day,
+      dn.today,
+      public.resolve_birthday_for_year(
+        extract(month from m.date_of_birth)::int,
+        extract(day from m.date_of_birth)::int,
+        extract(year from dn.today)::int
+      ) as bday_this_year,
+      public.resolve_birthday_for_year(
+        extract(month from m.date_of_birth)::int,
+        extract(day from m.date_of_birth)::int,
+        extract(year from dn.today)::int + 1
+      ) as bday_next_year
+    from public.members m
+    cross join dhaka_now dn
+    where m.status = 'active'
+      and m.date_of_birth is not null
+  ),
+  evaluated as (
+    select
+      id,
+      member_code,
+      full_name,
+      profile_image_url,
+      designation,
+      birth_month,
+      birth_day,
+      (case
+        when bday_this_year >= today then bday_this_year
+        else bday_next_year
+      end - today)::int as days_until
+    from candidates
+  )
+  select
+    id,
+    member_code,
+    full_name,
+    profile_image_url,
+    designation,
+    birth_month,
+    birth_day,
+    days_until
+  from evaluated
+  where days_until between 0 and greatest(0, least(coalesce(p_days_ahead, 2), 30))
+  order by days_until asc, member_code asc;
+$$;
+
+grant execute on function public.get_upcoming_birthday_highlights(int) to anon, authenticated;
+
+create or replace function public.sync_upcoming_birthday_notifications(
+  p_days_ahead int default 7
+)
+returns int
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_today date := (now() at time zone 'Asia/Dhaka')::date;
+  v_cur_year int := extract(year from v_today)::int;
+  v_inserted int := 0;
+  rec record;
+  v_bday_this date;
+  v_bday_next date;
+  v_target_date date;
+  v_target_year int;
+  v_days_until int;
+  v_dedup text;
+  v_date_label text;
+  v_title text;
+  v_msg text;
+begin
+  if auth.uid() is null then
+    return 0;
+  end if;
+
+  for rec in
+    select
+      m.id,
+      m.member_code,
+      m.full_name,
+      extract(month from m.date_of_birth)::int as birth_month,
+      extract(day from m.date_of_birth)::int as birth_day
+    from public.members m
+    where m.status = 'active'
+      and m.date_of_birth is not null
+  loop
+    v_bday_this := public.resolve_birthday_for_year(rec.birth_month, rec.birth_day, v_cur_year);
+    v_bday_next := public.resolve_birthday_for_year(rec.birth_month, rec.birth_day, v_cur_year + 1);
+
+    if v_bday_this >= v_today then
+      v_target_date := v_bday_this;
+      v_target_year := v_cur_year;
+    else
+      v_target_date := v_bday_next;
+      v_target_year := v_cur_year + 1;
+    end if;
+
+    v_days_until := (v_target_date - v_today)::int;
+
+    if v_days_until >= 0 and v_days_until <= greatest(0, least(coalesce(p_days_ahead, 7), 14)) then
+      v_dedup := 'bday-' || rec.id::text || '-' || v_target_year::text;
+      v_date_label := to_char(make_date(2024, rec.birth_month, rec.birth_day), 'Mon DD');
+
+      if v_days_until = 0 then
+        v_title := 'Happy Birthday, ' || rec.full_name || '!';
+        v_msg := 'Today (' || v_date_label || ') is ' || rec.full_name || ' (' || rec.member_code || ')''s birthday. Warm wishes from Bondhon 2017!';
+      else
+        v_title := 'Upcoming Birthday: ' || rec.full_name;
+        v_msg := rec.full_name || ' (' || rec.member_code || ') has a birthday coming up on ' || v_date_label || '.';
+      end if;
+
+      insert into public.notifications (
+        member_id,
+        member_code,
+        member_name,
+        event_type,
+        audience,
+        title,
+        message,
+        metadata,
+        dedup_key,
+        is_read
+      ) values (
+        rec.id,
+        rec.member_code,
+        rec.full_name,
+        'birthday_reminder',
+        'all_members',
+        v_title,
+        v_msg,
+        jsonb_build_object(
+          'birth_month', rec.birth_month,
+          'birth_day', rec.birth_day,
+          'date_label', v_date_label
+        ),
+        v_dedup,
+        false
+      )
+      on conflict (dedup_key) where dedup_key is not null do nothing;
+
+      if found then
+        v_inserted := v_inserted + 1;
+      end if;
+    end if;
+  end loop;
+
+  return v_inserted;
+end;
+$$;
+
+revoke all on function public.sync_upcoming_birthday_notifications(int) from public;
+grant execute on function public.sync_upcoming_birthday_notifications(int) to authenticated;
+
 -- ==============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- ==============================================================================
@@ -357,7 +690,9 @@ grant execute on function public.update_my_member_phone(text) to authenticated;
 alter table public.profiles enable row level security;
 alter table public.members enable row level security;
 alter table public.monthly_dues enable row level security;
+alter table public.announcements enable row level security;
 alter table public.notifications enable row level security;
+alter table public.notification_reads enable row level security;
 
 -- ------------------------------------------------------------------------------
 -- PROFILES RLS
@@ -450,17 +785,50 @@ create policy "Admins delete monthly dues"
   using (public.is_admin());
 
 -- ------------------------------------------------------------------------------
--- NOTIFICATIONS RLS
+-- ANNOUNCEMENTS & NOTIFICATIONS RLS
 -- ------------------------------------------------------------------------------
+create policy "Authenticated users can view announcements"
+  on public.announcements for select
+  to authenticated
+  using (true);
+
+create policy "Admins manage announcements"
+  on public.announcements for all
+  to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
 create policy "Authenticated users can log activity notifications"
   on public.notifications for insert
   to authenticated
-  with check (auth.uid() = actor_user_id or actor_user_id is null);
+  with check (
+    public.is_admin()
+    or (
+      audience = 'admin'
+      and event_type in ('member_login', 'member_logout', 'password_changed', 'profile_updated', 'payment_notice')
+      and (auth.uid() = actor_user_id or actor_user_id is null)
+    )
+  );
 
-create policy "Admins view notifications"
+create policy "Users view scoped notifications"
   on public.notifications for select
   to authenticated
-  using (public.is_admin() or auth.uid() = actor_user_id);
+  using (
+    public.is_admin()
+    or auth.uid() = actor_user_id
+    or audience = 'all_members'
+    or (
+      audience = 'member'
+      and target_member_id in (
+        select id from public.members
+        where auth_user_id = auth.uid()
+           or (
+             coalesce(auth.jwt()->>'email', '') <> ''
+             and lower(trim(coalesce(email, ''))) = lower(trim(auth.jwt()->>'email'))
+           )
+      )
+    )
+  );
 
 create policy "Admins update notifications"
   on public.notifications for update
@@ -471,6 +839,12 @@ create policy "Admins delete notifications"
   on public.notifications for delete
   to authenticated
   using (public.is_admin());
+
+create policy "Users manage own notification reads"
+  on public.notification_reads for all
+  to authenticated
+  using (auth.uid() = user_id or public.is_admin())
+  with check (auth.uid() = user_id);
 
 -- ==============================================================================
 -- TABLE 5: BANK DEPOSITS (Sonali Bank PLC Deposits)
@@ -574,6 +948,12 @@ as $$
       coalesce(sum(coalesce(fine_paid, 0)), 0) as total_fine_collected
     from public.monthly_dues
   ),
+  member_agg as (
+    select
+      coalesce(sum(shares_count), 0)::int as total_active_shares
+    from public.members
+    where status = 'active'
+  ),
   bank_tot as (
     select
       coalesce(sum(amount) filter (where coalesce(entry_type, 'deposit') = 'deposit'), 0) as total_bank_deposited,
@@ -611,6 +991,7 @@ as $$
       t.total_principal_collected,
       t.total_fine_collected,
       (t.total_principal_collected + t.total_fine_collected) as total_collected,
+      ma.total_active_shares,
       b.total_bank_deposited,
       b.total_bank_interest,
       b.total_bank_charges,
@@ -620,12 +1001,13 @@ as $$
       e.total_bank_expenses,
       ((t.total_principal_collected + t.total_fine_collected) + b.total_bank_interest - b.total_bank_charges - e.total_club_expenses) as net_club_available_balance,
       (b.total_bank_deposited + b.total_bank_interest - b.total_bank_charges - b.total_bank_withdrawals - e.total_bank_expenses) as current_bank_balance
-    from totals t, bank_tot b, exp_tot e
+    from totals t, member_agg ma, bank_tot b, exp_tot e
   )
   select json_build_object(
     'totalPrincipalCollected', c.total_principal_collected,
     'totalFineCollected', c.total_fine_collected,
     'totalCollected', c.total_collected,
+    'totalActiveShares', c.total_active_shares,
     'totalBankDeposited', c.total_bank_deposited,
     'totalBankInterest', c.total_bank_interest,
     'totalBankCharges', c.total_bank_charges,

@@ -219,4 +219,23 @@ select option:focus {
     background: #FFFFFF !important;
     color: #172435 !important;
   }
+
+  body.printing-receipt * {
+    visibility: hidden !important;
+  }
+
+  body.printing-receipt #bondhon-printable-receipt,
+  body.printing-receipt #bondhon-printable-receipt * {
+    visibility: visible !important;
+  }
+
+  body.printing-receipt #bondhon-printable-receipt {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #FFFFFF !important;
+  }
 }

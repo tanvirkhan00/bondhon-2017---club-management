@@ -1,14 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useClubData } from '../../hooks/useClubData';
 import { useAuth } from '../../hooks/useAuth';
 import { formatBDT, formatDate, getMonthName } from '../../utils/formatters';
 import { calculateDueBreakdown } from '../../utils/fineCalculator';
+import {
+  BLOOD_GROUPS,
+  computeDaysUntilBirthday,
+  formatBirthdayMonthDay,
+} from '../../utils/birthdayUtils';
+import { MonthlyDue } from '../../types';
 import { StatusBadge } from '../../components/StatusBadge';
 import { MetricCard } from '../../components/MetricCard';
 import { MemberProfileGreetingHero } from '../../components/MemberProfileGreetingHero';
 import { MemberAnalyticsChart } from '../../components/MemberAnalyticsChart';
 import { DashboardClock } from '../../components/DashboardClock';
+import { PaymentReceiptModal } from '../../components/PaymentReceiptModal';
 import { PageTransition } from '../../components/ui/MotionPrimitives';
 import {
   User,
@@ -23,6 +30,11 @@ import {
   Wallet,
   Coins,
   ShieldCheck,
+  Droplets,
+  Cake,
+  Search,
+  Megaphone,
+  Receipt,
 } from 'lucide-react';
 
 export const MemberProfile: React.FC = () => {
@@ -32,8 +44,10 @@ export const MemberProfile: React.FC = () => {
     myFinancialSummary,
     myDues,
     publicMembers,
+    memberDirectory,
+    announcements,
     linkMyMemberAccount,
-    updateMyContactPhone,
+    updateMyMemberProfile,
     logMemberActivity,
   } = useClubData();
 
@@ -48,20 +62,40 @@ export const MemberProfile: React.FC = () => {
   const [passLoading, setPassLoading] = useState(false);
   const [passFeedback, setPassFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Contact phone & notice to admin state
+  // Personal Profile (Phone, Private DOB, Public Blood Group) & Treasurer Notice state
   const [phoneInput, setPhoneInput] = useState(myMemberRecord?.phone || '');
-  const [phoneSaving, setPhoneSaving] = useState(false);
-  const [phoneFeedback, setPhoneFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [dobInput, setDobInput] = useState(myMemberRecord?.date_of_birth || '');
+  const [bloodGroupInput, setBloodGroupInput] = useState(myMemberRecord?.blood_group || '');
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileFeedback, setProfileFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const [noticeMessage, setNoticeMessage] = useState('');
   const [noticeSending, setNoticeSending] = useState(false);
   const [noticeFeedback, setNoticeFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Member Directory Filter & Receipt Modal state
+  const [dirSearch, setDirSearch] = useState('');
+  const [bloodFilter, setBloodFilter] = useState<string>('all');
+  const [receiptDue, setReceiptDue] = useState<MonthlyDue | null>(null);
+
   useEffect(() => {
-    if (myMemberRecord?.phone) {
-      setPhoneInput(myMemberRecord.phone);
-    }
-  }, [myMemberRecord?.phone]);
+    setPhoneInput(myMemberRecord?.phone || '');
+    setDobInput(myMemberRecord?.date_of_birth || '');
+    setBloodGroupInput(myMemberRecord?.blood_group || '');
+  }, [myMemberRecord?.phone, myMemberRecord?.date_of_birth, myMemberRecord?.blood_group]);
+
+  const filteredDirectory = useMemo(() => {
+    const q = dirSearch.trim().toLowerCase();
+    return memberDirectory.filter((item) => {
+      if (bloodFilter !== 'all' && item.blood_group !== bloodFilter) return false;
+      if (!q) return true;
+      return (
+        item.full_name.toLowerCase().includes(q) ||
+        item.member_code.toLowerCase().includes(q) ||
+        (item.blood_group || '').toLowerCase().includes(q)
+      );
+    });
+  }, [memberDirectory, dirSearch, bloodFilter]);
 
   const recentDues = [...myDues]
     .sort((a, b) => b.year - a.year || b.month - a.month)
@@ -123,18 +157,27 @@ export const MemberProfile: React.FC = () => {
     }
   };
 
-  const handleUpdatePhone = async (e: React.FormEvent) => {
+  const handleUpdatePersonalProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phoneInput.trim()) return;
-    setPhoneSaving(true);
-    setPhoneFeedback(null);
+    setProfileSaving(true);
+    setProfileFeedback(null);
 
-    const res = await updateMyContactPhone(phoneInput);
-    setPhoneSaving(false);
+    const res = await updateMyMemberProfile({
+      phone: phoneInput,
+      date_of_birth: dobInput.trim() || null,
+      blood_group: bloodGroupInput || null,
+    });
+    setProfileSaving(false);
     if (res.success) {
-      setPhoneFeedback({ type: 'success', text: 'মোবাইল নম্বর আপডেট হয়েছে এবং অ্যাডমিনকে জানানো হয়েছে।' });
+      setProfileFeedback({
+        type: 'success',
+        text: 'আপনার প্রোফাইল তথ্য (ফোন, জন্মতারিখ ও রক্তের গ্রুপ) সফলভাবে আপডেট হয়েছে।',
+      });
     } else {
-      setPhoneFeedback({ type: 'error', text: res.error || 'নম্বর আপডেট ব্যর্থ হয়েছে।' });
+      setProfileFeedback({
+        type: 'error',
+        text: res.error || 'প্রোফাইল তথ্য আপডেট ব্যর্থ হয়েছে।',
+      });
     }
   };
 
@@ -237,6 +280,7 @@ export const MemberProfile: React.FC = () => {
         member={myMemberRecord}
         monthlyContribution={myFinancialSummary.monthlyContribution}
         showEmail
+        showPrivateDob
       />
 
       {/* Personal Financial Summary */}
@@ -398,45 +442,87 @@ export const MemberProfile: React.FC = () => {
           </form>
         </div>
 
-        {/* Card 2: Contact & Treasurer Notice */}
+        {/* Card 2: Personal Details (Phone, Private DOB, Public Blood Group) & Treasurer Notice */}
         <div className="surface-card rounded-2xl p-6 space-y-5">
           <div className="flex items-center gap-2.5 pb-3 border-b border-[#DFE6F0] dark:border-[#233452]">
             <div className="w-9 h-9 rounded-xl bg-[#0F1B33]/8 dark:bg-[#18294A] text-[#0F1B33] dark:text-[#D6AC62] flex items-center justify-center">
-              <Send className="w-4 h-4" />
+              <User className="w-4 h-4" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-[#0F1B33] dark:text-white">
-                Contact &amp; Treasurer Notice
+                Personal Info &amp; Privacy Settings
               </h3>
               <p className="text-[11px] text-[#4E5E78]">
-                Update contact phone or notify the treasurer
+                Manage phone, private Date of Birth &amp; public Blood Group
               </p>
             </div>
           </div>
 
-          <form onSubmit={handleUpdatePhone} className="space-y-2 text-xs">
-            <label className="block font-semibold text-[#0F1B2E] dark:text-slate-300">
-              Phone Number
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="tel"
-                value={phoneInput}
-                onChange={(e) => setPhoneInput(e.target.value)}
-                placeholder="+880 17XX-XXXXXX"
-                className="flex-1 min-w-0 px-3 py-2.5 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono text-xs focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
-              />
-              <button
-                type="submit"
-                disabled={phoneSaving}
-                className="px-4 py-2.5 bg-[#0F1B33] hover:bg-[#18294A] text-white font-semibold rounded-xl text-xs cursor-pointer disabled:opacity-50 shrink-0"
-              >
-                {phoneSaving ? 'Saving...' : 'Save'}
-              </button>
+          <form onSubmit={handleUpdatePersonalProfile} className="space-y-3 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block font-semibold text-[#0F1B2E] dark:text-slate-300 mb-1">
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={phoneInput}
+                  onChange={(e) => setPhoneInput(e.target.value)}
+                  placeholder="+880 17XX-XXXXXX"
+                  className="w-full px-3 py-2 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono text-xs focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-[#0F1B2E] dark:text-slate-300 mb-1 flex items-center gap-1.5">
+                  <Droplets className="w-3.5 h-3.5 text-rose-500" />
+                  <span>Blood Group (Members Visible)</span>
+                </label>
+                <select
+                  value={bloodGroupInput}
+                  onChange={(e) => setBloodGroupInput(e.target.value)}
+                  className="w-full px-3 py-2 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono text-xs text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8] cursor-pointer"
+                >
+                  <option value="">Not specified</option>
+                  {BLOOD_GROUPS.map((bg) => (
+                    <option key={bg} value={bg}>
+                      {bg}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-            {phoneFeedback && (
-              <p className={`text-[11px] ${phoneFeedback.type === 'success' ? 'text-[#1D4ED8] dark:text-[#60A5FA]' : 'text-rose-600'}`}>
-                {phoneFeedback.text}
+
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <label className="font-semibold text-[#0F1B2E] dark:text-slate-300 flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-[#D6AC62]" />
+                  <span>Date of Birth (Strictly Private)</span>
+                </label>
+                <span className="text-[10px] font-mono text-[#0369A1] dark:text-[#38BDF8]">
+                  Only visible to you &amp; admins
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={dobInput}
+                  onChange={(e) => setDobInput(e.target.value)}
+                  className="flex-1 min-w-0 px-3 py-2 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono text-xs focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
+                />
+                <button
+                  type="submit"
+                  disabled={profileSaving}
+                  className="px-4 py-2 bg-[#0F1B33] hover:bg-[#18294A] text-white font-semibold rounded-xl text-xs cursor-pointer disabled:opacity-50 shrink-0 whitespace-nowrap"
+                >
+                  {profileSaving ? 'Saving...' : 'Save Info'}
+                </button>
+              </div>
+            </div>
+
+            {profileFeedback && (
+              <p className={`text-[11px] ${profileFeedback.type === 'success' ? 'text-[#1D4ED8] dark:text-[#60A5FA]' : 'text-rose-600'}`}>
+                {profileFeedback.text}
               </p>
             )}
           </form>
@@ -472,6 +558,175 @@ export const MemberProfile: React.FC = () => {
         </div>
       </div>
 
+      {/* Club Announcements & Peer Blood Group Directory */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Club Announcements */}
+        <div className="lg:col-span-5 surface-card rounded-2xl p-6 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-[#DFE6F0] dark:border-[#233452]">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-[#D6AC62]/15 text-[#92600A] dark:text-[#F0C56E] flex items-center justify-center">
+                <Megaphone className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[#0F1B33] dark:text-white">
+                  Club Announcements
+                </h3>
+                <p className="text-[11px] text-[#4E5E78]">
+                  Official notices from club admins
+                </p>
+              </div>
+            </div>
+            <span className="text-[11px] font-mono font-bold text-[#1D4ED8] dark:text-[#60A5FA] tabular-nums">
+              {announcements.length}
+            </span>
+          </div>
+
+          {announcements.length === 0 ? (
+            <div className="py-8 text-center text-xs text-[#4E5E78]">
+              No announcements published yet.
+            </div>
+          ) : (
+            <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+              {announcements.slice(0, 8).map((ann) => (
+                <div
+                  key={ann.id}
+                  className="p-3.5 rounded-xl bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] space-y-1.5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#92600A] dark:text-[#F0C56E]">
+                      {ann.category}
+                    </span>
+                    <span className="text-[10px] font-mono text-[#4E5E78]">
+                      {formatDate(ann.created_at)}
+                    </span>
+                  </div>
+                  <h4 className="text-xs font-bold text-[#0F1B33] dark:text-white">
+                    {ann.title}
+                  </h4>
+                  <p className="text-[11px] text-[#4E5E78] dark:text-slate-300 leading-relaxed whitespace-pre-line">
+                    {ann.body}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Authenticated Blood Group & Upcoming Birthday Directory */}
+        <div className="lg:col-span-7 surface-card rounded-2xl p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#DFE6F0] dark:border-[#233452]">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+                <Droplets className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[#0F1B33] dark:text-white">
+                  Club Blood Group &amp; Birthday Directory
+                </h3>
+                <p className="text-[11px] text-[#4E5E78]">
+                  Authenticated members only · Birth years &amp; private dates stay hidden
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-[#4E5E78] absolute left-2.5 top-2" />
+                <input
+                  type="text"
+                  value={dirSearch}
+                  onChange={(e) => setDirSearch(e.target.value)}
+                  placeholder="Search member..."
+                  className="pl-8 pr-2.5 py-1.5 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl w-36 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
+                />
+              </div>
+
+              <select
+                value={bloodFilter}
+                onChange={(e) => setBloodFilter(e.target.value)}
+                aria-label="Filter by blood group"
+                className="px-2.5 py-1.5 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono cursor-pointer"
+              >
+                <option value="all">All Blood</option>
+                {BLOOD_GROUPS.map((bg) => (
+                  <option key={bg} value={bg}>
+                    {bg}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-72 overflow-y-auto pr-1">
+            {filteredDirectory.length === 0 ? (
+              <div className="col-span-full py-8 text-center text-xs text-[#4E5E78]">
+                No matching club members found.
+              </div>
+            ) : (
+              filteredDirectory.map((peer) => {
+                const hasMonthDay = Boolean(peer.birth_month && peer.birth_day);
+                const daysUntil =
+                  hasMonthDay && peer.birth_month && peer.birth_day
+                    ? computeDaysUntilBirthday(peer.birth_month, peer.birth_day).daysUntil
+                    : null;
+                const isUpcoming = daysUntil !== null && daysUntil >= 0 && daysUntil <= 7;
+
+                return (
+                  <div
+                    key={peer.id}
+                    className="p-3 rounded-xl bg-[#EFF3F9]/80 dark:bg-[#17243C]/80 border border-[#DFE6F0] dark:border-[#233452] flex items-center justify-between gap-2.5"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-9 h-9 rounded-full overflow-hidden bg-white dark:bg-[#111B2E] ring-1 ring-[#D6AC62]/50 shrink-0 flex items-center justify-center text-[11px] font-bold text-[#0F1B33] dark:text-slate-200">
+                        {peer.profile_image_url ? (
+                          <img
+                            src={peer.profile_image_url}
+                            alt={peer.full_name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          peer.full_name.substring(0, 2).toUpperCase()
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-xs font-bold text-[#0F1B33] dark:text-white block truncate">
+                          {peer.full_name}
+                        </span>
+                        <span className="text-[10px] font-mono text-[#4E5E78] block truncate">
+                          {peer.member_code} · {peer.designation || 'Member'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0 space-y-0.5">
+                      <span
+                        className={`text-xs font-mono font-extrabold block ${
+                          peer.blood_group
+                            ? 'text-rose-600 dark:text-rose-400'
+                            : 'text-[#4E5E78]'
+                        }`}
+                      >
+                        {peer.blood_group || '—'}
+                      </span>
+                      {isUpcoming && peer.birth_month && peer.birth_day && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-mono text-[#92600A] dark:text-[#F0C56E]">
+                          <Cake className="w-3 h-3" />
+                          <span>
+                            {daysUntil === 0
+                              ? 'Today'
+                              : formatBirthdayMonthDay(peer.birth_month, peer.birth_day)}
+                          </span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Recent Dues Preview */}
       <div className="surface-card rounded-2xl p-6 space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-[#DFE6F0] dark:border-[#233452]">
@@ -498,18 +753,20 @@ export const MemberProfile: React.FC = () => {
                 <th className="py-2.5 px-3 font-semibold text-right">Outstanding (৳)</th>
                 <th className="py-2.5 px-3 font-semibold text-center">Status</th>
                 <th className="py-2.5 px-3 font-semibold">Payment Date</th>
+                <th className="py-2.5 px-3 font-semibold text-right">Receipt</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#DFE6F0] dark:divide-[#233452]">
               {recentDues.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-[#4E5E78]">
+                  <td colSpan={8} className="py-8 text-center text-[#4E5E78]">
                     No billing records available.
                   </td>
                 </tr>
               ) : (
                 recentDues.map((d) => {
                   const bd = calculateDueBreakdown(d, myMemberRecord.shares_count);
+                  const canReceipt = !d.isVirtual && bd.totalPaid > 0;
                   return (
                     <tr key={d.id} className="hover:bg-[#EFF3F9]/60 dark:hover:bg-[#17243C]/60 transition-colors">
                       <td className="py-2.5 px-3 font-semibold text-[#0F1B33] dark:text-white whitespace-nowrap">
@@ -544,6 +801,21 @@ export const MemberProfile: React.FC = () => {
                       <td className="py-2.5 px-3 font-mono text-[#4E5E78] whitespace-nowrap">
                         {d.paid_at ? formatDate(d.paid_at) : '—'}
                       </td>
+                      <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                        {canReceipt ? (
+                          <button
+                            type="button"
+                            onClick={() => setReceiptDue(d)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-[#1D4ED8] dark:text-[#60A5FA] bg-[#1D4ED8]/10 hover:bg-[#1D4ED8]/18 rounded-lg border border-[#1D4ED8]/25 dark:border-[#60A5FA]/30 cursor-pointer"
+                            title="View & Download Payment Receipt"
+                          >
+                            <Receipt className="w-3 h-3" />
+                            <span>Receipt</span>
+                          </button>
+                        ) : (
+                          <span className="text-[#4E5E78]">—</span>
+                        )}
+                      </td>
                     </tr>
                   );
                 })
@@ -552,6 +824,13 @@ export const MemberProfile: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Payment Receipt Modal */}
+      <PaymentReceiptModal
+        due={receiptDue}
+        member={myMemberRecord}
+        onClose={() => setReceiptDue(null)}
+      />
     </PageTransition>
   );
 };
