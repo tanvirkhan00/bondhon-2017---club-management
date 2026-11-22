@@ -29,6 +29,7 @@ select
   full_name,
   profile_image_url,
   designation,
+  blood_group,
   status
 from public.members
 where status = 'active';
@@ -243,6 +244,7 @@ create policy "Authenticated users can view announcements"
   to authenticated
   using (true);
 
+drop policy if exists "Admins manage announcements" on public.announcements;
 drop policy if exists "Admins insert announcements" on public.announcements;
 create policy "Admins insert announcements"
   on public.announcements for insert
@@ -263,6 +265,21 @@ create policy "Admins delete announcements"
   using (public.is_admin());
 
 -- 7. Upgrade Notifications Schema + Per-User Read Tracking
+create table if not exists public.notifications (
+  id uuid default gen_random_uuid() primary key,
+  actor_user_id uuid references auth.users(id) on delete set null,
+  member_id uuid references public.members(id) on delete cascade,
+  member_code text,
+  member_name text not null,
+  event_type text not null default 'profile_updated',
+  title text not null,
+  message text not null,
+  is_read boolean not null default false,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.notifications enable row level security;
+
 alter table public.notifications
   add column if not exists audience text not null default 'admin',
   add column if not exists target_member_id uuid references public.members(id) on delete cascade,
@@ -347,6 +364,18 @@ create policy "Users view scoped notifications"
       )
     )
   );
+
+drop policy if exists "Admins update notifications" on public.notifications;
+create policy "Admins update notifications"
+  on public.notifications for update
+  to authenticated
+  using (public.is_admin());
+
+drop policy if exists "Admins delete notifications" on public.notifications;
+create policy "Admins delete notifications"
+  on public.notifications for delete
+  to authenticated
+  using (public.is_admin());
 
 -- 8. Idempotent Server-Side Birthday Notification Sync (never exposes birth year)
 create or replace function public.sync_upcoming_birthday_notifications(

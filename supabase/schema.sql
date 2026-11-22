@@ -7,21 +7,13 @@
 -- 1. Enable UUID Extension
 create extension if not exists "uuid-ossp";
 
--- 2. Drop existing objects for clean deployment if needed
+-- 2. Recreate privacy view cleanly (views hold no table rows)
 drop view if exists public.public_members cascade;
-drop table if exists public.notification_reads cascade;
-drop table if exists public.club_expenses cascade;
-drop table if exists public.bank_deposits cascade;
-drop table if exists public.notifications cascade;
-drop table if exists public.announcements cascade;
-drop table if exists public.monthly_dues cascade;
-drop table if exists public.members cascade;
-drop table if exists public.profiles cascade;
 
 -- ==============================================================================
 -- TABLE 1: PROFILES (Linked with Supabase auth.users)
 -- ==============================================================================
-create table public.profiles (
+create table if not exists public.profiles (
   id uuid references auth.users(id) on delete cascade primary key,
   full_name text not null,
   role text not null default 'member' check (role in ('admin', 'member')),
@@ -35,7 +27,7 @@ comment on table public.profiles is 'User accounts and RBAC permissions for Bond
 -- ==============================================================================
 -- TABLE 2: MEMBERS (Official Club Member Directory)
 -- ==============================================================================
-create table public.members (
+create table if not exists public.members (
   id uuid default gen_random_uuid() primary key,
   member_code text not null unique,
   full_name text not null,
@@ -47,7 +39,7 @@ create table public.members (
   shares_count smallint not null default 1 check (shares_count >= 1),
   join_date date not null default '2024-04-01',
   date_of_birth date,
-  blood_group text check (blood_group is null or blood_group in ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')),
+  blood_group text,
   status text not null default 'active' check (status in ('active', 'inactive')),
   auth_user_id uuid unique references auth.users(id) on delete set null,
   monthly_contribution numeric(12, 2) not null default 500.00 check (monthly_contribution >= 0),
@@ -55,26 +47,41 @@ create table public.members (
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+alter table public.members
+  add column if not exists father_name text,
+  add column if not exists email text,
+  add column if not exists shares_count smallint not null default 1,
+  add column if not exists date_of_birth date,
+  add column if not exists blood_group text;
+
+alter table public.members
+  drop constraint if exists chk_members_blood_group;
+
+alter table public.members
+  add constraint chk_members_blood_group
+  check (blood_group is null or blood_group in ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'));
+
 comment on table public.members is 'Club members directory with contact and contribution records';
 
 -- Performance Indexes
-create index idx_members_code on public.members(member_code);
-create index idx_members_status on public.members(status);
-create index idx_members_auth on public.members(auth_user_id);
-create index idx_members_name on public.members(full_name);
+create index if not exists idx_members_code on public.members(member_code);
+create index if not exists idx_members_status on public.members(status);
+create index if not exists idx_members_auth on public.members(auth_user_id);
+create index if not exists idx_members_name on public.members(full_name);
 
 -- ==============================================================================
 -- VIEW: PUBLIC MEMBER DIRECTORY (Strict Privacy Rules)
 -- Never exposes father's name, monthly shares/fees, DOB, phone, join dates, or auth IDs.
 -- Accessible to anyone browsing the public site.
 -- ==============================================================================
-create or replace view public.public_members as
+create view public.public_members as
 select
   id,
   member_code,
   full_name,
   profile_image_url,
   designation,
+  blood_group,
   status
 from public.members
 where status = 'active';
@@ -84,7 +91,7 @@ comment on view public.public_members is 'Publicly accessible member directory v
 -- ==============================================================================
 -- TABLE 3: MONTHLY_DUES (Monthly Membership Contributions in BDT ৳)
 -- ==============================================================================
-create table public.monthly_dues (
+create table if not exists public.monthly_dues (
   id uuid default gen_random_uuid() primary key,
   member_id uuid not null references public.members(id) on delete cascade,
   month smallint not null check (month between 1 and 12),
@@ -109,12 +116,22 @@ create table public.monthly_dues (
   constraint unique_member_month_year unique (member_id, month, year)
 );
 
+alter table public.monthly_dues
+  add column if not exists fine_due numeric(12, 2) not null default 0.00,
+  add column if not exists fine_paid numeric(12, 2) not null default 0.00,
+  add column if not exists fine_paid_at timestamp with time zone,
+  add column if not exists fine_waived boolean not null default false,
+  add column if not exists notes text,
+  add column if not exists receipt_number text,
+  add column if not exists payment_method text,
+  add column if not exists recorded_by_name text;
+
 comment on table public.monthly_dues is 'Monthly membership dues records for all club members in BDT ৳';
 
 -- Performance Indexes
-create index idx_dues_member on public.monthly_dues(member_id);
-create index idx_dues_month_year on public.monthly_dues(year, month);
-create index idx_dues_status on public.monthly_dues(status);
+create index if not exists idx_dues_member on public.monthly_dues(member_id);
+create index if not exists idx_dues_month_year on public.monthly_dues(year, month);
+create index if not exists idx_dues_status on public.monthly_dues(status);
 
 -- ==============================================================================
 -- HELPER FUNCTIONS & TRIGGERS
@@ -155,6 +172,7 @@ begin
 end;
 $$;
 
+drop trigger if exists trg_calc_dues_status on public.monthly_dues;
 create trigger trg_calc_dues_status
   before insert or update of amount_due, amount_paid on public.monthly_dues
   for each row execute function public.calc_dues_status();
@@ -200,7 +218,8 @@ begin
 end;
 $$;
 
-create or replace trigger on_auth_user_created
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
@@ -259,7 +278,7 @@ $$;
 -- ==============================================================================
 -- TABLE 4A: ANNOUNCEMENTS (Admin Club Notices & Updates)
 -- ==============================================================================
-create table public.announcements (
+create table if not exists public.announcements (
   id uuid default gen_random_uuid() primary key,
   title text not null,
   body text not null,
@@ -270,12 +289,12 @@ create table public.announcements (
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
-create index idx_announcements_created on public.announcements(created_at desc);
+create index if not exists idx_announcements_created on public.announcements(created_at desc);
 
 -- ==============================================================================
 -- TABLE 4B: NOTIFICATIONS (Scoped Admin Activity, Member Payments, Announcements & Birthdays)
 -- ==============================================================================
-create table public.notifications (
+create table if not exists public.notifications (
   id uuid default gen_random_uuid() primary key,
   actor_user_id uuid references auth.users(id) on delete set null,
   member_id uuid references public.members(id) on delete cascade,
@@ -283,17 +302,8 @@ create table public.notifications (
   announcement_id uuid references public.announcements(id) on delete cascade,
   member_code text,
   member_name text not null,
-  audience text not null default 'admin' check (audience in ('admin', 'member', 'all_members')),
-  event_type text not null default 'profile_updated' check (event_type in (
-    'member_login',
-    'member_logout',
-    'password_changed',
-    'profile_updated',
-    'payment_notice',
-    'payment_recorded',
-    'announcement',
-    'birthday_reminder'
-  )),
+  audience text not null default 'admin',
+  event_type text not null default 'profile_updated',
   title text not null,
   message text not null,
   metadata jsonb not null default '{}'::jsonb,
@@ -302,13 +312,43 @@ create table public.notifications (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
-create index idx_notifications_created on public.notifications(created_at desc);
-create index idx_notifications_read on public.notifications(is_read);
-create index idx_notifications_audience on public.notifications(audience, target_member_id, created_at desc);
-create unique index idx_notifications_dedup_key on public.notifications(dedup_key) where dedup_key is not null;
+alter table public.notifications
+  add column if not exists target_member_id uuid references public.members(id) on delete cascade,
+  add column if not exists announcement_id uuid references public.announcements(id) on delete cascade,
+  add column if not exists audience text not null default 'admin',
+  add column if not exists metadata jsonb not null default '{}'::jsonb,
+  add column if not exists dedup_key text;
+
+alter table public.notifications
+  drop constraint if exists notifications_audience_check;
+
+alter table public.notifications
+  add constraint notifications_audience_check
+  check (audience in ('admin', 'member', 'all_members'));
+
+alter table public.notifications
+  drop constraint if exists notifications_event_type_check;
+
+alter table public.notifications
+  add constraint notifications_event_type_check
+  check (event_type in (
+    'member_login',
+    'member_logout',
+    'password_changed',
+    'profile_updated',
+    'payment_notice',
+    'payment_recorded',
+    'announcement',
+    'birthday_reminder'
+  ));
+
+create index if not exists idx_notifications_created on public.notifications(created_at desc);
+create index if not exists idx_notifications_read on public.notifications(is_read);
+create index if not exists idx_notifications_audience on public.notifications(audience, target_member_id, created_at desc);
+create unique index if not exists idx_notifications_dedup_key on public.notifications(dedup_key) where dedup_key is not null;
 
 -- Per-user read status for broadcast announcements & birthday reminders
-create table public.notification_reads (
+create table if not exists public.notification_reads (
   notification_id uuid not null references public.notifications(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
   read_at timestamp with time zone default timezone('utc'::text, now()) not null,
@@ -698,16 +738,19 @@ alter table public.notification_reads enable row level security;
 -- PROFILES RLS
 -- ------------------------------------------------------------------------------
 -- Authenticated users can view their own profile, Admins can view all profiles
+drop policy if exists "Users can view own profile or admins view all" on public.profiles;
 create policy "Users can view own profile or admins view all"
   on public.profiles for select
   to authenticated
   using (auth.uid() = id or public.is_admin());
 
+drop policy if exists "Users can insert own profile" on public.profiles;
 create policy "Users can insert own profile"
   on public.profiles for insert
   to authenticated
   with check (auth.uid() = id);
 
+drop policy if exists "Users can update own profile non-role fields" on public.profiles;
 create policy "Users can update own profile non-role fields"
   on public.profiles for update
   to authenticated
@@ -725,6 +768,7 @@ create policy "Users can update own profile non-role fields"
 grant select on public.public_members to anon, authenticated;
 
 -- Authenticated Member can view their own full member record; Admins can view all
+drop policy if exists "Members view own record or admins view all" on public.members;
 create policy "Members view own record or admins view all"
   on public.members for select
   to authenticated
@@ -735,17 +779,20 @@ create policy "Members view own record or admins view all"
   );
 
 -- Only Admins can modify member records
+drop policy if exists "Admins insert members" on public.members;
 create policy "Admins insert members"
   on public.members for insert
   to authenticated
   with check (public.is_admin());
 
+drop policy if exists "Admins update members" on public.members;
 create policy "Admins update members"
   on public.members for update
   to authenticated
   using (public.is_admin())
   with check (public.is_admin());
 
+drop policy if exists "Admins delete members" on public.members;
 create policy "Admins delete members"
   on public.members for delete
   to authenticated
@@ -755,6 +802,7 @@ create policy "Admins delete members"
 -- MONTHLY_DUES RLS
 -- ------------------------------------------------------------------------------
 -- Member can read ONLY their own dues; Admins can read all dues
+drop policy if exists "Members view own dues or admins view all" on public.monthly_dues;
 create policy "Members view own dues or admins view all"
   on public.monthly_dues for select
   to authenticated
@@ -768,17 +816,20 @@ create policy "Members view own dues or admins view all"
   );
 
 -- Only Admins can insert, update, or delete dues
+drop policy if exists "Admins insert monthly dues" on public.monthly_dues;
 create policy "Admins insert monthly dues"
   on public.monthly_dues for insert
   to authenticated
   with check (public.is_admin());
 
+drop policy if exists "Admins update monthly dues" on public.monthly_dues;
 create policy "Admins update monthly dues"
   on public.monthly_dues for update
   to authenticated
   using (public.is_admin())
   with check (public.is_admin());
 
+drop policy if exists "Admins delete monthly dues" on public.monthly_dues;
 create policy "Admins delete monthly dues"
   on public.monthly_dues for delete
   to authenticated
@@ -787,17 +838,23 @@ create policy "Admins delete monthly dues"
 -- ------------------------------------------------------------------------------
 -- ANNOUNCEMENTS & NOTIFICATIONS RLS
 -- ------------------------------------------------------------------------------
+drop policy if exists "Authenticated users can view announcements" on public.announcements;
 create policy "Authenticated users can view announcements"
   on public.announcements for select
   to authenticated
   using (true);
 
+drop policy if exists "Admins insert announcements" on public.announcements;
+drop policy if exists "Admins update announcements" on public.announcements;
+drop policy if exists "Admins delete announcements" on public.announcements;
+drop policy if exists "Admins manage announcements" on public.announcements;
 create policy "Admins manage announcements"
   on public.announcements for all
   to authenticated
   using (public.is_admin())
   with check (public.is_admin());
 
+drop policy if exists "Authenticated users can log activity notifications" on public.notifications;
 create policy "Authenticated users can log activity notifications"
   on public.notifications for insert
   to authenticated
@@ -810,6 +867,8 @@ create policy "Authenticated users can log activity notifications"
     )
   );
 
+drop policy if exists "Admins view notifications" on public.notifications;
+drop policy if exists "Users view scoped notifications" on public.notifications;
 create policy "Users view scoped notifications"
   on public.notifications for select
   to authenticated
@@ -830,16 +889,19 @@ create policy "Users view scoped notifications"
     )
   );
 
+drop policy if exists "Admins update notifications" on public.notifications;
 create policy "Admins update notifications"
   on public.notifications for update
   to authenticated
   using (public.is_admin());
 
+drop policy if exists "Admins delete notifications" on public.notifications;
 create policy "Admins delete notifications"
   on public.notifications for delete
   to authenticated
   using (public.is_admin());
 
+drop policy if exists "Users manage own notification reads" on public.notification_reads;
 create policy "Users manage own notification reads"
   on public.notification_reads for all
   to authenticated
@@ -849,7 +911,7 @@ create policy "Users manage own notification reads"
 -- ==============================================================================
 -- TABLE 5: BANK DEPOSITS (Sonali Bank PLC Deposits)
 -- ==============================================================================
-create table public.bank_deposits (
+create table if not exists public.bank_deposits (
   id uuid default gen_random_uuid() primary key,
   bank_name text not null default 'Sonali Bank PLC',
   branch_name text not null default 'Bhedarganj Branch, Shariatpur',
@@ -865,27 +927,34 @@ create table public.bank_deposits (
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
-create index idx_bank_deposits_date on public.bank_deposits(deposited_at desc);
-create index idx_bank_deposits_entry_type on public.bank_deposits(entry_type);
+alter table public.bank_deposits
+  add column if not exists entry_type text not null default 'deposit';
+
+create index if not exists idx_bank_deposits_date on public.bank_deposits(deposited_at desc);
+create index if not exists idx_bank_deposits_entry_type on public.bank_deposits(entry_type);
 
 alter table public.bank_deposits enable row level security;
 
+drop policy if exists "Admins view bank deposits" on public.bank_deposits;
 create policy "Admins view bank deposits"
   on public.bank_deposits for select
   to authenticated
   using (public.is_admin());
 
+drop policy if exists "Admins insert bank deposits" on public.bank_deposits;
 create policy "Admins insert bank deposits"
   on public.bank_deposits for insert
   to authenticated
   with check (public.is_admin());
 
+drop policy if exists "Admins update bank deposits" on public.bank_deposits;
 create policy "Admins update bank deposits"
   on public.bank_deposits for update
   to authenticated
   using (public.is_admin())
   with check (public.is_admin());
 
+drop policy if exists "Admins delete bank deposits" on public.bank_deposits;
 create policy "Admins delete bank deposits"
   on public.bank_deposits for delete
   to authenticated
@@ -894,7 +963,7 @@ create policy "Admins delete bank deposits"
 -- ==============================================================================
 -- TABLE 6: CLUB EXPENSES (Operational, Account Opening & Deduction Ledger)
 -- ==============================================================================
-create table public.club_expenses (
+create table if not exists public.club_expenses (
   id uuid default gen_random_uuid() primary key,
   title text not null,
   category text not null default 'operational' check (category in ('bank_charge', 'account_opening', 'operational', 'event', 'welfare', 'other')),
@@ -908,27 +977,31 @@ create table public.club_expenses (
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
-create index idx_club_expenses_date on public.club_expenses(expense_date desc);
-create index idx_club_expenses_source on public.club_expenses(payment_source);
+create index if not exists idx_club_expenses_date on public.club_expenses(expense_date desc);
+create index if not exists idx_club_expenses_source on public.club_expenses(payment_source);
 
 alter table public.club_expenses enable row level security;
 
+drop policy if exists "Admins view club expenses" on public.club_expenses;
 create policy "Admins view club expenses"
   on public.club_expenses for select
   to authenticated
   using (public.is_admin());
 
+drop policy if exists "Admins insert club expenses" on public.club_expenses;
 create policy "Admins insert club expenses"
   on public.club_expenses for insert
   to authenticated
   with check (public.is_admin());
 
+drop policy if exists "Admins update club expenses" on public.club_expenses;
 create policy "Admins update club expenses"
   on public.club_expenses for update
   to authenticated
   using (public.is_admin())
   with check (public.is_admin());
 
+drop policy if exists "Admins delete club expenses" on public.club_expenses;
 create policy "Admins delete club expenses"
   on public.club_expenses for delete
   to authenticated
@@ -1034,21 +1107,25 @@ values ('member-avatars', 'member-avatars', true)
 on conflict (id) do update set public = true;
 
 -- Storage RLS: Public can view member avatars
+drop policy if exists "Public can view member avatars" on storage.objects;
 create policy "Public can view member avatars"
   on storage.objects for select
   using (bucket_id = 'member-avatars');
 
 -- Storage RLS: Only Admins can upload, update, and delete member avatars
+drop policy if exists "Admins can upload member avatars" on storage.objects;
 create policy "Admins can upload member avatars"
   on storage.objects for insert
   to authenticated
   with check (bucket_id = 'member-avatars' and public.is_admin());
 
+drop policy if exists "Admins can update member avatars" on storage.objects;
 create policy "Admins can update member avatars"
   on storage.objects for update
   to authenticated
   using (bucket_id = 'member-avatars' and public.is_admin());
 
+drop policy if exists "Admins can delete member avatars" on storage.objects;
 create policy "Admins can delete member avatars"
   on storage.objects for delete
   to authenticated

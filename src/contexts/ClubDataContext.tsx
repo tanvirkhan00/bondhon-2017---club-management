@@ -498,6 +498,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           full_name: m.full_name,
           profile_image_url: m.profile_image_url,
           designation: m.designation,
+          blood_group: m.blood_group || null,
           status: 'active',
         }));
       setPublicMembers(activePubs);
@@ -565,10 +566,20 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     try {
       // 1. Fetch public directory view (strictly stripped of father_name, shares/fees, DOB, phone)
-      const { data: pubData, error: pubErr } = await client
+      let { data: pubData, error: pubErr } = await client
         .from('public_members')
-        .select('id, member_code, full_name, profile_image_url, designation, status')
+        .select('id, member_code, full_name, profile_image_url, designation, blood_group, status')
         .order('member_code', { ascending: true });
+
+      // Fallback cleanly if remote public_members view hasn't been updated with blood_group yet
+      if (pubErr) {
+        const legacyPub = await client
+          .from('public_members')
+          .select('id, member_code, full_name, profile_image_url, designation, status')
+          .order('member_code', { ascending: true });
+        pubData = legacyPub.data as typeof pubData;
+        pubErr = legacyPub.error;
+      }
 
       const resolvedPubs: PublicMember[] =
         !pubErr && Array.isArray(pubData) && pubData.length > 0
@@ -578,6 +589,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
               full_name: pm.full_name,
               profile_image_url: pm.profile_image_url || null,
               designation: pm.designation || 'Member',
+              blood_group: pm.blood_group || null,
               status: 'active',
             }))
           : INITIAL_PUBLIC_MEMBERS;
@@ -1054,6 +1066,11 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
 
     const md = extractMonthDayFromDob(nextDob);
+    setPublicMembers((prev) =>
+      prev.map((pm) =>
+        pm.id === myMemberRecord.id ? { ...pm, blood_group: cleanBlood } : pm
+      )
+    );
     setRpcDirectory((prev) =>
       prev
         ? prev.map((item) =>
@@ -2944,9 +2961,23 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setClubExpenses([]);
   };
 
+  const enrichedPublicMembers = useMemo(() => {
+    const dirById = new Map(memberDirectory.map((d) => [d.id, d]));
+    const fullById = new Map(members.map((m) => [m.id, m]));
+    return publicMembers.map((pm) => {
+      const dir = dirById.get(pm.id);
+      const full = fullById.get(pm.id);
+      const selfRecord = myMemberRecord?.id === pm.id ? myMemberRecord : null;
+      return {
+        ...pm,
+        blood_group: pm.blood_group ?? selfRecord?.blood_group ?? dir?.blood_group ?? full?.blood_group ?? null,
+      };
+    });
+  }, [publicMembers, memberDirectory, members, myMemberRecord]);
+
   const value = useMemo(
     () => ({
-      publicMembers,
+      publicMembers: enrichedPublicMembers,
       memberDirectory,
       upcomingBirthdayHighlights,
       members,
@@ -3018,7 +3049,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       resetDemoData,
     }),
     [
-      publicMembers,
+      enrichedPublicMembers,
       memberDirectory,
       upcomingBirthdayHighlights,
       members,

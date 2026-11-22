@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useClubData } from '../../hooks/useClubData';
 import { BankDeposit, BankEntryType, ClubExpense } from '../../types';
 import { formatBDT, formatDate } from '../../utils/formatters';
-import { downloadCsv } from '../../utils/csvExport';
+import { downloadClubTablePdf } from '../../utils/reportPdfGenerator';
 import { MetricCard } from '../../components/MetricCard';
 import { BankEntryModal } from '../../components/BankEntryModal';
 import { ClubExpenseModal } from '../../components/ClubExpenseModal';
@@ -195,65 +195,133 @@ export const AdminTreasury: React.FC = () => {
     setExpenseModalOpen(true);
   };
 
-  const handleExportBankStatementCsv = () => {
-    const headers = [
-      'Date',
-      'Transaction Type',
-      'Note / Particular',
-      'Reference No',
-      'Credit / Debit (BDT)',
-      'Running Bank Balance (BDT)',
-    ];
+  const handleExportBankStatementPdf = () => {
+    const todayIso = new Date().toISOString().substring(0, 10);
     const rows = [...bankStatementRows]
       .reverse()
       .map((r) => [
-        r.date,
+        r.date ? formatDate(r.date) : '-',
         r.label,
         r.note,
-        r.refNo === '—' ? '' : r.refNo,
-        r.signedAmount,
-        r.runningBalance,
+        r.refNo === '—' ? '-' : r.refNo,
+        `${r.signedAmount >= 0 ? '+' : '-'}BDT ${Math.abs(Math.round(r.signedAmount)).toLocaleString('en-US')}`,
+        `BDT ${Math.round(r.runningBalance).toLocaleString('en-US')}`,
       ]);
-    rows.push(['', 'CURRENT SONALI BANK BALANCE', '', '', '', currentBankBalance]);
-    downloadCsv(`Bondhon_2017_Sonali_Bank_Statement_${new Date().toISOString().substring(0, 10)}.csv`, headers, rows);
+
+    downloadClubTablePdf({
+      filename: `Bondhon_2017_Sonali_Bank_Statement_${todayIso}.pdf`,
+      title: 'Sonali Bank PLC Account Statement (A/C 2102201027292)',
+      subtitle: `Bhedarganj Branch, Shariatpur · Chronological bank ledger & running cash balance`,
+      orientation: 'landscape',
+      kpis: [
+        { label: 'Current Bank Cash', value: `BDT ${Math.round(currentBankBalance).toLocaleString('en-US')}` },
+        { label: 'Total Deposited', value: `BDT ${Math.round(totalBankDeposited).toLocaleString('en-US')}` },
+        { label: 'Interest Credited', value: `BDT ${Math.round(totalBankInterest).toLocaleString('en-US')}` },
+        { label: 'Bank Charges & VAT', value: `BDT ${Math.round(totalBankCharges).toLocaleString('en-US')}` },
+      ],
+      columns: [
+        { header: 'Date', weight: 1.0, align: 'left', mono: true },
+        { header: 'Transaction Type', weight: 1.3, align: 'left' },
+        { header: 'Note / Particular', weight: 2.2, align: 'left' },
+        { header: 'Slip / Ref No', weight: 1.0, align: 'left', mono: true },
+        { header: 'Credit / Debit', weight: 1.3, align: 'right', mono: true },
+        { header: 'Running Balance', weight: 1.4, align: 'right', mono: true },
+      ],
+      rows,
+      totalsRow: [
+        todayIso,
+        'CLOSING BALANCE',
+        'Sonali Bank PLC Current Cash',
+        '-',
+        '-',
+        `BDT ${Math.round(currentBankBalance).toLocaleString('en-US')}`,
+      ],
+    });
   };
 
-  const handleExportClubStatementCsv = () => {
-    const headers = ['Date', 'Category', 'Particular / Description', 'Source', 'Ref No', 'Amount (BDT)'];
+  const handleExportClubStatementPdf = () => {
+    const todayIso = new Date().toISOString().substring(0, 10);
     const rows: (string | number)[][] = [];
 
     yearlyCollectionRows.forEach((yr) => {
-      if (yr.principal > 0) rows.push(['', 'Collection', `${yr.year} Principal Collection`, 'Member Dues', '', yr.principal]);
-      if (yr.fine > 0) rows.push(['', 'Fine', `${yr.year} Jorimana Collection`, 'Member Fines', '', yr.fine]);
+      if (yr.principal > 0) {
+        rows.push([
+          String(yr.year),
+          'Collection',
+          `${yr.year} Principal Collection`,
+          'Member Dues',
+          '-',
+          `+BDT ${Math.round(yr.principal).toLocaleString('en-US')}`,
+        ]);
+      }
+      if (yr.fine > 0) {
+        rows.push([
+          String(yr.year),
+          'Late Fine',
+          `${yr.year} Jorimana Collection`,
+          'Member Fines',
+          '-',
+          `+BDT ${Math.round(yr.fine).toLocaleString('en-US')}`,
+        ]);
+      }
     });
 
     bankDeposits
       .filter((b) => b.entry_type === 'interest' || b.entry_type === 'charge')
       .forEach((b) => {
         const isInt = b.entry_type === 'interest';
+        const amt = Math.round(Number(b.amount || 0)).toLocaleString('en-US');
         rows.push([
-          (b.deposited_at || '').substring(0, 10),
+          b.deposited_at ? formatDate(b.deposited_at) : '-',
           isInt ? 'Bank Interest' : 'Bank Charge',
           b.notes || (isInt ? 'Credit from Interest' : 'Bank Charge'),
           'Sonali Bank PLC',
-          b.reference_no || '',
-          isInt ? Number(b.amount) : -Number(b.amount),
+          b.reference_no || '-',
+          `${isInt ? '+' : '-'}BDT ${amt}`,
         ]);
       });
 
     clubExpenses.forEach((e) => {
+      const amt = Math.round(Number(e.amount || 0)).toLocaleString('en-US');
       rows.push([
-        (e.expense_date || '').substring(0, 10),
+        e.expense_date ? formatDate(e.expense_date) : '-',
         EXPENSE_CATEGORY_LABELS[e.category] || e.category,
         e.title,
         e.payment_source === 'bank' ? 'Sonali Bank A/C' : 'Cash in Hand',
-        e.reference_no || '',
-        -Number(e.amount),
+        e.reference_no || '-',
+        `-BDT ${amt}`,
       ]);
     });
 
-    rows.push(['', 'NET SUMMARY', 'Club Net Available Balance', '', '', netClubAvailableBalance]);
-    downloadCsv(`Bondhon_2017_Club_Treasury_Cashbook_${new Date().toISOString().substring(0, 10)}.csv`, headers, rows);
+    downloadClubTablePdf({
+      filename: `Bondhon_2017_Club_Treasury_Cashbook_${todayIso}.pdf`,
+      title: 'Club Total Cash & Expense Reconciliation Statement',
+      subtitle: 'Complete treasury cashbook combining member inflows, bank interest, charges & expenses',
+      orientation: 'landscape',
+      kpis: [
+        { label: 'Total Collected', value: `BDT ${Math.round(totalClubCollected).toLocaleString('en-US')}` },
+        { label: 'Bank Interest', value: `BDT ${Math.round(totalBankInterest).toLocaleString('en-US')}` },
+        { label: 'Total Deductions', value: `BDT ${Math.round(totalDeductions).toLocaleString('en-US')}` },
+        { label: 'Net Available Balance', value: `BDT ${Math.round(netClubAvailableBalance).toLocaleString('en-US')}` },
+      ],
+      columns: [
+        { header: 'Date / FY', weight: 1.0, align: 'left', mono: true },
+        { header: 'Category', weight: 1.2, align: 'left' },
+        { header: 'Particular / Description', weight: 2.2, align: 'left' },
+        { header: 'Source / Account', weight: 1.3, align: 'left' },
+        { header: 'Ref No', weight: 1.0, align: 'left', mono: true },
+        { header: 'Amount (BDT)', weight: 1.3, align: 'right', mono: true },
+      ],
+      rows,
+      totalsRow: [
+        'SUMMARY',
+        'NET AVAILABLE',
+        'Club Net Available Balance',
+        'Bank + Cash',
+        '-',
+        `BDT ${Math.round(netClubAvailableBalance).toLocaleString('en-US')}`,
+      ],
+    });
   };
 
   return (
@@ -428,11 +496,11 @@ export const AdminTreasury: React.FC = () => {
 
           <button
             type="button"
-            onClick={activeTab === 'bank' ? handleExportBankStatementCsv : handleExportClubStatementCsv}
+            onClick={activeTab === 'bank' ? handleExportBankStatementPdf : handleExportClubStatementPdf}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-[#0F1B2E] dark:text-slate-100 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] hover:border-[#1D4ED8] dark:hover:border-[#60A5FA] rounded-xl transition-colors cursor-pointer whitespace-nowrap"
           >
             <Download className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
-            <span>Export CSV</span>
+            <span>Export PDF</span>
           </button>
         </div>
       </div>

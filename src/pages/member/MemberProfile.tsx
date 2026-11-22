@@ -1,14 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useClubData } from '../../hooks/useClubData';
 import { useAuth } from '../../hooks/useAuth';
 import { formatBDT, formatDate, getMonthName } from '../../utils/formatters';
 import { calculateDueBreakdown } from '../../utils/fineCalculator';
-import {
-  BLOOD_GROUPS,
-  computeDaysUntilBirthday,
-  formatBirthdayMonthDay,
-} from '../../utils/birthdayUtils';
+import { BLOOD_GROUPS } from '../../utils/birthdayUtils';
 import { StatusBadge } from '../../components/StatusBadge';
 import { MetricCard } from '../../components/MetricCard';
 import { MemberProfileGreetingHero } from '../../components/MemberProfileGreetingHero';
@@ -29,10 +25,13 @@ import {
   Coins,
   ShieldCheck,
   Droplets,
-  Cake,
-  Search,
   Megaphone,
+  QrCode,
+  FileText,
+  SlidersHorizontal,
 } from 'lucide-react';
+
+type DeskTab = 'profile' | 'security' | 'treasurer';
 
 export const MemberProfile: React.FC = () => {
   const { user, updatePassword } = useAuth();
@@ -41,7 +40,6 @@ export const MemberProfile: React.FC = () => {
     myFinancialSummary,
     myDues,
     publicMembers,
-    memberDirectory,
     announcements,
     linkMyMemberAccount,
     updateMyMemberProfile,
@@ -51,6 +49,9 @@ export const MemberProfile: React.FC = () => {
   const [selectedCode, setSelectedCode] = useState('');
   const [linking, setLinking] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
+
+  // Unified Member Desk Tab
+  const [deskTab, setDeskTab] = useState<DeskTab>('profile');
 
   // Change password state
   const [newPassword, setNewPassword] = useState('');
@@ -70,28 +71,11 @@ export const MemberProfile: React.FC = () => {
   const [noticeSending, setNoticeSending] = useState(false);
   const [noticeFeedback, setNoticeFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Member Directory Filter state
-  const [dirSearch, setDirSearch] = useState('');
-  const [bloodFilter, setBloodFilter] = useState<string>('all');
-
   useEffect(() => {
     setPhoneInput(myMemberRecord?.phone || '');
     setDobInput(myMemberRecord?.date_of_birth || '');
     setBloodGroupInput(myMemberRecord?.blood_group || '');
   }, [myMemberRecord?.phone, myMemberRecord?.date_of_birth, myMemberRecord?.blood_group]);
-
-  const filteredDirectory = useMemo(() => {
-    const q = dirSearch.trim().toLowerCase();
-    return memberDirectory.filter((item) => {
-      if (bloodFilter !== 'all' && item.blood_group !== bloodFilter) return false;
-      if (!q) return true;
-      return (
-        item.full_name.toLowerCase().includes(q) ||
-        item.member_code.toLowerCase().includes(q) ||
-        (item.blood_group || '').toLowerCase().includes(q)
-      );
-    });
-  }, [memberDirectory, dirSearch, bloodFilter]);
 
   const recentDues = [...myDues]
     .sort((a, b) => b.year - a.year || b.month - a.month)
@@ -256,554 +240,550 @@ export const MemberProfile: React.FC = () => {
     );
   }
 
+  const paidProgress =
+    myFinancialSummary.totalBilled > 0
+      ? Math.min(100, Math.round((myFinancialSummary.totalPaid / myFinancialSummary.totalBilled) * 100))
+      : 100;
+
   return (
-    <PageTransition className="space-y-6 sm:space-y-8">
-      {/* Member Portal Top Overview Bar with Live Clock & Weather */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="min-w-0">
-          <h2 className="text-lg sm:text-xl font-extrabold tracking-tight text-[#0F1B33] dark:text-white">
-            Member Overview
+    <PageTransition className="space-y-6 sm:space-y-7">
+      {/* 1. Member Workspace Command Bar + Live Local Clock */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-[#DFE6F0] dark:border-[#233452]">
+        <div className="min-w-0 space-y-1">
+          <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono font-bold uppercase tracking-wider text-[#1D4ED8] dark:text-[#60A5FA]">
+            <span>Bondhon 2017 Member Workspace</span>
+            <span className="text-[#4E5E78]" aria-hidden="true">·</span>
+            <span className="text-[#92600A] dark:text-[#F0C56E]">{myMemberRecord.member_code}</span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#0F1B33] dark:text-white">
+            Personal Dashboard &amp; Financial Ledger
           </h2>
-          <p className="text-xs sm:text-sm text-[#4E5E78] dark:text-[#9BB0CD] mt-0.5">
-            Live local time, weather &amp; your verified contribution ledger
+          <p className="text-xs sm:text-sm text-[#4E5E78] dark:text-[#9BB0CD]">
+            Track verified monthly contributions, update privacy settings &amp; follow official club notices
           </p>
         </div>
         <DashboardClock />
       </div>
 
-      {/* Personalized Greeting & Member Identity Card */}
-      <MemberProfileGreetingHero
-        member={myMemberRecord}
-        monthlyContribution={myFinancialSummary.monthlyContribution}
-        showEmail
-        showPrivateDob
-      />
-
-      {/* Personal Financial Summary */}
+      {/* 2. Elevated Identity Hero + Quick Member Utility Strip */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs font-mono font-bold text-[#4E5E78] uppercase tracking-wider">
-            Contribution Summary
-          </h2>
-          <Link
-            to="/constitution"
-            className="text-xs font-semibold text-[#1D4ED8] dark:text-[#60A5FA] hover:underline"
-          >
-            Club Policy
-          </Link>
-        </div>
+        <MemberProfileGreetingHero
+          member={myMemberRecord}
+          monthlyContribution={myFinancialSummary.monthlyContribution}
+          showEmail
+          showPrivateDob
+        />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <MetricCard
-            label="Total Paid"
-            value={formatBDT(myFinancialSummary.totalPaid)}
-            subLabel={`${myFinancialSummary.totalPaidMonths} months cleared`}
-            icon={Wallet}
-            accent="sapphire"
-          />
-
-          <MetricCard
-            label="Total Outstanding"
-            value={formatBDT(myFinancialSummary.totalOutstanding)}
-            subLabel={`Principal ${formatBDT(myFinancialSummary.principalOutstanding)} · Fine ${formatBDT(myFinancialSummary.totalFinePending)}`}
-            icon={AlertCircle}
-            accent={myFinancialSummary.totalOutstanding > 0 ? 'rose' : 'navy'}
-            trend={{
-              positive: myFinancialSummary.totalOutstanding === 0,
-              text: `${myFinancialSummary.unpaidMonthsCount} mos`,
-            }}
-          />
-
-          <MetricCard
-            label="Fines Paid"
-            value={formatBDT(myFinancialSummary.totalFinePaid)}
-            subLabel={`Total charged: ${formatBDT(myFinancialSummary.totalFineCharged)}`}
-            icon={Coins}
-            accent="gold"
-          />
-
-          <div className="surface-card surface-card-hover rounded-2xl p-5 flex flex-col justify-between">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-[11px] font-semibold tracking-wider uppercase text-[#4E5E78]">
-                Account Status
-              </span>
-              <div className="w-9 h-9 rounded-xl bg-[#0F1B33]/8 dark:bg-[#18294A] text-[#0F1B33] dark:text-[#D6AC62] flex items-center justify-center">
-                <ShieldCheck className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-3">
-              <StatusBadge status={myFinancialSummary.currentStatus} />
-            </div>
-            <div className="mt-3.5 pt-2.5 border-t border-[#DFE6F0] dark:border-[#233452] text-xs text-[#4E5E78] font-mono">
-              Last payment: {myFinancialSummary.lastPaymentDate ? formatDate(myFinancialSummary.lastPaymentDate) : 'None'}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Interactive Member Profile Analytics */}
-      <MemberAnalyticsChart
-        member={myMemberRecord}
-        ledger={myDues}
-        summary={myFinancialSummary}
-      />
-
-      {/* Member Security & Communication */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Card 1: Change Password */}
-        <div className="surface-card rounded-2xl p-6 space-y-4">
-          <div className="flex items-center gap-2.5 pb-3 border-b border-[#DFE6F0] dark:border-[#233452]">
-            <div className="w-9 h-9 rounded-xl bg-[#1D4ED8]/10 text-[#1D4ED8] dark:text-[#60A5FA] flex items-center justify-center">
-              <KeyRound className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-[#0F1B33] dark:text-white">
-                Account Security
-              </h3>
-              <p className="text-[11px] text-[#4E5E78]">
-                Update your portal password
-              </p>
-            </div>
-          </div>
-
-          {passFeedback && (
-            <div
-              className={`p-3 rounded-xl text-xs flex items-start gap-2 ${
-                passFeedback.type === 'success'
-                  ? 'bg-[#1D4ED8]/10 text-[#1D4ED8] dark:text-[#60A5FA] border border-[#1D4ED8]/25 dark:border-[#60A5FA]/35'
-                  : 'bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300'
-              }`}
-            >
-              {passFeedback.type === 'success' ? (
-                <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
-              ) : (
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
-              )}
-              <span>{passFeedback.text}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleChangePassword} className="space-y-3.5 text-xs">
-            <div>
-              <label className="block font-semibold text-[#0F1B2E] dark:text-slate-300 mb-1.5">
-                New Password
-              </label>
-              <div className="relative">
-                <Lock className="w-3.5 h-3.5 text-[#4E5E78] absolute left-3 top-3" />
-                <input
-                  type={showPass ? 'text' : 'password'}
-                  required
-                  minLength={6}
-                  placeholder="Minimum 6 characters"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full pl-9 pr-10 py-2.5 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-sm focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPass(!showPass)}
-                  aria-label="Toggle password visibility"
-                  className="absolute right-3 top-2.5 text-[#4E5E78] hover:text-[#0F1B33] cursor-pointer"
-                >
-                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="block font-semibold text-[#0F1B2E] dark:text-slate-300 mb-1.5">
-                Confirm Password
-              </label>
-              <div className="relative">
-                <Lock className="w-3.5 h-3.5 text-[#4E5E78] absolute left-3 top-3" />
-                <input
-                  type={showPass ? 'text' : 'password'}
-                  required
-                  minLength={6}
-                  placeholder="Re-enter password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-sm focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={passLoading}
-              className="w-full py-2.5 px-4 bg-[#1D4ED8] hover:bg-[#1E40AF] text-white font-semibold rounded-xl shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
-            >
-              {passLoading ? 'Updating...' : 'Update Password'}
-            </button>
-          </form>
-        </div>
-
-        {/* Card 2: Personal Details (Phone, Private DOB, Public Blood Group) & Treasurer Notice */}
-        <div className="surface-card rounded-2xl p-6 space-y-5">
-          <div className="flex items-center gap-2.5 pb-3 border-b border-[#DFE6F0] dark:border-[#233452]">
-            <div className="w-9 h-9 rounded-xl bg-[#0F1B33]/8 dark:bg-[#18294A] text-[#0F1B33] dark:text-[#D6AC62] flex items-center justify-center">
-              <User className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-[#0F1B33] dark:text-white">
-                Personal Info &amp; Privacy Settings
-              </h3>
-              <p className="text-[11px] text-[#4E5E78]">
-                Manage phone, private Date of Birth &amp; public Blood Group
-              </p>
-            </div>
-          </div>
-
-          <form onSubmit={handleUpdatePersonalProfile} className="space-y-3 text-xs">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block font-semibold text-[#0F1B2E] dark:text-slate-300 mb-1">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  value={phoneInput}
-                  onChange={(e) => setPhoneInput(e.target.value)}
-                  placeholder="+880 17XX-XXXXXX"
-                  className="w-full px-3 py-2 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono text-xs focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-[#0F1B2E] dark:text-slate-300 mb-1 flex items-center gap-1.5">
-                  <Droplets className="w-3.5 h-3.5 text-rose-500" />
-                  <span>Blood Group (Members Visible)</span>
-                </label>
-                <select
-                  value={bloodGroupInput}
-                  onChange={(e) => setBloodGroupInput(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono text-xs text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8] cursor-pointer"
-                >
-                  <option value="">Not specified</option>
-                  {BLOOD_GROUPS.map((bg) => (
-                    <option key={bg} value={bg}>
-                      {bg}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <label className="font-semibold text-[#0F1B2E] dark:text-slate-300 flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-[#D6AC62]" />
-                  <span>Date of Birth (Strictly Private)</span>
-                </label>
-                <span className="text-[10px] font-mono text-[#0369A1] dark:text-[#38BDF8]">
-                  Only visible to you &amp; admins
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="date"
-                  value={dobInput}
-                  onChange={(e) => setDobInput(e.target.value)}
-                  className="flex-1 min-w-0 px-3 py-2 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono text-xs focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
-                />
-                <button
-                  type="submit"
-                  disabled={profileSaving}
-                  className="px-4 py-2 bg-[#0F1B33] hover:bg-[#18294A] text-white font-semibold rounded-xl text-xs cursor-pointer disabled:opacity-50 shrink-0 whitespace-nowrap"
-                >
-                  {profileSaving ? 'Saving...' : 'Save Info'}
-                </button>
-              </div>
-            </div>
-
-            {profileFeedback && (
-              <p className={`text-[11px] ${profileFeedback.type === 'success' ? 'text-[#1D4ED8] dark:text-[#60A5FA]' : 'text-rose-600'}`}>
-                {profileFeedback.text}
-              </p>
-            )}
-          </form>
-
-          <form onSubmit={handleSendNotice} className="space-y-2 text-xs pt-3 border-t border-[#DFE6F0] dark:border-[#233452]">
-            <label className="block font-semibold text-[#0F1B2E] dark:text-slate-300">
-              Message to Treasurer
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                required
-                value={noticeMessage}
-                onChange={(e) => setNoticeMessage(e.target.value)}
-                placeholder="Payment reference or TrxID..."
-                className="flex-1 min-w-0 px-3 py-2.5 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-xs focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
-              />
-              <button
-                type="submit"
-                disabled={noticeSending}
-                className="px-4 py-2.5 bg-[#1D4ED8] hover:bg-[#1E40AF] text-white font-semibold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shrink-0"
-              >
-                <Send className="w-3.5 h-3.5" />
-                <span>{noticeSending ? 'Sending...' : 'Send'}</span>
-              </button>
-            </div>
-            {noticeFeedback && (
-              <p className={`text-[11px] ${noticeFeedback.type === 'success' ? 'text-[#1D4ED8] dark:text-[#60A5FA]' : 'text-rose-600'}`}>
-                {noticeFeedback.text}
-              </p>
-            )}
-          </form>
-        </div>
-      </div>
-
-      {/* Club Announcements & Peer Blood Group Directory */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Club Announcements */}
-        <div className="lg:col-span-5 surface-card rounded-2xl p-6 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-[#DFE6F0] dark:border-[#233452]">
+        <div className="surface-card rounded-2xl px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+            <span className="font-semibold text-[#0F1B2E] dark:text-slate-200">
+              Account Settlement Progress:
+            </span>
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-[#D6AC62]/15 text-[#92600A] dark:text-[#F0C56E] flex items-center justify-center">
+              <div className="w-32 h-2 rounded-full bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] overflow-hidden">
+                <div
+                  style={{ width: `${paidProgress}%` }}
+                  className="h-full rounded-full bg-gradient-to-r from-[#1D4ED8] to-[#38BDF8]"
+                />
+              </div>
+              <span className="font-mono font-bold tabular-nums text-[#1D4ED8] dark:text-[#38BDF8]">
+                {paidProgress}%
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              to={`/members/${encodeURIComponent(myMemberRecord.member_code)}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] hover:border-[#1D4ED8] text-[#0F1B2E] dark:text-slate-100 font-semibold transition-colors whitespace-nowrap"
+            >
+              <QrCode className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
+              <span>Public QR Card</span>
+            </Link>
+
+            <Link
+              to="/member/payment-history"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] hover:border-[#1D4ED8] text-[#0F1B2E] dark:text-slate-100 font-semibold transition-colors whitespace-nowrap"
+            >
+              <FileText className="w-3.5 h-3.5 text-[#D6AC62]" />
+              <span>Full Payment History</span>
+            </Link>
+
+            <Link
+              to="/constitution"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1D4ED8]/10 text-[#1D4ED8] dark:text-[#60A5FA] font-bold hover:bg-[#1D4ED8]/15 transition-colors whitespace-nowrap"
+            >
+              <span>Club Policy</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Personal Financial Summary KPI Grid */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricCard
+          label="Total Paid"
+          value={formatBDT(myFinancialSummary.totalPaid)}
+          subLabel={`${myFinancialSummary.totalPaidMonths} months cleared`}
+          icon={Wallet}
+          accent="sapphire"
+          trend={{
+            positive: true,
+            text: `${paidProgress}%`,
+          }}
+        />
+
+        <MetricCard
+          label="Total Outstanding"
+          value={formatBDT(myFinancialSummary.totalOutstanding)}
+          subLabel={`Principal ${formatBDT(myFinancialSummary.principalOutstanding)} · Fine ${formatBDT(myFinancialSummary.totalFinePending)}`}
+          icon={AlertCircle}
+          accent={myFinancialSummary.totalOutstanding > 0 ? 'rose' : 'navy'}
+          trend={{
+            positive: myFinancialSummary.totalOutstanding === 0,
+            text: myFinancialSummary.totalOutstanding === 0 ? 'Cleared' : `${myFinancialSummary.unpaidMonthsCount} mos`,
+          }}
+        />
+
+        <MetricCard
+          label="Fines Paid"
+          value={formatBDT(myFinancialSummary.totalFinePaid)}
+          subLabel={`Total charged: ${formatBDT(myFinancialSummary.totalFineCharged)}`}
+          icon={Coins}
+          accent="gold"
+        />
+
+        <div className="surface-card surface-card-hover rounded-2xl p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[11px] font-semibold tracking-wider uppercase text-[#4E5E78] dark:text-[#9BB0CD]">
+              Account Status
+            </span>
+            <div className="w-9 h-9 rounded-xl bg-[#0F1B33]/8 dark:bg-[#18294A] text-[#0F1B33] dark:text-[#D6AC62] flex items-center justify-center">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3 flex items-center justify-between gap-2">
+            <StatusBadge status={myFinancialSummary.currentStatus} />
+            <span className="text-xs font-mono font-bold tabular-nums text-[#0369A1] dark:text-[#38BDF8]">
+              {formatBDT(myFinancialSummary.monthlyContribution)}/mo
+            </span>
+          </div>
+          <div className="mt-3.5 pt-2.5 border-t border-[#DFE6F0] dark:border-[#233452] text-xs text-[#4E5E78] dark:text-[#9BB0CD] font-mono">
+            Last payment: {myFinancialSummary.lastPaymentDate ? formatDate(myFinancialSummary.lastPaymentDate) : 'None'}
+          </div>
+        </div>
+      </section>
+
+      {/* 4. Interactive Contribution Analytics + Club Announcements Feed */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        <div className="lg:col-span-8 min-w-0">
+          <MemberAnalyticsChart
+            member={myMemberRecord}
+            ledger={myDues}
+            summary={myFinancialSummary}
+          />
+        </div>
+
+        <div className="lg:col-span-4 surface-card rounded-2xl flex flex-col overflow-hidden min-w-0">
+          <div className="px-5 py-4 border-b border-[#DFE6F0] dark:border-[#233452] flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-[#D6AC62]/15 text-[#92600A] dark:text-[#F0C56E] flex items-center justify-center shrink-0">
                 <Megaphone className="w-4 h-4" />
               </div>
-              <div>
-                <h3 className="text-sm font-bold text-[#0F1B33] dark:text-white">
+              <div className="min-w-0">
+                <h3 className="text-sm font-bold text-[#0F1B33] dark:text-white truncate">
                   Club Announcements
                 </h3>
-                <p className="text-[11px] text-[#4E5E78]">
-                  Official notices from club admins
+                <p className="text-[11px] text-[#4E5E78] dark:text-[#9BB0CD] truncate">
+                  Official admin bulletins
                 </p>
               </div>
             </div>
-            <span className="text-[11px] font-mono font-bold text-[#1D4ED8] dark:text-[#60A5FA] tabular-nums">
+            <span className="text-xs font-mono font-bold text-[#1D4ED8] dark:text-[#60A5FA] tabular-nums shrink-0">
               {announcements.length}
             </span>
           </div>
 
           {announcements.length === 0 ? (
-            <div className="py-8 text-center text-xs text-[#4E5E78]">
-              No announcements published yet.
+            <div className="flex-1 py-12 px-5 flex flex-col items-center justify-center text-center text-xs text-[#4E5E78] dark:text-[#9BB0CD] space-y-2">
+              <Megaphone className="w-6 h-6 text-[#D6AC62]/60" />
+              <p>No announcements published yet.</p>
             </div>
           ) : (
-            <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+            <div className="flex-1 divide-y divide-[#DFE6F0] dark:divide-[#233452] overflow-y-auto max-h-[380px]">
               {announcements.slice(0, 8).map((ann) => (
-                <div
+                <article
                   key={ann.id}
-                  className="p-3.5 rounded-xl bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] space-y-1.5"
+                  className="p-4 sm:px-5 space-y-1.5 hover:bg-[#EFF3F9]/60 dark:hover:bg-[#17243C]/50 transition-colors"
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#92600A] dark:text-[#F0C56E]">
+                  <div className="flex items-center justify-between gap-2 text-[10px] font-mono">
+                    <span className="font-bold uppercase tracking-wider text-[#92600A] dark:text-[#F0C56E]">
                       {ann.category}
                     </span>
-                    <span className="text-[10px] font-mono text-[#4E5E78]">
+                    <span className="text-[#4E5E78] dark:text-[#9BB0CD]">
                       {formatDate(ann.created_at)}
                     </span>
                   </div>
-                  <h4 className="text-xs font-bold text-[#0F1B33] dark:text-white">
+                  <h4 className="text-xs font-bold text-[#0F1B33] dark:text-white leading-snug">
                     {ann.title}
                   </h4>
                   <p className="text-[11px] text-[#4E5E78] dark:text-slate-300 leading-relaxed whitespace-pre-line">
                     {ann.body}
                   </p>
-                </div>
+                </article>
               ))}
             </div>
           )}
         </div>
+      </section>
 
-        {/* Authenticated Blood Group & Upcoming Birthday Directory */}
-        <div className="lg:col-span-7 surface-card rounded-2xl p-6 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#DFE6F0] dark:border-[#233452]">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center">
-                <Droplets className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-[#0F1B33] dark:text-white">
-                  Club Blood Group &amp; Birthday Directory
-                </h3>
-                <p className="text-[11px] text-[#4E5E78]">
-                  Authenticated members only · Birth years &amp; private dates stay hidden
-                </p>
+      {/* 5. Unified Member Desk (Left 5 Cols) & Recent Billing Ledger (Right 7 Cols) */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left: Tabbed Self-Service Desk */}
+        <div className="lg:col-span-5 surface-card rounded-2xl overflow-hidden min-w-0">
+          <div className="px-5 py-4 border-b border-[#DFE6F0] dark:border-[#233452] space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-[#1D4ED8]/10 text-[#1D4ED8] dark:text-[#60A5FA] flex items-center justify-center shrink-0">
+                  <SlidersHorizontal className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-[#0F1B33] dark:text-white">
+                    Member Account Desk
+                  </h3>
+                  <p className="text-[11px] text-[#4E5E78] dark:text-[#9BB0CD]">
+                    Profile, privacy, password &amp; treasurer contact
+                  </p>
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <Search className="w-3.5 h-3.5 text-[#4E5E78] absolute left-2.5 top-2" />
-                <input
-                  type="text"
-                  value={dirSearch}
-                  onChange={(e) => setDirSearch(e.target.value)}
-                  placeholder="Search member..."
-                  className="pl-8 pr-2.5 py-1.5 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl w-36 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
-                />
-              </div>
-
-              <select
-                value={bloodFilter}
-                onChange={(e) => setBloodFilter(e.target.value)}
-                aria-label="Filter by blood group"
-                className="px-2.5 py-1.5 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono cursor-pointer"
+            {/* Segmented Desk Switcher */}
+            <div className="grid grid-cols-3 gap-1 p-1 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[11px] font-semibold">
+              <button
+                type="button"
+                onClick={() => setDeskTab('profile')}
+                className={`py-1.5 px-2 rounded-lg transition-colors cursor-pointer whitespace-nowrap truncate ${
+                  deskTab === 'profile'
+                    ? 'bg-white dark:bg-[#1D4ED8] text-[#0F1B33] dark:text-white shadow-2xs font-bold'
+                    : 'text-[#4E5E78] dark:text-[#9BB0CD] hover:text-[#0F1B33] dark:hover:text-white'
+                }`}
               >
-                <option value="all">All Blood</option>
-                {BLOOD_GROUPS.map((bg) => (
-                  <option key={bg} value={bg}>
-                    {bg}
-                  </option>
-                ))}
-              </select>
+                Profile &amp; Privacy
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeskTab('security')}
+                className={`py-1.5 px-2 rounded-lg transition-colors cursor-pointer whitespace-nowrap truncate ${
+                  deskTab === 'security'
+                    ? 'bg-white dark:bg-[#1D4ED8] text-[#0F1B33] dark:text-white shadow-2xs font-bold'
+                    : 'text-[#4E5E78] dark:text-[#9BB0CD] hover:text-[#0F1B33] dark:hover:text-white'
+                }`}
+              >
+                Password
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeskTab('treasurer')}
+                className={`py-1.5 px-2 rounded-lg transition-colors cursor-pointer whitespace-nowrap truncate ${
+                  deskTab === 'treasurer'
+                    ? 'bg-white dark:bg-[#1D4ED8] text-[#0F1B33] dark:text-white shadow-2xs font-bold'
+                    : 'text-[#4E5E78] dark:text-[#9BB0CD] hover:text-[#0F1B33] dark:hover:text-white'
+                }`}
+              >
+                Message Admin
+              </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-72 overflow-y-auto pr-1">
-            {filteredDirectory.length === 0 ? (
-              <div className="col-span-full py-8 text-center text-xs text-[#4E5E78]">
-                No matching club members found.
-              </div>
-            ) : (
-              filteredDirectory.map((peer) => {
-                const hasMonthDay = Boolean(peer.birth_month && peer.birth_day);
-                const daysUntil =
-                  hasMonthDay && peer.birth_month && peer.birth_day
-                    ? computeDaysUntilBirthday(peer.birth_month, peer.birth_day).daysUntil
-                    : null;
-                const isUpcoming = daysUntil !== null && daysUntil >= 0 && daysUntil <= 7;
-
-                return (
-                  <div
-                    key={peer.id}
-                    className="p-3 rounded-xl bg-[#EFF3F9]/80 dark:bg-[#17243C]/80 border border-[#DFE6F0] dark:border-[#233452] flex items-center justify-between gap-2.5"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-9 h-9 rounded-full overflow-hidden bg-white dark:bg-[#111B2E] ring-1 ring-[#D6AC62]/50 shrink-0 flex items-center justify-center text-[11px] font-bold text-[#0F1B33] dark:text-slate-200">
-                        {peer.profile_image_url ? (
-                          <img
-                            src={peer.profile_image_url}
-                            alt={peer.full_name}
-                            referrerPolicy="no-referrer"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          peer.full_name.substring(0, 2).toUpperCase()
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-xs font-bold text-[#0F1B33] dark:text-white block truncate">
-                          {peer.full_name}
-                        </span>
-                        <span className="text-[10px] font-mono text-[#4E5E78] block truncate">
-                          {peer.member_code} · {peer.designation || 'Member'}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="text-right shrink-0 space-y-0.5">
-                      <span
-                        className={`text-xs font-mono font-extrabold block ${
-                          peer.blood_group
-                            ? 'text-rose-600 dark:text-rose-400'
-                            : 'text-[#4E5E78]'
-                        }`}
-                      >
-                        {peer.blood_group || '—'}
-                      </span>
-                      {isUpcoming && peer.birth_month && peer.birth_day && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-mono text-[#92600A] dark:text-[#F0C56E]">
-                          <Cake className="w-3 h-3" />
-                          <span>
-                            {daysUntil === 0
-                              ? 'Today'
-                              : formatBirthdayMonthDay(peer.birth_month, peer.birth_day)}
-                          </span>
-                        </span>
-                      )}
-                    </div>
+          <div className="p-5 text-xs">
+            {deskTab === 'profile' && (
+              <form onSubmit={handleUpdatePersonalProfile} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-[#0F1B2E] dark:text-slate-300 mb-1.5">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={phoneInput}
+                      onChange={(e) => setPhoneInput(e.target.value)}
+                      placeholder="+880 17XX-XXXXXX"
+                      className="w-full px-3 py-2.5 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono text-xs text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
+                    />
                   </div>
-                );
-              })
+
+                  <div>
+                    <label className="font-semibold text-[#0F1B2E] dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+                      <Droplets className="w-3.5 h-3.5 text-rose-500" />
+                      <span>Blood Group (Public)</span>
+                    </label>
+                    <select
+                      value={bloodGroupInput}
+                      onChange={(e) => setBloodGroupInput(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono text-xs text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8] cursor-pointer"
+                    >
+                      <option value="">Not specified</option>
+                      {BLOOD_GROUPS.map((bg) => (
+                        <option key={bg} value={bg}>
+                          {bg}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <label className="font-semibold text-[#0F1B2E] dark:text-slate-300 flex items-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5 text-[#D6AC62]" />
+                      <span>Date of Birth (Private)</span>
+                    </label>
+                    <span className="text-[10px] font-mono text-[#0369A1] dark:text-[#38BDF8]">
+                      Hidden from public &amp; peers
+                    </span>
+                  </div>
+                  <input
+                    type="date"
+                    value={dobInput}
+                    onChange={(e) => setDobInput(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono text-xs text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
+                  />
+                </div>
+
+                {profileFeedback && (
+                  <div
+                    className={`p-3 rounded-xl text-[11px] flex items-start gap-2 ${
+                      profileFeedback.type === 'success'
+                        ? 'bg-[#1D4ED8]/10 text-[#1D4ED8] dark:text-[#60A5FA] border border-[#1D4ED8]/25'
+                        : 'bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300'
+                    }`}
+                  >
+                    {profileFeedback.type === 'success' ? (
+                      <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    )}
+                    <span>{profileFeedback.text}</span>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={profileSaving}
+                  className="w-full py-2.5 px-4 bg-[#0F1B33] hover:bg-[#18294A] dark:bg-[#1D4ED8] dark:hover:bg-[#1E40AF] text-white font-bold rounded-xl text-xs cursor-pointer disabled:opacity-50 transition-colors"
+                >
+                  {profileSaving ? 'Saving Profile...' : 'Save Personal Info'}
+                </button>
+              </form>
+            )}
+
+            {deskTab === 'security' && (
+              <form onSubmit={handleChangePassword} className="space-y-4">
+                {passFeedback && (
+                  <div
+                    className={`p-3 rounded-xl text-[11px] flex items-start gap-2 ${
+                      passFeedback.type === 'success'
+                        ? 'bg-[#1D4ED8]/10 text-[#1D4ED8] dark:text-[#60A5FA] border border-[#1D4ED8]/25 dark:border-[#60A5FA]/35'
+                        : 'bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300'
+                    }`}
+                  >
+                    {passFeedback.type === 'success' ? (
+                      <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
+                    )}
+                    <span>{passFeedback.text}</span>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block font-semibold text-[#0F1B2E] dark:text-slate-300 mb-1.5">
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <KeyRound className="w-3.5 h-3.5 text-[#4E5E78] absolute left-3 top-3" />
+                    <input
+                      type={showPass ? 'text' : 'password'}
+                      required
+                      minLength={6}
+                      placeholder="Minimum 6 characters"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full pl-9 pr-10 py-2.5 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-xs text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPass(!showPass)}
+                      aria-label="Toggle password visibility"
+                      className="absolute right-3 top-2.5 text-[#4E5E78] hover:text-[#0F1B33] dark:hover:text-white cursor-pointer"
+                    >
+                      {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-[#0F1B2E] dark:text-slate-300 mb-1.5">
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-3.5 h-3.5 text-[#4E5E78] absolute left-3 top-3" />
+                    <input
+                      type={showPass ? 'text' : 'password'}
+                      required
+                      minLength={6}
+                      placeholder="Re-enter password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2.5 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-xs text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={passLoading}
+                  className="w-full py-2.5 px-4 bg-[#1D4ED8] hover:bg-[#1E40AF] text-white font-bold rounded-xl shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  {passLoading ? 'Updating...' : 'Update Portal Password'}
+                </button>
+              </form>
+            )}
+
+            {deskTab === 'treasurer' && (
+              <form onSubmit={handleSendNotice} className="space-y-4">
+                <p className="text-[11px] text-[#4E5E78] dark:text-[#9BB0CD] leading-relaxed">
+                  Send a payment confirmation note, bKash/Bank TrxID, or correction request directly to the Club Treasurer dashboard.
+                </p>
+
+                <div>
+                  <label className="block font-semibold text-[#0F1B2E] dark:text-slate-300 mb-1.5">
+                    Message / Transaction Reference
+                  </label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={noticeMessage}
+                    onChange={(e) => setNoticeMessage(e.target.value)}
+                    placeholder="e.g. Sent Nov installment ৳500 via bKash TrxID 9X8Y7Z..."
+                    className="w-full px-3 py-2.5 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-xs text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
+                  />
+                </div>
+
+                {noticeFeedback && (
+                  <div
+                    className={`p-3 rounded-xl text-[11px] flex items-start gap-2 ${
+                      noticeFeedback.type === 'success'
+                        ? 'bg-[#1D4ED8]/10 text-[#1D4ED8] dark:text-[#60A5FA] border border-[#1D4ED8]/25'
+                        : 'bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300'
+                    }`}
+                  >
+                    <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>{noticeFeedback.text}</span>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={noticeSending}
+                  className="w-full py-2.5 px-4 bg-[#1D4ED8] hover:bg-[#1E40AF] text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 transition-colors"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>{noticeSending ? 'Sending...' : 'Send Notice to Treasurer'}</span>
+                </button>
+              </form>
             )}
           </div>
         </div>
-      </div>
 
-      {/* Recent Dues Preview */}
-      <div className="surface-card rounded-2xl p-6 space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-[#DFE6F0] dark:border-[#233452]">
-          <h3 className="text-sm font-bold text-[#0F1B33] dark:text-white">
-            Recent Billing Cycles
-          </h3>
-          <Link
-            to="/member/payment-history"
-            className="text-xs font-semibold text-[#1D4ED8] dark:text-[#60A5FA] hover:underline flex items-center gap-1"
-          >
-            <span>Full Ledger</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
+        {/* Right: Recent Billing Cycles Table */}
+        <div className="lg:col-span-7 surface-card rounded-2xl overflow-hidden min-w-0">
+          <div className="px-5 py-4 border-b border-[#DFE6F0] dark:border-[#233452] flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-bold text-[#0F1B33] dark:text-white">
+                Recent Billing Cycles
+              </h3>
+              <p className="text-[11px] text-[#4E5E78] dark:text-[#9BB0CD]">
+                Latest 6 monthly contribution &amp; fine periods
+              </p>
+            </div>
+            <Link
+              to="/member/payment-history"
+              className="text-xs font-semibold text-[#1D4ED8] dark:text-[#60A5FA] hover:underline inline-flex items-center gap-1 whitespace-nowrap"
+            >
+              <span>Full Ledger</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#EFF3F9] dark:bg-[#17243C] text-[#4E5E78] border-b border-[#DFE6F0] dark:border-[#233452]">
-              <tr>
-                <th className="py-2.5 px-3 font-semibold">Period</th>
-                <th className="py-2.5 px-3 font-semibold text-right">Due (৳)</th>
-                <th className="py-2.5 px-3 font-semibold text-right">Fine (৳)</th>
-                <th className="py-2.5 px-3 font-semibold text-right">Paid (৳)</th>
-                <th className="py-2.5 px-3 font-semibold text-right">Outstanding (৳)</th>
-                <th className="py-2.5 px-3 font-semibold text-center">Status</th>
-                <th className="py-2.5 px-3 font-semibold">Payment Date</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#DFE6F0] dark:divide-[#233452]">
-              {recentDues.length === 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#EFF3F9] dark:bg-[#17243C] text-[#4E5E78] dark:text-[#9BB0CD] border-b border-[#DFE6F0] dark:border-[#233452]">
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-[#4E5E78]">
-                    No billing records available.
-                  </td>
+                  <th className="py-3 px-4 font-semibold">Period</th>
+                  <th className="py-3 px-4 font-semibold text-right">Due (৳)</th>
+                  <th className="py-3 px-4 font-semibold text-right">Fine (৳)</th>
+                  <th className="py-3 px-4 font-semibold text-right">Paid (৳)</th>
+                  <th className="py-3 px-4 font-semibold text-right">Outstanding</th>
+                  <th className="py-3 px-4 font-semibold text-center">Status</th>
+                  <th className="py-3 px-4 font-semibold">Paid Date</th>
                 </tr>
-              ) : (
-                recentDues.map((d) => {
-                  const bd = calculateDueBreakdown(d, myMemberRecord.shares_count);
-                  return (
-                    <tr key={d.id} className="hover:bg-[#EFF3F9]/60 dark:hover:bg-[#17243C]/60 transition-colors">
-                      <td className="py-2.5 px-3 font-semibold text-[#0F1B33] dark:text-white whitespace-nowrap">
-                        {getMonthName(d.month)} {d.year}
-                      </td>
-                      <td className="py-2.5 px-3 text-right font-mono tabular-nums text-[#4E5E78]">
-                        {formatBDT(bd.principalDue)}
-                      </td>
-                      <td className="py-2.5 px-3 text-right font-mono tabular-nums text-[#92600A] dark:text-[#F0C56E]">
-                        {bd.fineDue > 0 ? (
-                          <span>
-                            {formatBDT(bd.fineDue)}
-                            {bd.finePaid > 0 && (
-                              <span className="block text-[10px] text-[#0369A1] dark:text-[#38BDF8]">
-                                Paid: {formatBDT(bd.finePaid)}
-                              </span>
-                            )}
-                          </span>
-                        ) : (
-                          '—'
-                        )}
-                      </td>
-                      <td className="py-2.5 px-3 text-right font-mono tabular-nums font-bold text-[#0369A1] dark:text-[#38BDF8]">
-                        {formatBDT(bd.totalPaid)}
-                      </td>
-                      <td className="py-2.5 px-3 text-right font-mono tabular-nums font-bold text-rose-700 dark:text-rose-400">
-                        {bd.totalOutstanding > 0 ? formatBDT(bd.totalOutstanding) : '—'}
-                      </td>
-                      <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                        <StatusBadge status={d.status} size="sm" />
-                      </td>
-                      <td className="py-2.5 px-3 font-mono text-[#4E5E78] whitespace-nowrap">
-                        {d.paid_at ? formatDate(d.paid_at) : '—'}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-[#DFE6F0] dark:divide-[#233452]">
+                {recentDues.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-10 text-center text-[#4E5E78] dark:text-[#9BB0CD]">
+                      No billing records available.
+                    </td>
+                  </tr>
+                ) : (
+                  recentDues.map((d) => {
+                    const bd = calculateDueBreakdown(d, myMemberRecord.shares_count);
+                    return (
+                      <tr key={d.id} className="hover:bg-[#EFF3F9]/60 dark:hover:bg-[#17243C]/60 transition-colors">
+                        <td className="py-3 px-4 font-semibold text-[#0F1B33] dark:text-white whitespace-nowrap">
+                          {getMonthName(d.month)} {d.year}
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono tabular-nums text-[#4E5E78] dark:text-slate-300">
+                          {formatBDT(bd.principalDue)}
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono tabular-nums text-[#92600A] dark:text-[#F0C56E]">
+                          {bd.fineDue > 0 ? (
+                            <span>
+                              {formatBDT(bd.fineDue)}
+                              {bd.finePaid > 0 && (
+                                <span className="block text-[10px] text-[#0369A1] dark:text-[#38BDF8]">
+                                  Paid: {formatBDT(bd.finePaid)}
+                                </span>
+                              )}
+                            </span>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-[#0369A1] dark:text-[#38BDF8]">
+                          {formatBDT(bd.totalPaid)}
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-rose-700 dark:text-rose-400">
+                          {bd.totalOutstanding > 0 ? formatBDT(bd.totalOutstanding) : '—'}
+                        </td>
+                        <td className="py-3 px-4 text-center whitespace-nowrap">
+                          <StatusBadge status={d.status} size="sm" />
+                        </td>
+                        <td className="py-3 px-4 font-mono text-[#4E5E78] dark:text-[#9BB0CD] whitespace-nowrap">
+                          {d.paid_at ? formatDate(d.paid_at) : '—'}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      </section>
     </PageTransition>
   );
 };

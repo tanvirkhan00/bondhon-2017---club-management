@@ -39,6 +39,7 @@ export interface PublicMember {
   full_name: string;
   profile_image_url?: string | null;
   designation?: string | null;
+  blood_group?: string | null;
   status: 'active';
 }
 

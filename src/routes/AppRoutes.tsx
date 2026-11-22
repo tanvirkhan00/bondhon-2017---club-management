@@ -9,6 +9,7 @@ import { ProtectedRoute } from './ProtectedRoute';
 import { Home } from '../pages/public/Home';
 import { About } from '../pages/public/About';
 import { PublicMembers } from '../pages/public/PublicMembers';
+import { PublicMemberProfile } from '../pages/public/PublicMemberProfile';
 import { Constitution } from '../pages/public/Constitution';
 import { Login } from '../pages/public/Login';
 
@@ -35,6 +36,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/members" element={<PublicMembers />} />
+        <Route path="/members/:memberKey" element={<PublicMemberProfile />} />
         <Route path="/constitution" element={<Constitution />} />
         <Route path="/policy" element={<Navigate to="/constitution" replace />} />
         <Route path="/login" element={<Login />} />
