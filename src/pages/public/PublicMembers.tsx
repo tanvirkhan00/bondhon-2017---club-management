@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useClubData } from '../../hooks/useClubData';
 import { BLOOD_GROUPS } from '../../utils/birthdayUtils';
-import { MemberQrCode } from '../../components/MemberQrCode';
+import { MemberQrCode, getPublicMemberProfileUrl } from '../../components/MemberQrCode';
 import { PageTransition } from '../../components/ui/MotionPrimitives';
 import {
   Search,
@@ -26,9 +26,6 @@ export const PublicMembers: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<'code-asc' | 'alpha-asc' | 'alpha-desc'>('code-asc');
   const [pinnedQrId, setPinnedQrId] = useState<string | null>(null);
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
-
-  const origin =
-    typeof window !== 'undefined' && window.location?.origin ? window.location.origin : '';
 
   const filteredMembers = useMemo(() => {
     return publicMembers
@@ -210,7 +207,7 @@ export const PublicMembers: React.FC = () => {
               member.designation && !member.designation.toLowerCase().startsWith('member');
             const isPinned = pinnedQrId === member.id;
             const profilePath = `/members/${encodeURIComponent(member.member_code)}`;
-            const qrTargetUrl = `${origin}${profilePath}`;
+            const qrTargetUrl = getPublicMemberProfileUrl(member.member_code);
             const imgFailed = Boolean(failedImages[member.id]);
             const initials =
               member.full_name
@@ -223,7 +220,7 @@ export const PublicMembers: React.FC = () => {
             return (
               <div
                 key={member.id}
-                className={`surface-card surface-card-hover group relative overflow-hidden rounded-2xl p-5 flex flex-col items-center text-center ${
+                className={`surface-card surface-card-hover group relative overflow-hidden rounded-2xl p-5 min-h-[296px] flex flex-col items-center justify-between text-center ${
                   isExecutive ? 'ring-1 ring-[#D6AC62]/50' : ''
                 }`}
               >
@@ -238,64 +235,66 @@ export const PublicMembers: React.FC = () => {
                   {isPinned ? <X className="w-3.5 h-3.5" /> : <QrCode className="w-3.5 h-3.5" />}
                 </button>
 
-                {/* Avatar Portrait */}
-                <div className="relative mb-3.5 mt-1">
-                  <div
-                    className={`w-24 h-24 rounded-full overflow-hidden bg-[#EFF3F9] dark:bg-[#17243C] transition-transform duration-300 group-hover:scale-105 flex items-center justify-center ${
-                      isExecutive
-                        ? 'ring-3 ring-[#D6AC62]'
-                        : 'ring-2 ring-[#1D4ED8]/35 dark:ring-[#60A5FA]/35'
-                    }`}
-                  >
-                    {member.profile_image_url && !imgFailed ? (
-                      <img
-                        src={member.profile_image_url}
-                        alt={member.full_name}
-                        referrerPolicy="no-referrer"
-                        loading="lazy"
-                        className="w-full h-full object-cover object-center"
-                        onError={() => markImgFailed(member.id)}
-                      />
-                    ) : (
-                      <span className="text-xl font-bold text-[#0F1B33] dark:text-slate-300">
-                        {initials}
-                      </span>
-                    )}
+                <div className="w-full flex flex-col items-center">
+                  {/* Avatar Portrait */}
+                  <div className="relative mb-3.5 mt-1">
+                    <div
+                      className={`w-24 h-24 rounded-full overflow-hidden bg-[#EFF3F9] dark:bg-[#17243C] transition-transform duration-300 group-hover:scale-105 flex items-center justify-center ${
+                        isExecutive
+                          ? 'ring-3 ring-[#D6AC62]'
+                          : 'ring-2 ring-[#1D4ED8]/35 dark:ring-[#60A5FA]/35'
+                      }`}
+                    >
+                      {member.profile_image_url && !imgFailed ? (
+                        <img
+                          src={member.profile_image_url}
+                          alt={member.full_name}
+                          referrerPolicy="no-referrer"
+                          loading="lazy"
+                          className="w-full h-full object-cover object-top"
+                          onError={() => markImgFailed(member.id)}
+                        />
+                      ) : (
+                        <span className="text-xl font-bold text-[#0F1B33] dark:text-slate-300">
+                          {initials}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                {/* Unboxed Monospace Metadata Line */}
-                <div className="text-[11px] font-mono font-bold text-[#4E5E78] dark:text-slate-400 flex items-center justify-center gap-2">
-                  <span className="text-[#0F1B33] dark:text-slate-200">{member.member_code}</span>
-                  <span aria-hidden="true">·</span>
-                  <span
-                    className={`inline-flex items-center gap-1 ${
-                      member.blood_group
-                        ? 'text-rose-600 dark:text-rose-400'
-                        : 'text-[#4E5E78] dark:text-slate-400'
+                  {/* Unboxed Monospace Metadata Line */}
+                  <div className="text-[11px] font-mono font-bold text-[#4E5E78] dark:text-slate-400 flex items-center justify-center gap-2">
+                    <span className="text-[#0F1B33] dark:text-slate-200">{member.member_code}</span>
+                    <span aria-hidden="true">·</span>
+                    <span
+                      className={`inline-flex items-center gap-1 ${
+                        member.blood_group
+                          ? 'text-rose-600 dark:text-rose-400'
+                          : 'text-[#4E5E78] dark:text-slate-400'
+                      }`}
+                    >
+                      <Droplets className="w-3 h-3 shrink-0" />
+                      <span>{member.blood_group || '—'}</span>
+                    </span>
+                  </div>
+
+                  {/* Name */}
+                  <h3 className="font-bold text-[#0F1B33] dark:text-white text-base leading-snug mt-1 line-clamp-1 group-hover:text-[#1D4ED8] dark:group-hover:text-[#60A5FA] transition-colors">
+                    {member.full_name}
+                  </h3>
+
+                  {/* Role / Designation */}
+                  <p
+                    className={`mt-1.5 text-xs font-semibold flex items-center justify-center gap-1 ${
+                      isExecutive
+                        ? 'text-[#92600A] dark:text-[#F0C56E]'
+                        : 'text-[#1D4ED8] dark:text-[#60A5FA]'
                     }`}
                   >
-                    <Droplets className="w-3 h-3 shrink-0" />
-                    <span>{member.blood_group || '—'}</span>
-                  </span>
+                    {isExecutive && <Crown className="w-3 h-3 shrink-0" />}
+                    <span className="line-clamp-1">{member.designation || 'Member (সদস্য)'}</span>
+                  </p>
                 </div>
-
-                {/* Name */}
-                <h3 className="font-bold text-[#0F1B33] dark:text-white text-base leading-snug mt-1 line-clamp-1 group-hover:text-[#1D4ED8] dark:group-hover:text-[#60A5FA] transition-colors">
-                  {member.full_name}
-                </h3>
-
-                {/* Role / Designation */}
-                <p
-                  className={`mt-1.5 text-xs font-semibold flex items-center justify-center gap-1 ${
-                    isExecutive
-                      ? 'text-[#92600A] dark:text-[#F0C56E]'
-                      : 'text-[#1D4ED8] dark:text-[#60A5FA]'
-                  }`}
-                >
-                  {isExecutive && <Crown className="w-3 h-3 shrink-0" />}
-                  <span className="line-clamp-1">{member.designation || 'Member (সদস্য)'}</span>
-                </p>
 
                 {/* Card Footer */}
                 <div className="mt-4 pt-3 border-t border-[#DFE6F0] dark:border-[#233452] w-full flex items-center justify-between text-[11px]">
@@ -311,7 +310,7 @@ export const PublicMembers: React.FC = () => {
 
                 {/* Hover & Pinned QR Code Profile Reveal Overlay */}
                 <div
-                  className={`absolute inset-0 z-10 bg-[#0F1B33]/96 backdrop-blur-sm text-white p-4 flex flex-col items-center justify-center gap-2.5 transition-all duration-200 ${
+                  className={`absolute inset-0 z-10 bg-[#0F1B33]/97 backdrop-blur-sm text-white p-4 flex flex-col items-center justify-center gap-2.5 transition-all duration-200 ${
                     isPinned
                       ? 'opacity-100 pointer-events-auto'
                       : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto'
@@ -319,13 +318,14 @@ export const PublicMembers: React.FC = () => {
                 >
                   <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-[#D6AC62]">
                     <QrCode className="w-3.5 h-3.5" />
-                    <span>Scan For Profile</span>
+                    <span>Scan QR For Profile</span>
                   </div>
 
-                  <div className="p-2 rounded-xl bg-white shadow-lg">
+                  <div className="p-2 rounded-2xl bg-white shadow-lg">
                     <MemberQrCode
                       value={qrTargetUrl}
-                      size={112}
+                      size={136}
+                      marginModules={4}
                       label={`QR profile code for ${member.full_name}`}
                     />
                   </div>

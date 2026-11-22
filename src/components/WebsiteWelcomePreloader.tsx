@@ -21,7 +21,8 @@ export const WebsiteWelcomePreloader: React.FC = () => {
     const isAuthRedirect =
       window.location.hash.includes('access_token=') ||
       window.location.hash.includes('type=recovery');
-    if (isAuthRedirect) return false;
+    const isQrProfileDeepLink = /^\/members\/[^/]+/.test(window.location.pathname);
+    if (isAuthRedirect || isQrProfileDeepLink) return false;
     if (hasShownWebsiteWelcomeOnce()) return false;
     hasShownWebsitePreloader = true;
     return true;
