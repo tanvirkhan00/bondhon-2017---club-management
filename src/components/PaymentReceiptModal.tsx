@@ -5,13 +5,13 @@ import { useClubData } from '../hooks/useClubData';
 import { formatBDT } from '../utils/formatters';
 import {
   buildPaymentReceiptPayload,
-  downloadPaymentReceiptPdf,
+  downloadPaymentReceiptImage,
 } from '../utils/receiptGenerator';
 import { Modal } from './ui/Modal';
 import crestImage from '../assets/images/bondhon_club_crest_1793703027252.jpg';
 import {
   Receipt,
-  Download,
+  ImageDown,
   Printer,
   CheckCircle2,
   ShieldCheck,
@@ -30,7 +30,7 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
   onClose,
 }) => {
   const { isAdmin, profile } = useAuth();
-  const { members, myMemberRecord } = useClubData();
+  const { members } = useClubData();
   const [downloading, setDownloading] = useState(false);
 
   const resolvedMember = useMemo(() => {
@@ -39,16 +39,12 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
       member ||
       due.member ||
       members.find((m) => m.id === due.member_id) ||
-      (myMemberRecord && myMemberRecord.id === due.member_id ? myMemberRecord : null)
+      null
     );
-  }, [due, member, members, myMemberRecord]);
+  }, [due, member, members]);
 
-  // Strict ownership check
-  const isAuthorized = useMemo(() => {
-    if (!due) return false;
-    if (isAdmin) return true;
-    return Boolean(myMemberRecord && due.member_id === myMemberRecord.id);
-  }, [due, isAdmin, myMemberRecord]);
+  // Receipts are strictly Admin-only
+  const isAuthorized = Boolean(due && isAdmin);
 
   const hasSettledAmount = useMemo(() => {
     if (!due) return false;
@@ -65,11 +61,11 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
     );
   }, [due, isAuthorized, hasSettledAmount, resolvedMember, profile?.full_name]);
 
-  const handleDownloadPdf = () => {
-    if (!payload) return;
+  const handleDownloadImage = async () => {
+    if (!payload || downloading) return;
     setDownloading(true);
     try {
-      downloadPaymentReceiptPdf(payload);
+      await downloadPaymentReceiptImage(payload, crestImage);
     } finally {
       setTimeout(() => setDownloading(false), 300);
     }
@@ -92,7 +88,7 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
       isOpen={Boolean(due)}
       onClose={onClose}
       title="Official Payment Receipt"
-      subtitle={payload ? `Receipt #${payload.receiptNumber}` : 'Receipt Verification'}
+      subtitle={payload ? `PNG Image Receipt · #${payload.receiptNumber}` : 'Admin Receipt Verification'}
       icon={<Receipt className="w-4 h-4" />}
       maxWidthClass="max-w-2xl"
     >
@@ -101,7 +97,7 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
           <AlertCircle className="w-8 h-8 text-rose-500 mx-auto" />
           <p className="text-sm font-semibold text-[#0F1B2E] dark:text-[#F3F6FC]">
             {!isAuthorized
-              ? 'Unauthorized: You can only view or download receipts for your own payments.'
+              ? 'Unauthorized: Payment receipts are available strictly to club administrators.'
               : 'Receipt unavailable for unpaid billing cycles.'}
           </p>
         </div>
@@ -111,7 +107,7 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
           <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#DFE6F0] dark:border-[#233452]">
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0369A1] dark:text-[#38BDF8]">
               <CheckCircle2 className="w-4 h-4" />
-              <span>Verified Club Ledger Receipt</span>
+              <span>Verified Admin Ledger Receipt (PNG Image)</span>
             </span>
 
             <div className="flex items-center gap-2">
@@ -126,12 +122,12 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
 
               <button
                 type="button"
-                onClick={handleDownloadPdf}
+                onClick={handleDownloadImage}
                 disabled={downloading}
                 className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-xs cursor-pointer transition-colors disabled:opacity-60 whitespace-nowrap"
               >
-                <Download className="w-3.5 h-3.5" />
-                <span>{downloading ? 'Generating PDF...' : 'Download PDF'}</span>
+                <ImageDown className="w-3.5 h-3.5" />
+                <span>{downloading ? 'Saving Image...' : 'Download Image (PNG)'}</span>
               </button>
             </div>
           </div>

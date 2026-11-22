@@ -1,7 +1,7 @@
-import { jsPDF } from 'jspdf';
 import { Member, MonthlyDue } from '../types';
 import { calculateDueBreakdown } from './fineCalculator';
-import { getMonthName } from './formatters';
+import { formatBDT, getMonthName } from './formatters';
+import crestImageDefault from '../assets/images/bondhon_club_crest_1793703027252.jpg';
 
 export interface PaymentReceiptPayload {
   receiptNumber: string;
@@ -109,208 +109,427 @@ export function buildPaymentReceiptPayload(
   };
 }
 
-function toAsciiSafe(text: string): string {
-  // Helvetica built into jsPDF supports Latin-1; strip unsupported Unicode glyphs cleanly
-  const cleaned = text.replace(/[^\x20-\x7E]/g, '').trim();
-  return cleaned || 'Verified Club Record';
+function drawRoundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
+) {
+  const radius = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + w - radius, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+  ctx.lineTo(x + w, y + h - radius);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+  ctx.lineTo(x + radius, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
 }
 
-function formatPdfBdt(amount: number): string {
-  return `BDT ${Math.round(Number(amount || 0)).toLocaleString('en-US')}`;
+function truncateTextToWidth(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number
+): string {
+  if (ctx.measureText(text).width <= maxWidth) return text;
+  let clipped = text;
+  while (clipped.length > 3 && ctx.measureText(`${clipped}...`).width > maxWidth) {
+    clipped = clipped.slice(0, -1);
+  }
+  return `${clipped.trim()}...`;
 }
 
-export function downloadPaymentReceiptPdf(payload: PaymentReceiptPayload): void {
-  const doc = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a4',
+function loadImageSafe(src: string): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
   });
+}
 
-  const pageW = doc.internal.pageSize.getWidth();
-  const marginX = 18;
-  const contentW = pageW - marginX * 2;
+function triggerPngDownload(canvas: HTMLCanvasElement, filename: string): Promise<void> {
+  return new Promise((resolve) => {
+    if (typeof canvas.toBlob === 'function') {
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(url), 1500);
+            resolve();
+            return;
+          }
+          const fallbackUrl = canvas.toDataURL('image/png');
+          const link = document.createElement('a');
+          link.href = fallbackUrl;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          resolve();
+        },
+        'image/png',
+        1.0
+      );
+      return;
+    }
 
-  // Header Banner (Navy #0F1B33 + Burnished Brass #D6AC62 accent stripe)
-  doc.setFillColor(15, 27, 51);
-  doc.rect(0, 0, pageW, 44, 'F');
-  doc.setFillColor(214, 172, 98);
-  doc.rect(0, 44, pageW, 2.2, 'F');
+    const fallbackUrl = canvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.href = fallbackUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    resolve();
+  });
+}
 
-  doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(20);
-  doc.text('BONDHON 2017', marginX, 19);
+/**
+ * Generates and downloads an official high-DPI PNG image receipt
+ * using HTML5 Canvas 2D (supports both English & Bangla scripts + Crest logo).
+ */
+export async function downloadPaymentReceiptImage(
+  payload: PaymentReceiptPayload,
+  crestSrc: string = crestImageDefault
+): Promise<void> {
+  const width = 1240;
+  const hasBalance = payload.remainingBalance > 0;
+  const height = hasBalance ? 1480 : 1400;
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9.5);
-  doc.setTextColor(214, 172, 98);
-  doc.text('FRIENDS COOPERATIVE SOCIETY  |  SSC BATCH 2017', marginX, 26);
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
 
-  doc.setTextColor(203, 213, 225);
-  doc.setFontSize(8.5);
-  doc.text('Char Chanda Khasmahal Bazar, Shariatpur  |  Official Digital Ledger', marginX, 33);
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
 
-  // Top-right Receipt Title & Number
-  doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.text('PAYMENT RECEIPT', pageW - marginX, 18, { align: 'right' });
+  const crestImg = await loadImageSafe(crestSrc);
 
-  doc.setFont('courier', 'bold');
-  doc.setFontSize(9.5);
-  doc.setTextColor(147, 197, 253);
-  doc.text(toAsciiSafe(payload.receiptNumber), pageW - marginX, 26, { align: 'right' });
+  // 1. Crisp Sheet Background
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, width, height);
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8.5);
-  doc.setTextColor(214, 172, 98);
-  doc.text(payload.statusLabel, pageW - marginX, 33, { align: 'right' });
+  // Subtle Outer Border Frame
+  ctx.strokeStyle = '#DFE6F0';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(1.5, 1.5, width - 3, height - 3);
 
-  // Meta Info Box
-  let y = 58;
-  doc.setFillColor(246, 247, 251);
-  doc.setDrawColor(223, 230, 240);
-  doc.roundedRect(marginX, y, contentW, 42, 3, 3, 'FD');
+  // 2. Sovereign Navy Header Banner (#0F1B33) + Burnished Brass Bottom Accent (#D6AC62)
+  const headerH = 240;
+  ctx.fillStyle = '#0F1B33';
+  ctx.fillRect(0, 0, width, headerH);
 
-  const col2X = marginX + contentW / 2 + 4;
+  ctx.fillStyle = '#D6AC62';
+  ctx.fillRect(0, headerH, width, 8);
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(78, 94, 120);
-  doc.text('RECEIVED FROM', marginX + 6, y + 8);
-  doc.text('RECEIPT DETAILS', col2X, y + 8);
+  // Crest Emblem (Left)
+  const crestCx = 122;
+  const crestCy = 120;
+  const crestRadius = 60;
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11.5);
-  doc.setTextColor(15, 27, 51);
-  doc.text(toAsciiSafe(payload.memberName), marginX + 6, y + 16);
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(crestCx, crestCy, crestRadius + 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#D6AC62';
+  ctx.fill();
+  ctx.closePath();
 
-  doc.setFont('courier', 'bold');
-  doc.setFontSize(9.5);
-  doc.setTextColor(29, 78, 216);
-  doc.text(`${toAsciiSafe(payload.memberCode)}  |  ${toAsciiSafe(payload.memberDesignation)}`, marginX + 6, y + 23);
+  ctx.beginPath();
+  ctx.arc(crestCx, crestCy, crestRadius, 0, Math.PI * 2);
+  ctx.clip();
+  if (crestImg) {
+    ctx.drawImage(
+      crestImg,
+      crestCx - crestRadius,
+      crestCy - crestRadius,
+      crestRadius * 2,
+      crestRadius * 2
+    );
+  } else {
+    ctx.fillStyle = '#1D4ED8';
+    ctx.fillRect(crestCx - crestRadius, crestCy - crestRadius, crestRadius * 2, crestRadius * 2);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '800 34px "Plus Jakarta Sans", system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('B17', crestCx, crestCy);
+  }
+  ctx.restore();
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  doc.setTextColor(78, 94, 120);
-  doc.text(`Billing Purpose: ${toAsciiSafe(payload.billingPeriod)}`, marginX + 6, y + 32);
+  // Brand Title & Subtitle
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '800 44px "Plus Jakarta Sans", system-ui, -apple-system, sans-serif';
+  ctx.fillText('Bondhon 2017', 210, 102);
 
-  // Right column of meta box
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(15, 27, 46);
-  doc.text(`Payment Date:   ${payload.paymentDateFormatted}`, col2X, y + 16);
-  doc.text(`Payment Method: ${toAsciiSafe(payload.paymentMethod)}`, col2X, y + 23);
-  doc.text(`Transaction ID: ${toAsciiSafe(payload.transactionId).slice(0, 24)}`, col2X, y + 30);
-  doc.text(`Recorded By:    ${toAsciiSafe(payload.recordedByName)}`, col2X, y + 37);
+  ctx.fillStyle = '#D6AC62';
+  ctx.font = '600 22px "Plus Jakarta Sans", "Noto Sans Bengali", system-ui, sans-serif';
+  ctx.fillText('বন্ধুত্ব সমবায় সমিতি · SSC Batch 2017', 210, 140);
 
-  // Payment Breakdown Table
-  y += 52;
-  doc.setFillColor(15, 27, 51);
-  doc.rect(marginX, y, contentW, 10, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.text('DESCRIPTION', marginX + 5, y + 6.7);
-  doc.text('PERIOD', marginX + 95, y + 6.7);
-  doc.text('AMOUNT', pageW - marginX - 5, y + 6.7, { align: 'right' });
+  ctx.fillStyle = '#CBD5E1';
+  ctx.font = '500 18px "Plus Jakarta Sans", system-ui, sans-serif';
+  ctx.fillText('Char Chanda Khasmahal Bazar, Shariatpur · Official Digital Ledger', 210, 174);
 
-  y += 10;
-  const rows: Array<{ label: string; period: string; amount: string }> = [
-    {
-      label: 'Monthly Contribution (Principal)',
-      period: payload.billingPeriod,
-      amount: formatPdfBdt(payload.principalPaid),
-    },
-    {
-      label: 'Late Payment Fine (12th Rule)',
-      period: payload.finePaid > 0 ? payload.billingPeriod : 'Waived / None',
-      amount: formatPdfBdt(payload.finePaid),
-    },
+  // Top-Right Official Receipt Info
+  const rightX = width - 64;
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#D6AC62';
+  ctx.font = '700 18px "JetBrains Mono", monospace';
+  ctx.fillText('OFFICIAL PAYMENT RECEIPT', rightX, 78);
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '700 26px "JetBrains Mono", monospace';
+  ctx.fillText(payload.receiptNumber, rightX, 118);
+
+  // Status Pill Badge inside Header
+  const statusText = payload.statusLabel;
+  ctx.font = '700 16px "Plus Jakarta Sans", system-ui, sans-serif';
+  const badgeW = ctx.measureText(statusText).width + 36;
+  const badgeX = rightX - badgeW;
+  const badgeY = 142;
+  drawRoundedRect(ctx, badgeX, badgeY, badgeW, 38, 8);
+  ctx.fillStyle = payload.remainingBalance > 0 ? '#D97706' : '#1D4ED8';
+  ctx.fill();
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.textAlign = 'center';
+  ctx.fillText(statusText, badgeX + badgeW / 2, badgeY + 25);
+
+  // 3. Member & Transaction Metadata Card
+  const padX = 64;
+  const contentW = width - padX * 2;
+  let cursorY = 300;
+
+  drawRoundedRect(ctx, padX, cursorY, contentW, 240, 18);
+  ctx.fillStyle = '#F6F7FB';
+  ctx.fill();
+  ctx.strokeStyle = '#DFE6F0';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Left Column: Member Info
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#4E5E78';
+  ctx.font = '700 16px "JetBrains Mono", monospace';
+  ctx.fillText('RECEIVED FROM', padX + 32, cursorY + 44);
+
+  ctx.fillStyle = '#0F1B33';
+  ctx.font = '800 32px "Plus Jakarta Sans", "Noto Sans Bengali", system-ui, sans-serif';
+  ctx.fillText(
+    truncateTextToWidth(ctx, payload.memberName, contentW * 0.52),
+    padX + 32,
+    cursorY + 90
+  );
+
+  ctx.fillStyle = '#1D4ED8';
+  ctx.font = '700 20px "JetBrains Mono", "Noto Sans Bengali", monospace';
+  ctx.fillText(
+    truncateTextToWidth(ctx, `${payload.memberCode} · ${payload.memberDesignation}`, contentW * 0.52),
+    padX + 32,
+    cursorY + 128
+  );
+
+  ctx.fillStyle = '#4E5E78';
+  ctx.font = '600 20px "Plus Jakarta Sans", system-ui, sans-serif';
+  ctx.fillText('Billing Purpose:', padX + 32, cursorY + 194);
+  ctx.fillStyle = '#0F1B2E';
+  ctx.font = '800 22px "Plus Jakarta Sans", system-ui, sans-serif';
+  ctx.fillText(payload.billingPeriod, padX + 196, cursorY + 194);
+
+  // Right Column: Receipt Details
+  const metaRightX = width - padX - 32;
+  ctx.textAlign = 'right';
+  const metaLines: Array<[string, string]> = [
+    ['Payment Date', payload.paymentDateFormatted],
+    ['Payment Method', payload.paymentMethod],
+    ['Txn ID', payload.transactionId.slice(0, 18)],
+    ['Recorded By', payload.recordedByName],
   ];
 
-  rows.forEach((r, idx) => {
-    doc.setFillColor(idx % 2 === 0 ? 255 : 248, idx % 2 === 0 ? 255 : 250, idx % 2 === 0 ? 255 : 252);
-    doc.setDrawColor(223, 230, 240);
-    doc.rect(marginX, y, contentW, 12, 'FD');
+  metaLines.forEach(([label, val], idx) => {
+    const lineY = cursorY + 58 + idx * 42;
+    ctx.fillStyle = '#4E5E78';
+    ctx.font = '600 18px "Plus Jakarta Sans", system-ui, sans-serif';
+    const valStr = truncateTextToWidth(ctx, val, 300);
+    ctx.fillStyle = '#0F1B2E';
+    ctx.font = '700 19px "JetBrains Mono", system-ui, sans-serif';
+    ctx.fillText(valStr, metaRightX, lineY);
 
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9.5);
-    doc.setTextColor(15, 27, 46);
-    doc.text(r.label, marginX + 5, y + 7.7);
-
-    doc.setTextColor(78, 94, 120);
-    doc.text(toAsciiSafe(r.period), marginX + 95, y + 7.7);
-
-    doc.setFont('courier', 'bold');
-    doc.setTextColor(15, 27, 51);
-    doc.text(r.amount, pageW - marginX - 5, y + 7.7, { align: 'right' });
-    y += 12;
+    const valWidth = ctx.measureText(valStr).width;
+    ctx.fillStyle = '#4E5E78';
+    ctx.font = '500 18px "Plus Jakarta Sans", system-ui, sans-serif';
+    ctx.fillText(`${label}: `, metaRightX - valWidth - 10, lineY);
   });
 
-  // Total Paid Summary Box
-  y += 6;
-  doc.setFillColor(239, 243, 249);
-  doc.setDrawColor(29, 78, 216);
-  doc.roundedRect(marginX + contentW * 0.42, y, contentW * 0.58, 22, 2.5, 2.5, 'FD');
+  // 4. Amount Breakdown Table
+  cursorY += 286;
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(78, 94, 120);
-  doc.text('TOTAL AMOUNT PAID', marginX + contentW * 0.42 + 6, y + 8);
+  // Table Container
+  const rowH = 82;
+  const tableHeaderH = 62;
+  const tableFooterH = 86;
+  const totalTableH = tableHeaderH + rowH * 2 + tableFooterH;
 
-  doc.setFont('courier', 'bold');
-  doc.setFontSize(14);
-  doc.setTextColor(29, 78, 216);
-  doc.text(formatPdfBdt(payload.totalPaid), pageW - marginX - 6, y + 10, { align: 'right' });
+  ctx.save();
+  drawRoundedRect(ctx, padX, cursorY, contentW, totalTableH, 16);
+  ctx.clip();
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(78, 94, 120);
-  const remLabel =
-    payload.remainingBalance > 0
-      ? `Remaining Balance: ${formatPdfBdt(payload.remainingBalance)}`
-      : 'Cycle Balance: Settled in Full (BDT 0 due)';
-  doc.text(remLabel, pageW - marginX - 6, y + 17.5, { align: 'right' });
+  // Table Header
+  ctx.fillStyle = '#0F1B33';
+  ctx.fillRect(padX, cursorY, contentW, tableHeaderH);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '700 18px "Plus Jakarta Sans", system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('CONTRIBUTION LINE ITEM', padX + 32, cursorY + 38);
+  ctx.fillText('PERIOD', padX + 560, cursorY + 38);
+  ctx.textAlign = 'right';
+  ctx.fillText('AMOUNT PAID', width - padX - 32, cursorY + 38);
 
-  // Notes & Verification Section
-  y += 34;
-  doc.setDrawColor(223, 230, 240);
-  doc.line(marginX, y, pageW - marginX, y);
-  y += 8;
+  // Row 1: Monthly Contribution (Principal)
+  const r1Y = cursorY + tableHeaderH;
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(padX, r1Y, contentW, rowH);
+  ctx.fillStyle = '#0F1B2E';
+  ctx.font = '600 21px "Plus Jakarta Sans", system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Monthly Contribution (Principal)', padX + 32, r1Y + 49);
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8.5);
-  doc.setTextColor(15, 27, 51);
-  doc.text('Notes / Reference:', marginX, y);
+  ctx.fillStyle = '#4E5E78';
+  ctx.font = '500 20px "Plus Jakarta Sans", system-ui, sans-serif';
+  ctx.fillText(payload.billingPeriod, padX + 560, r1Y + 49);
 
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(78, 94, 120);
-  doc.text(toAsciiSafe(payload.notes), marginX + 34, y);
+  ctx.fillStyle = '#0F1B33';
+  ctx.font = '700 24px "JetBrains Mono", monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText(formatBDT(payload.principalPaid), width - padX - 32, r1Y + 49);
 
-  y += 14;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(100, 116, 139);
-  doc.text(`Receipt Generated: ${payload.generatedAtFormatted}`, marginX, y);
-  doc.text(`Authorized Admin: ${toAsciiSafe(payload.recordedByName)}`, pageW - marginX, y, {
-    align: 'right',
-  });
+  // Divider
+  ctx.fillStyle = '#DFE6F0';
+  ctx.fillRect(padX, r1Y + rowH - 1.5, contentW, 1.5);
 
-  // Footer
-  doc.setDrawColor(214, 172, 98);
-  doc.line(marginX, 272, pageW - marginX, 272);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(78, 94, 120);
-  doc.text(
-    'This is a computer-generated official receipt from Bondhon 2017 Club Management Portal (https://bondon2017.netlify.app).',
-    pageW / 2,
-    278,
-    { align: 'center' }
+  // Row 2: Late Payment Fine
+  const r2Y = r1Y + rowH;
+  ctx.fillStyle = '#F8FAFC';
+  ctx.fillRect(padX, r2Y, contentW, rowH);
+  ctx.fillStyle = '#0F1B2E';
+  ctx.font = '600 21px "Plus Jakarta Sans", system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Late Payment Fine (12th Rule)', padX + 32, r2Y + 49);
+
+  ctx.fillStyle = '#4E5E78';
+  ctx.font = '500 20px "Plus Jakarta Sans", system-ui, sans-serif';
+  ctx.fillText(payload.finePaid > 0 ? payload.billingPeriod : 'None / Waived', padX + 560, r2Y + 49);
+
+  ctx.fillStyle = '#92600A';
+  ctx.font = '700 24px "JetBrains Mono", monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText(formatBDT(payload.finePaid), width - padX - 32, r2Y + 49);
+
+  // Footer Row: TOTAL PAID
+  const ftY = r2Y + rowH;
+  ctx.fillStyle = '#EFF3F9';
+  ctx.fillRect(padX, ftY, contentW, tableFooterH);
+  ctx.fillStyle = '#1D4ED8';
+  ctx.fillRect(padX, ftY, contentW, 3);
+
+  ctx.fillStyle = '#0F1B33';
+  ctx.font = '800 24px "Plus Jakarta Sans", system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('TOTAL PAID', padX + 32, ftY + 53);
+
+  ctx.fillStyle = '#1D4ED8';
+  ctx.font = '800 34px "JetBrains Mono", monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText(formatBDT(payload.totalPaid), width - padX - 32, ftY + 55);
+  ctx.restore();
+
+  // Outer Border for Table
+  drawRoundedRect(ctx, padX, cursorY, contentW, totalTableH, 16);
+  ctx.strokeStyle = '#DFE6F0';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  cursorY += totalTableH + 34;
+
+  // 5. Remaining Balance Callout (if partial)
+  if (hasBalance) {
+    drawRoundedRect(ctx, padX, cursorY, contentW, 64, 14);
+    ctx.fillStyle = '#FFF1F2';
+    ctx.fill();
+    ctx.strokeStyle = '#FECDD3';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#9F1239';
+    ctx.font = '700 20px "Plus Jakarta Sans", system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Remaining Balance for ${payload.billingPeriod}:`, padX + 26, cursorY + 40);
+
+    ctx.font = '800 22px "JetBrains Mono", monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(formatBDT(payload.remainingBalance), width - padX - 26, cursorY + 40);
+
+    cursorY += 92;
+  }
+
+  // 6. Verified Notes & Timestamp Row
+  ctx.strokeStyle = '#DFE6F0';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(padX, cursorY + 12);
+  ctx.lineTo(width - padX, cursorY + 12);
+  ctx.stroke();
+
+  cursorY += 56;
+  ctx.fillStyle = '#0369A1';
+  ctx.font = '700 19px "Plus Jakarta Sans", "Noto Sans Bengali", system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(
+    truncateTextToWidth(ctx, `Notes: ${payload.notes}`, contentW * 0.58),
+    padX,
+    cursorY
   );
+
+  ctx.fillStyle = '#4E5E78';
+  ctx.font = '600 18px "JetBrains Mono", monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText(`Generated: ${payload.generatedAtFormatted}`, width - padX, cursorY);
+
+  // 7. Bottom Verification Strip
+  const footerStripY = height - 110;
+  ctx.fillStyle = '#0F1B33';
+  ctx.fillRect(0, footerStripY, width, 110);
+  ctx.fillStyle = '#D6AC62';
+  ctx.fillRect(0, footerStripY, width, 4);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#F8FAFC';
+  ctx.font = '600 18px "Plus Jakarta Sans", system-ui, sans-serif';
+  ctx.fillText(
+    'Verified Official Admin Receipt · Bondhon 2017 Club Management Portal',
+    width / 2,
+    footerStripY + 46
+  );
+
+  ctx.fillStyle = '#93C5FD';
+  ctx.font = '600 16px "JetBrains Mono", monospace';
+  ctx.fillText('https://bondon2017.netlify.app', width / 2, footerStripY + 78);
 
   const safeFileCode = payload.memberCode.replace(/[^A-Z0-9-]/gi, '');
   const safePeriod = payload.billingPeriod.replace(/\s+/g, '_');
-  doc.save(`Bondhon2017_Receipt_${safeFileCode}_${safePeriod}.pdf`);
+  await triggerPngDownload(canvas, `Bondhon2017_Receipt_${safeFileCode}_${safePeriod}.png`);
 }

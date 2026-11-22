@@ -3,7 +3,11 @@ import { Link } from 'react-router-dom';
 import { useClubData } from '../../hooks/useClubData';
 import { FISCAL_YEARS, formatBDT, formatDate, getMonthName } from '../../utils/formatters';
 import { calculateDueBreakdown, computeMemberFinancialSummary } from '../../utils/fineCalculator';
-import { downloadCsv } from '../../utils/csvExport';
+import {
+  downloadMonthlyReconciliationPdf,
+  downloadMemberRankingsPdf,
+  downloadCustomRangeTransactionsPdf,
+} from '../../utils/reportPdfGenerator';
 import { MetricCard } from '../../components/MetricCard';
 import { PageTransition } from '../../components/ui/MotionPrimitives';
 import { PaymentReceiptModal } from '../../components/PaymentReceiptModal';
@@ -84,103 +88,33 @@ export const AdminReports: React.FC = () => {
     );
   }, [customRangeTransactions]);
 
-  // Export Yearly Report CSV
+  // Export Yearly Report PDF
   const handleExportYearlyReport = () => {
-    const headers = [
-      'Month',
-      'Target Amount (BDT)',
-      'Collected Amount (BDT)',
-      'Outstanding Amount (BDT)',
-      'Paid Members',
-      'Unpaid Members',
-      'Active Members',
-      'Collection Efficiency (%)',
-    ];
-
-    const rows = monthSummaries.map((m) => [
-      m.label,
-      m.target,
-      m.collected,
-      m.outstanding,
-      m.paidCount,
-      m.unpaidCount,
-      m.totalActive,
-      `${m.collectionRate}%`,
-    ]);
-
-    rows.push([
-      `TOTAL ${selectedYear}`,
+    downloadMonthlyReconciliationPdf({
+      year: selectedYear,
+      monthSummaries,
       totalYearTarget,
       totalYearCollected,
       totalYearOutstanding,
-      '',
-      '',
-      '',
-      `${yearCollectionRate}%`,
-    ]);
-
-    downloadCsv(`Bondhon_2017_Yearly_Report_${selectedYear}.csv`, headers, rows);
-  };
-
-  // Export Member-Wise Report CSV
-  const handleExportMembersReport = () => {
-    const headers = [
-      'Member Code',
-      'Full Name',
-      'Designation',
-      'Status',
-      'Total Billed (BDT)',
-      'Total Paid (BDT)',
-      'Outstanding (BDT)',
-      'Paid Months',
-      'Unpaid Months',
-      'Settlement Rate (%)',
-    ];
-
-    const rows = memberRankings.map((r) => [
-      r.member.member_code,
-      r.member.full_name,
-      r.member.designation || 'Member',
-      r.member.status.toUpperCase(),
-      r.billed,
-      r.paid,
-      r.outstanding,
-      r.paidMonths,
-      r.unpaidMonths,
-      `${r.settlementRate}%`,
-    ]);
-
-    downloadCsv(`Bondhon_2017_Member_Contributions_${new Date().toISOString().substring(0, 10)}.csv`, headers, rows);
-  };
-
-  // Export Custom Date Range CSV
-  const handleExportCustomReport = () => {
-    const headers = [
-      'Payment Date',
-      'Receipt Number',
-      'Member Code',
-      'Member Name',
-      'Billing Cycle',
-      'Principal Paid (BDT)',
-      'Fine Paid (BDT)',
-      'Total Paid (BDT)',
-      'Method',
-    ];
-    const rows = customRangeTransactions.map((d) => {
-      const bd = calculateDueBreakdown(d, d.member?.shares_count);
-      return [
-        d.paid_at ? formatDate(d.paid_at) : '—',
-        d.receipt_number || d.id.slice(0, 12),
-        d.member?.member_code || '',
-        d.member?.full_name || '',
-        `${getMonthName(d.month)} ${d.year}`,
-        bd.principalPaid,
-        bd.finePaid,
-        bd.totalPaid,
-        d.payment_method || 'Ledger',
-      ];
+      yearCollectionRate,
     });
-    downloadCsv(`Bondhon_2017_Transactions_${customStartDate}_to_${customEndDate}.csv`, headers, rows);
+  };
+
+  // Export Member-Wise Report PDF
+  const handleExportMembersReport = () => {
+    downloadMemberRankingsPdf({
+      rankings: memberRankings,
+    });
+  };
+
+  // Export Custom Date Range PDF
+  const handleExportCustomReport = () => {
+    downloadCustomRangeTransactionsPdf({
+      startDate: customStartDate,
+      endDate: customEndDate,
+      transactions: customRangeTransactions,
+      totals: customRangeTotals,
+    });
   };
 
   return (
@@ -193,7 +127,7 @@ export const AdminReports: React.FC = () => {
             <span>Financial Reports &amp; Backups</span>
           </h1>
           <p className="text-xs sm:text-sm text-[#4E5E78] dark:text-slate-400 mt-0.5">
-            Annual reconciliations, member-wise contribution rankings, and CSV export backups
+            Annual reconciliations, member-wise contribution rankings, and A4 PDF report exports
           </p>
         </div>
 
@@ -293,7 +227,7 @@ export const AdminReports: React.FC = () => {
               className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl transition-colors shadow-2xs cursor-pointer whitespace-nowrap"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Export Monthly Report CSV</span>
+              <span>Export Monthly Report PDF</span>
             </button>
           ) : activeTab === 'members' ? (
             <button
@@ -301,7 +235,7 @@ export const AdminReports: React.FC = () => {
               className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl transition-colors shadow-2xs cursor-pointer whitespace-nowrap"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Export Members Ranking CSV</span>
+              <span>Export Members Ranking PDF</span>
             </button>
           ) : (
             <button
@@ -309,7 +243,7 @@ export const AdminReports: React.FC = () => {
               className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl transition-colors shadow-2xs cursor-pointer whitespace-nowrap"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Export Range CSV</span>
+              <span>Export Range PDF</span>
             </button>
           )}
         </div>

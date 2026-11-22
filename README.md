@@ -26,10 +26,8 @@ Authenticated club members access their personal records:
   - Personal profile & self-service editor: photo, full name, member ID, phone, join date, monthly contribution (BDT ৳), **Private Date of Birth** (strictly visible only to self & admins), and **Public Blood Group** (visible to all authenticated members).
   - Personal Financial Summary & interactive charts: Total paid, total paid months, total outstanding dues (principal + fines), unpaid months count, and payment status.
   - **Club Announcements** feed + **Authenticated Blood Group & Birthday Directory** (searchable & filterable by blood group; shows birthday Month + Day only, never birth year, DOB, father's name, or shares/fee).
-  - Recent billing cycles with 1-click **Official Payment Receipt** (printable A4 & direct PDF download).
 - **`/member/payment-history`**:
   - Personal contribution ledger with fiscal year, month, status, and search filters.
-  - **Official Payment Receipt** button for all paid and partial transactions (ownership enforced: members can only view/download their own receipts).
 - **Animated Notification Bell (`NotificationCenter`)**:
   - Real-time unread counter with ringing animation and category filters (**All**, **Notices**, **Payments**, **Birthdays**).
   - Includes clickable Admin Announcements (opening detail view), private payment confirmation alerts (`audience = 'member'`), and `Asia/Dhaka` upcoming birthday reminders (Month + Day only).
@@ -39,15 +37,16 @@ Authenticated Administrators have full operational, financial, and member manage
 - **`/admin/dashboard`**:
   - **Date Range & Period Analytics**: Interactive filters (`This Month`, `Last 6 Mos`, `FY YYYY`, `All Time`, `Custom Range`) computing real database KPIs, MoM/YoY % growth indicators, and cumulative active-member outstanding dues.
   - **Interactive Recharts Visualizations**: Bar vs. Target comparison, explicit **Trend Line** mode (`LineChart`), Multi-Year Stacked History, Payment Status Donut, Fund Allocation & Expense History Donut, and Revenue Mix Donut.
+  - **4-Category Club Financial Leaderboards**: Real-time member rankings with portraits across **Max Joma**, **Max Due**, **Max Jorimana**, and **Max Jorimana Due**.
   - **Club Treasury & Sonali Bank PLC Ledger**: Track bank deposits, interest, bank charges/VAT, withdrawals, cash-in-hand progress, and club expenses.
   - **Publish Announcements Manager**: Create categorized club announcements (`general`, `finance`, `event`, `urgent`) broadcast directly to all authenticated members.
 - **`/admin/members` & `/admin/members/:memberId`**:
   - Full Member Directory & individual profile ledger management (including Date of Birth, Blood Group, Share Allocations, Status toggle, and Supabase Storage avatar uploads).
-  - Member-level analytics and printable/PDF **Official Payment Receipts**.
+  - Member-level analytics, A4 PDF member statements, and Admin-only **PNG Image Official Payment Receipts**.
 - **`/admin/payments` & `/admin/payment-history`**:
-  - Atomic monthly dues generation (`UNIQUE(member_id, month, year)`), late-fine automation (12th of following month rule), `RecordPaymentModal` with immediate **Download / Print Receipt** action upon saving, advanced filtering, and UTF-8 CSV exports.
+  - Atomic monthly dues generation (`UNIQUE(member_id, month, year)`), late-fine automation (12th of following month rule), `RecordPaymentModal` with immediate **Download Receipt Image (PNG)** right inside the success popup, advanced filtering, and A4 PDF ledger exports.
 - **`/admin/reports`**:
-  - Monthly Reconciliation, Member-Wise Rankings, **Custom Date Range** transaction reports with instant receipt lookup, and UTF-8 CSV exports with Excel BOM.
+  - Monthly Reconciliation, Member-Wise Rankings, **Custom Date Range** transaction reports with instant receipt lookup, and A4 PDF report exports.
 - **`/admin/settings` & `/admin/treasury`**:
   - Club configuration, Sonali Bank statement reconciliation, Supabase connection diagnostics, SQL schema export, and JSON backups.
 
@@ -56,7 +55,7 @@ Authenticated Administrators have full operational, financial, and member manage
 ## 🛠 Technology Stack
 
 - **Frontend**: React 19, Vite, TypeScript, Tailwind CSS v4, React Router 7, Lucide Icons, Recharts, Motion (`motion/react`), Lottie (`lottie-react`).
-- **PDF Receipts**: `jspdf` client-side A4 PDF generation + isolated `@media print` A4 receipt sheet.
+- **Receipts & Reports**: Client-side Canvas 2D **PNG Image Receipt** generator (Bangla/English + club crest) + `jspdf` multi-page **A4 PDF Financial Reports**.
 - **Backend & Database**: Supabase PostgreSQL with Row Level Security (RLS) & `SECURITY DEFINER` RPCs.
 - **Authentication & Storage**: Supabase Auth & Supabase Storage (`member-avatars`).
 - **Serverless & Hosting**: Netlify Functions (`netlify/functions/admin-invite.ts`) & `netlify.toml` SPA/security header config.

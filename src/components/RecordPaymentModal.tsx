@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useClubData } from '../hooks/useClubData';
+import { useAuth } from '../hooks/useAuth';
 import { FISCAL_YEARS, MONTH_NAMES, formatBDT, getMonthName } from '../utils/formatters';
 import {
   FINE_PER_SHARE,
@@ -7,13 +8,18 @@ import {
   getDueDeadline,
   isAfterMonthDeadline,
 } from '../utils/fineCalculator';
+import {
+  buildPaymentReceiptPayload,
+  downloadPaymentReceiptImage,
+} from '../utils/receiptGenerator';
 import { MonthlyDue } from '../types';
 import { AnimatePresence, motion } from 'motion/react';
 import { Modal } from './ui/Modal';
 import { ModalLottie } from './ui/ModalLottie';
 import { PaymentReceiptModal } from './PaymentReceiptModal';
 import { usePrefersReducedMotion } from './LoginLottieStage';
-import { CheckCircle2, AlertCircle, CreditCard, Calendar, User, AlertTriangle, Loader2, Receipt, PlusCircle } from 'lucide-react';
+import crestImage from '../assets/images/bondhon_club_crest_1793703027252.jpg';
+import { CheckCircle2, AlertCircle, CreditCard, Calendar, User, AlertTriangle, Loader2, Receipt, PlusCircle, ImageDown } from 'lucide-react';
 
 interface RecordPaymentModalProps {
   isOpen: boolean;
@@ -30,7 +36,8 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
   initialMonth,
   initialYear,
 }) => {
-  const { members, selectedYear, selectedMonth, recordNewPayment } = useClubData();
+  const { members, selectedYear, selectedMonth, recordNewPayment, myMemberRecord } = useClubData();
+  const { profile } = useAuth();
 
   const todayStr = new Date().toISOString().substring(0, 10);
   const initialPeriod = getBillingPeriodFromPaymentDate(todayStr);
@@ -47,6 +54,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
   const [paymentMethod, setPaymentMethod] = useState<string>('Cash');
   const [notes, setNotes] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [downloadingImage, setDownloadingImage] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [savedDue, setSavedDue] = useState<MonthlyDue | null>(null);
   const [receiptModalOpen, setReceiptModalOpen] = useState(false);
@@ -147,7 +155,23 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
 
     if (res.success) {
       const totalSaved = Number(amountPaid) + Number(finePaid);
-      setSavedDue(res.due || null);
+      const fallbackDue: MonthlyDue = {
+        id: `due-${year}-${month}-${memberId}-${Date.now()}`,
+        member_id: memberId,
+        member: selectedMember,
+        month,
+        year,
+        amount_due: Number(amountDue),
+        amount_paid: Number(amountPaid),
+        fine_due: Number(fineDue),
+        fine_paid: Number(finePaid),
+        status: Number(amountPaid) >= Number(amountDue) ? 'paid' : Number(amountPaid) > 0 ? 'partial' : 'unpaid',
+        paid_at: paidDate ? new Date(paidDate).toISOString() : new Date().toISOString(),
+        payment_method: paymentMethod,
+        recorded_by_name: myMemberRecord?.full_name || profile?.full_name || 'Admin',
+        notes: notes.trim() ? `${paymentMethod} - ${notes.trim()}` : paymentMethod,
+      };
+      setSavedDue(res.due || fallbackDue);
       setMessage({
         type: 'success',
         text: `পেমেন্ট সফলভাবে এন্ট্রি হয়েছে! (${selectedMember?.full_name}: ৳${totalSaved})`,
@@ -157,6 +181,21 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
         type: 'error',
         text: res.error || 'পেমেন্ট সংরক্ষণ করতে সমস্যা হয়েছে।',
       });
+    }
+  };
+
+  const handleInstantDownloadReceiptImage = async () => {
+    if (!savedDue || downloadingImage) return;
+    setDownloadingImage(true);
+    try {
+      const payload = buildPaymentReceiptPayload(
+        savedDue,
+        selectedMember || null,
+        myMemberRecord?.full_name || profile?.full_name || 'Authorized Club Treasurer'
+      );
+      await downloadPaymentReceiptImage(payload, crestImage);
+    } finally {
+      setTimeout(() => setDownloadingImage(false), 300);
     }
   };
 
@@ -215,23 +254,51 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.18 }}
-              className={`p-3 rounded-xl text-xs flex items-center gap-2.5 border ${
+              className={`p-3.5 rounded-xl text-xs border space-y-2.5 ${
                 message.type === 'success'
                   ? 'bg-[#0369A1]/10 text-[#0369A1] dark:text-[#38BDF8] border-[#0369A1]/25 dark:border-[#38BDF8]/35'
                   : 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/40'
               }`}
             >
-              {message.type === 'success' ? (
-                <ModalLottie
-                  src="/lottie/payment-success.json"
-                  isSuccess={true}
-                  fallbackIcon={<CheckCircle2 className="w-4 h-4 shrink-0" />}
-                  className="w-7 h-7 shrink-0"
-                />
-              ) : (
-                <AlertCircle className="w-4 h-4 shrink-0" />
-              )}
-              <span className="font-semibold">{message.text}</span>
+              <div className="flex items-center gap-2.5">
+                {message.type === 'success' ? (
+                  <ModalLottie
+                    src="/lottie/payment-success.json"
+                    isSuccess={true}
+                    fallbackIcon={<CheckCircle2 className="w-4 h-4 shrink-0" />}
+                    className="w-7 h-7 shrink-0"
+                  />
+                ) : (
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                )}
+                <span className="font-semibold flex-1">{message.text}</span>
+              </div>
+
+              {message.type === 'success' &&
+                savedDue &&
+                Number(savedDue.amount_paid || 0) + Number(savedDue.fine_paid || 0) > 0 && (
+                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#38BDF8]/25">
+                    <button
+                      type="button"
+                      onClick={handleInstantDownloadReceiptImage}
+                      disabled={downloadingImage}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-lg shadow-xs cursor-pointer transition-colors disabled:opacity-60 whitespace-nowrap"
+                    >
+                      <ImageDown className="w-3.5 h-3.5" />
+                      <span>
+                        {downloadingImage ? 'Saving Image...' : 'Download Receipt Image (PNG)'}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setReceiptModalOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-[#0F1B2E] dark:text-slate-200 bg-white/80 dark:bg-[#111B2E] hover:bg-white dark:hover:bg-[#18294A] border border-[#DFE6F0] dark:border-[#233452] rounded-lg cursor-pointer transition-colors whitespace-nowrap"
+                    >
+                      <Receipt className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
+                      <span>Preview / Print</span>
+                    </button>
+                  </div>
+                )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -499,11 +566,12 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                 {savedDue && (Number(savedDue.amount_paid || 0) + Number(savedDue.fine_paid || 0) > 0) && (
                   <button
                     type="button"
-                    onClick={() => setReceiptModalOpen(true)}
-                    className="px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+                    onClick={handleInstantDownloadReceiptImage}
+                    disabled={downloadingImage}
+                    className="px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60 whitespace-nowrap"
                   >
-                    <Receipt className="w-3.5 h-3.5" />
-                    <span>Download / Print Receipt</span>
+                    <ImageDown className="w-3.5 h-3.5" />
+                    <span>{downloadingImage ? 'Saving Image...' : 'Download Receipt Image'}</span>
                   </button>
                 )}
                 <button

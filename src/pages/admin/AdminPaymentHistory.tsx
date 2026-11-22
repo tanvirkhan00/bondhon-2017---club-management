@@ -6,7 +6,10 @@ import { calculateDueBreakdown } from '../../utils/fineCalculator';
 import { StatusBadge } from '../../components/StatusBadge';
 import { MetricCard } from '../../components/MetricCard';
 import { PageTransition } from '../../components/ui/MotionPrimitives';
-import { downloadCsv } from '../../utils/csvExport';
+import { downloadClubTablePdf } from '../../utils/reportPdfGenerator';
+import { buildPaymentReceiptPayload, downloadPaymentReceiptImage } from '../../utils/receiptGenerator';
+import { useAuth } from '../../hooks/useAuth';
+import crestImage from '../../assets/images/bondhon_club_crest_1793703027252.jpg';
 import { MonthlyDue } from '../../types';
 import {
   History,
@@ -22,13 +25,15 @@ import {
   AlertTriangle,
   AlertCircle,
   Receipt,
+  ImageDown,
 } from 'lucide-react';
 import { RecordPaymentModal } from '../../components/RecordPaymentModal';
 import { EditPaymentModal } from '../../components/EditPaymentModal';
 import { PaymentReceiptModal } from '../../components/PaymentReceiptModal';
 
 export const AdminPaymentHistory: React.FC = () => {
-  const { monthlyDues, members, selectedMonth, selectedYear, clubMonthlyTarget, deleteDueRecord } = useClubData();
+  const { monthlyDues, members, selectedMonth, selectedYear, clubMonthlyTarget, deleteDueRecord, myMemberRecord } = useClubData();
+  const { profile } = useAuth();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedYearFilter, setSelectedYearFilter] = useState<string>('all');
@@ -110,45 +115,44 @@ export const AdminPaymentHistory: React.FC = () => {
     { due: 0, paid: 0, finePaid: 0, outstanding: 0 }
   );
 
-  const handleExportCsv = () => {
-    const headers = [
-      'Record ID',
-      'Member Code',
-      'Member Name',
-      'Phone Number',
-      'Month',
-      'Year',
-      'Principal Due (BDT)',
-      'Principal Paid (BDT)',
-      'Fine Due (BDT)',
-      'Fine Paid (BDT)',
-      'Total Outstanding (BDT)',
-      'Payment Status',
-      'Payment Date',
-      'Recorded By',
-    ];
-
-    const rows = filteredRecords.map((d) => {
-      const bd = calculateDueBreakdown(d, d.member?.shares_count);
-      return [
-        d.id,
-        d.member?.member_code || '',
-        d.member?.full_name || '',
-        d.member?.phone || '',
-        getMonthName(d.month),
-        d.year,
-        bd.principalDue,
-        bd.principalPaid,
-        bd.fineDue,
-        bd.finePaid,
-        bd.totalOutstanding,
-        d.status.toUpperCase(),
-        d.paid_at ? formatDate(d.paid_at) : 'Unpaid',
-        d.recorded_by || 'Admin',
-      ];
+  const handleExportPdf = () => {
+    downloadClubTablePdf({
+      filename: `Bondhon_2017_Payment_Ledger_${new Date().toISOString().substring(0, 10)}.pdf`,
+      title: 'Payment Ledger & History Report',
+      subtitle: `Filtered payment records (${filteredRecords.length} entries)`,
+      orientation: 'landscape',
+      kpis: [
+        { label: 'Records Count', value: String(filteredRecords.length) },
+        { label: 'Total Collected', value: `BDT ${Math.round(ledgerSummary.paid).toLocaleString('en-US')}` },
+        { label: 'Fines Collected', value: `BDT ${Math.round(ledgerSummary.finePaid).toLocaleString('en-US')}` },
+        { label: 'Outstanding', value: `BDT ${Math.round(ledgerSummary.outstanding).toLocaleString('en-US')}` },
+      ],
+      columns: [
+        { header: 'Billing Cycle', weight: 1.2, align: 'left' },
+        { header: 'Code', weight: 0.9, align: 'left', mono: true },
+        { header: 'Member Name', weight: 1.8, align: 'left' },
+        { header: 'Due (BDT)', weight: 1.0, align: 'right', mono: true },
+        { header: 'Paid (BDT)', weight: 1.1, align: 'right', mono: true },
+        { header: 'Fine Paid', weight: 0.9, align: 'right', mono: true },
+        { header: 'Outstanding', weight: 1.1, align: 'right', mono: true },
+        { header: 'Status', weight: 0.8, align: 'center' },
+        { header: 'Paid Date', weight: 1.0, align: 'left', mono: true },
+      ],
+      rows: filteredRecords.map((d) => {
+        const bd = calculateDueBreakdown(d, d.member?.shares_count);
+        return [
+          `${getMonthName(d.month)} ${d.year}`,
+          d.member?.member_code || '-',
+          d.member?.full_name || 'Member',
+          `BDT ${Math.round(bd.principalDue).toLocaleString('en-US')}`,
+          `BDT ${Math.round(bd.totalPaid).toLocaleString('en-US')}`,
+          bd.finePaid > 0 ? `BDT ${Math.round(bd.finePaid).toLocaleString('en-US')}` : '-',
+          bd.totalOutstanding > 0 ? `BDT ${Math.round(bd.totalOutstanding).toLocaleString('en-US')}` : '-',
+          d.status.toUpperCase(),
+          d.paid_at ? formatDate(d.paid_at) : 'Unpaid',
+        ];
+      }),
     });
-
-    downloadCsv(`Bondhon_2017_Ledger_${new Date().toISOString().substring(0, 10)}.csv`, headers, rows);
   };
 
   const isSingleMonthScope =
@@ -189,11 +193,11 @@ export const AdminPaymentHistory: React.FC = () => {
           </button>
 
           <button
-            onClick={handleExportCsv}
+            onClick={handleExportPdf}
             className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#0F1B2E] dark:text-slate-200 bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] hover:bg-[#EFF3F9] dark:hover:bg-[#17243C] rounded-xl transition-colors cursor-pointer whitespace-nowrap"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Export CSV</span>
+            <span>Export PDF</span>
           </button>
         </div>
       </div>
@@ -418,14 +422,31 @@ export const AdminPaymentHistory: React.FC = () => {
                       <td className="py-3 px-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
                           {bd.totalPaid > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => setReceiptDue(due)}
-                              className="p-1.5 text-[#0369A1] dark:text-[#38BDF8] hover:bg-[#0369A1]/10 dark:hover:bg-[#38BDF8]/15 rounded-lg cursor-pointer"
-                              title="View / Download Receipt"
-                            >
-                              <Receipt className="w-3.5 h-3.5" />
-                            </button>
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const payload = buildPaymentReceiptPayload(
+                                    due,
+                                    due.member || members.find((m) => m.id === due.member_id) || null,
+                                    myMemberRecord?.full_name || profile?.full_name || 'Authorized Club Treasurer'
+                                  );
+                                  downloadPaymentReceiptImage(payload, crestImage);
+                                }}
+                                className="p-1.5 text-[#1D4ED8] dark:text-[#60A5FA] hover:bg-[#1D4ED8]/10 dark:hover:bg-[#60A5FA]/15 rounded-lg cursor-pointer"
+                                title="Download Receipt Image (PNG)"
+                              >
+                                <ImageDown className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setReceiptDue(due)}
+                                className="p-1.5 text-[#0369A1] dark:text-[#38BDF8] hover:bg-[#0369A1]/10 dark:hover:bg-[#38BDF8]/15 rounded-lg cursor-pointer"
+                                title="Preview / Print Official Receipt"
+                              >
+                                <Receipt className="w-3.5 h-3.5" />
+                              </button>
+                            </>
                           )}
 
                           <button

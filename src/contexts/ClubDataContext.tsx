@@ -951,14 +951,39 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Upcoming Birthday Highlights (-2 .. 0 days in Asia/Dhaka, ZERO birth year exposed)
   const upcomingBirthdayHighlights = useMemo<BirthdayHighlight[]>(() => {
-    if (rpcBirthdayHighlights !== null) {
-      return rpcBirthdayHighlights;
-    }
-    if (isAdmin || !supabaseSyncedMembers) {
-      return getUpcomingBirthdayHighlightsFromList(members, 2);
-    }
-    return getUpcomingBirthdayHighlightsFromList(memberDirectory, 2);
-  }, [rpcBirthdayHighlights, isAdmin, supabaseSyncedMembers, members, memberDirectory]);
+    const rawList: BirthdayHighlight[] =
+      rpcBirthdayHighlights !== null
+        ? rpcBirthdayHighlights
+        : isAdmin || !supabaseSyncedMembers
+        ? getUpcomingBirthdayHighlightsFromList(members, 2)
+        : getUpcomingBirthdayHighlightsFromList(memberDirectory, 2);
+
+    const avatarById = new Map<string, string>();
+    const avatarByCode = new Map<string, string>();
+    const registerAvatar = (id?: string, code?: string, url?: string | null) => {
+      const clean = (url || '').trim();
+      if (!clean) return;
+      if (id && !avatarById.has(id)) avatarById.set(id, clean);
+      if (code && !avatarByCode.has(code.toUpperCase())) avatarByCode.set(code.toUpperCase(), clean);
+    };
+
+    members.forEach((m) => registerAvatar(m.id, m.member_code, m.profile_image_url));
+    memberDirectory.forEach((m) => registerAvatar(m.id, m.member_code, m.profile_image_url));
+    publicMembers.forEach((m) => registerAvatar(m.id, m.member_code, m.profile_image_url));
+    INITIAL_MEMBERS.forEach((m) => registerAvatar(m.id, m.member_code, m.profile_image_url));
+
+    return rawList.map((item) => {
+      const resolvedUrl =
+        (item.profile_image_url || '').trim() ||
+        avatarById.get(item.id) ||
+        avatarByCode.get((item.member_code || '').toUpperCase()) ||
+        null;
+      return {
+        ...item,
+        profile_image_url: resolvedUrl,
+      };
+    });
+  }, [rpcBirthdayHighlights, isAdmin, supabaseSyncedMembers, members, memberDirectory, publicMembers]);
 
   // Update member's own phone number & notify admin
   const updateMyContactPhone = async (phone: string) => {

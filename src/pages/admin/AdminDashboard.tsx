@@ -14,6 +14,7 @@ import {
   PeriodStatusDonut,
   HistoryPieAnalyticsRow,
 } from '../../components/DashboardCharts';
+import { DashboardLeaderboard } from '../../components/DashboardLeaderboard';
 import { PageTransition } from '../../components/ui/MotionPrimitives';
 import {
   Users,
@@ -951,6 +952,9 @@ export const AdminDashboard: React.FC = () => {
         totalBankInterest={totalBankInterest}
         yearlyCollections={yearlyMemberCollections}
       />
+
+      {/* 4C. 4-CATEGORY CLUB FINANCIAL LEADERBOARD (Max Joma, Max Due, Max Jorimana, Max Jorimana Due) */}
+      <DashboardLeaderboard members={members} monthlyDues={monthlyDues} />
 
       {/* 5. OPERATIONAL WORKBENCH (Pending Dues + Tabbed Activity Feed) */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-5">

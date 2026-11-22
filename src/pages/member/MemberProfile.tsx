@@ -9,13 +9,11 @@ import {
   computeDaysUntilBirthday,
   formatBirthdayMonthDay,
 } from '../../utils/birthdayUtils';
-import { MonthlyDue } from '../../types';
 import { StatusBadge } from '../../components/StatusBadge';
 import { MetricCard } from '../../components/MetricCard';
 import { MemberProfileGreetingHero } from '../../components/MemberProfileGreetingHero';
 import { MemberAnalyticsChart } from '../../components/MemberAnalyticsChart';
 import { DashboardClock } from '../../components/DashboardClock';
-import { PaymentReceiptModal } from '../../components/PaymentReceiptModal';
 import { PageTransition } from '../../components/ui/MotionPrimitives';
 import {
   User,
@@ -34,7 +32,6 @@ import {
   Cake,
   Search,
   Megaphone,
-  Receipt,
 } from 'lucide-react';
 
 export const MemberProfile: React.FC = () => {
@@ -73,10 +70,9 @@ export const MemberProfile: React.FC = () => {
   const [noticeSending, setNoticeSending] = useState(false);
   const [noticeFeedback, setNoticeFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Member Directory Filter & Receipt Modal state
+  // Member Directory Filter state
   const [dirSearch, setDirSearch] = useState('');
   const [bloodFilter, setBloodFilter] = useState<string>('all');
-  const [receiptDue, setReceiptDue] = useState<MonthlyDue | null>(null);
 
   useEffect(() => {
     setPhoneInput(myMemberRecord?.phone || '');
@@ -682,6 +678,7 @@ export const MemberProfile: React.FC = () => {
                           <img
                             src={peer.profile_image_url}
                             alt={peer.full_name}
+                            referrerPolicy="no-referrer"
                             className="w-full h-full object-cover"
                           />
                         ) : (
@@ -753,20 +750,18 @@ export const MemberProfile: React.FC = () => {
                 <th className="py-2.5 px-3 font-semibold text-right">Outstanding (৳)</th>
                 <th className="py-2.5 px-3 font-semibold text-center">Status</th>
                 <th className="py-2.5 px-3 font-semibold">Payment Date</th>
-                <th className="py-2.5 px-3 font-semibold text-right">Receipt</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#DFE6F0] dark:divide-[#233452]">
               {recentDues.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-[#4E5E78]">
+                  <td colSpan={7} className="py-8 text-center text-[#4E5E78]">
                     No billing records available.
                   </td>
                 </tr>
               ) : (
                 recentDues.map((d) => {
                   const bd = calculateDueBreakdown(d, myMemberRecord.shares_count);
-                  const canReceipt = !d.isVirtual && bd.totalPaid > 0;
                   return (
                     <tr key={d.id} className="hover:bg-[#EFF3F9]/60 dark:hover:bg-[#17243C]/60 transition-colors">
                       <td className="py-2.5 px-3 font-semibold text-[#0F1B33] dark:text-white whitespace-nowrap">
@@ -801,21 +796,6 @@ export const MemberProfile: React.FC = () => {
                       <td className="py-2.5 px-3 font-mono text-[#4E5E78] whitespace-nowrap">
                         {d.paid_at ? formatDate(d.paid_at) : '—'}
                       </td>
-                      <td className="py-2.5 px-3 text-right whitespace-nowrap">
-                        {canReceipt ? (
-                          <button
-                            type="button"
-                            onClick={() => setReceiptDue(d)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-[#1D4ED8] dark:text-[#60A5FA] bg-[#1D4ED8]/10 hover:bg-[#1D4ED8]/18 rounded-lg border border-[#1D4ED8]/25 dark:border-[#60A5FA]/30 cursor-pointer"
-                            title="View & Download Payment Receipt"
-                          >
-                            <Receipt className="w-3 h-3" />
-                            <span>Receipt</span>
-                          </button>
-                        ) : (
-                          <span className="text-[#4E5E78]">—</span>
-                        )}
-                      </td>
                     </tr>
                   );
                 })
@@ -824,13 +804,6 @@ export const MemberProfile: React.FC = () => {
           </table>
         </div>
       </div>
-
-      {/* Payment Receipt Modal */}
-      <PaymentReceiptModal
-        due={receiptDue}
-        member={myMemberRecord}
-        onClose={() => setReceiptDue(null)}
-      />
     </PageTransition>
   );
 };

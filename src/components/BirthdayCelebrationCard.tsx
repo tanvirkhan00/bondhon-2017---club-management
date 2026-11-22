@@ -1,11 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { useClubData } from '../hooks/useClubData';
+import { INITIAL_MEMBERS } from '../lib/mockData';
 import { formatBirthdayMonthDay } from '../utils/birthdayUtils';
+import crestImage from '../assets/images/bondhon_club_crest_1793703027252.jpg';
 import { Cake, Sparkles, PartyPopper } from 'lucide-react';
+
+const FALLBACK_AVATAR_BY_CODE = new Map(
+  INITIAL_MEMBERS.filter((m) => m.profile_image_url).map((m) => [
+    m.member_code.toUpperCase(),
+    m.profile_image_url as string,
+  ])
+);
 
 export const BirthdayCelebrationCard: React.FC = () => {
   const { upcomingBirthdayHighlights } = useClubData();
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
   // Strictly visible only from 2 days prior through birthday date (0 <= days_until <= 2)
   const celebrations = upcomingBirthdayHighlights.filter(
@@ -86,29 +96,36 @@ export const BirthdayCelebrationCard: React.FC = () => {
                 true
               );
 
+              const resolvedAvatar =
+                !failedImages[person.id]
+                  ? (person.profile_image_url || '').trim() ||
+                    FALLBACK_AVATAR_BY_CODE.get((person.member_code || '').toUpperCase()) ||
+                    crestImage
+                  : crestImage;
+
               return (
                 <div
                   key={person.id}
-                  className="rounded-2xl bg-[#09101D]/55 backdrop-blur-md border border-white/15 p-4 sm:p-5 flex items-center gap-4"
+                  className="rounded-2xl bg-[#09101D]/60 backdrop-blur-md border border-white/15 p-4 sm:p-5 flex items-center gap-4"
                 >
                   <div className="relative shrink-0">
-                    <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full overflow-hidden ring-2 ring-[#D6AC62] bg-[#18294A] flex items-center justify-center">
-                      {person.profile_image_url ? (
-                        <img
-                          src={person.profile_image_url}
-                          alt={person.full_name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-lg font-extrabold text-[#F0C56E]">
-                          {person.full_name.substring(0, 2).toUpperCase()}
-                        </span>
-                      )}
+                    <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl overflow-hidden ring-2 ring-[#D6AC62] shadow-[0_10px_25px_-8px_rgba(214,172,98,0.45)] bg-[#18294A] flex items-center justify-center">
+                      <img
+                        src={resolvedAvatar}
+                        alt={person.full_name}
+                        referrerPolicy="no-referrer"
+                        onError={() =>
+                          setFailedImages((prev) =>
+                            prev[person.id] ? prev : { ...prev, [person.id]: true }
+                          )
+                        }
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     {isToday && (
                       <span
                         aria-hidden="true"
-                        className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#D6AC62] text-[#0F1B33] flex items-center justify-center shadow-sm"
+                        className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-[#D6AC62] text-[#0F1B33] flex items-center justify-center shadow-md ring-2 ring-[#09101D]"
                       >
                         <PartyPopper className="w-3.5 h-3.5" />
                       </span>
@@ -126,8 +143,14 @@ export const BirthdayCelebrationCard: React.FC = () => {
                       {person.full_name}
                     </h3>
 
-                    <p className="text-xs text-slate-300 truncate">
+                    <p className="text-xs text-slate-300 truncate font-mono">
                       {person.member_code} · {person.designation || 'Member'}
+                    </p>
+
+                    <p className="text-[11px] text-slate-300/90 pt-0.5">
+                      {isToday
+                        ? 'Wishing health, joy & prosperity!'
+                        : 'Get ready to celebrate together.'}
                     </p>
                   </div>
                 </div>
