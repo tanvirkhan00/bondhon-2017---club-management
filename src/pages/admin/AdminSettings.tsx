@@ -28,7 +28,7 @@ export const AdminSettings: React.FC = () => {
     resetDemoData,
     refreshData,
   } = useClubData();
-  const { isConfigured } = useAuth();
+  const { isConfigured, isAdmin } = useAuth();
 
   const currentCreds = getSupabaseCredentials();
   const [supabaseUrl, setSupabaseUrl] = useState(currentCreds.url);
@@ -94,6 +94,8 @@ export const AdminSettings: React.FC = () => {
     dlAnchorElem.setAttribute('download', `Bondhon_2017_Backup_${new Date().toISOString().substring(0, 10)}.json`);
     dlAnchorElem.click();
   };
+
+  if (!isAdmin) return null;
 
   return (
     <PageTransition className="space-y-6 max-w-4xl">
@@ -221,17 +223,17 @@ export const AdminSettings: React.FC = () => {
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button
             onClick={handleDownloadJsonBackup}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-[#0F1B2E] dark:text-slate-200 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] hover:bg-slate-200/70 dark:hover:bg-[#18294A] rounded-xl transition-colors cursor-pointer whitespace-nowrap"
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-[#0F1B2E] dark:text-slate-200 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] hover:bg-slate-200/70 dark:hover:bg-[#18294A] rounded-xl transition-colors cursor-pointer text-left sm:whitespace-nowrap"
           >
-            <Download className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
+            <Download className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA] shrink-0" />
             <span>Download Full Backup ({members.length} members · {monthlyDues.length} entries)</span>
           </button>
 
           <button
             onClick={resetDemoData}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl border border-rose-200 dark:border-rose-800/60 cursor-pointer transition-colors whitespace-nowrap"
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl border border-rose-200 dark:border-rose-800/60 cursor-pointer transition-colors text-left sm:whitespace-nowrap"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className="w-3.5 h-3.5 shrink-0" />
             <span>Clear Payment History &amp; Reset Roster</span>
           </button>
         </div>

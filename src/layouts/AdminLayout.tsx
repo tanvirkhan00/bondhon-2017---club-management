@@ -27,7 +27,7 @@ import { NotificationCenter } from '../components/NotificationCenter';
 const SIDEBAR_COLLAPSED_KEY = 'bondhon_admin_sidebar_collapsed';
 
 export const AdminLayout: React.FC = () => {
-  const { profile, signOut } = useAuth();
+  const { profile, isAdmin, isViewer, signOut } = useAuth();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
@@ -86,7 +86,7 @@ export const AdminLayout: React.FC = () => {
     { to: '/admin/payment-history', label: 'Payment Ledger', icon: History },
     { to: '/admin/treasury', label: 'Bank & Expenses', icon: Landmark },
     { to: '/admin/reports', label: 'Financial Reports', icon: BarChart3 },
-    { to: '/admin/settings', label: 'Settings', icon: Settings },
+    ...(isAdmin ? [{ to: '/admin/settings', label: 'Settings', icon: Settings }] : []),
   ];
 
   const currentItem = navItems.find((item) => location.pathname === item.to);
@@ -94,6 +94,8 @@ export const AdminLayout: React.FC = () => {
     ? currentItem.label
     : location.pathname.startsWith('/admin/members/')
     ? 'Member Profile & Ledger'
+    : isViewer
+    ? 'Executive Console'
     : 'Admin Console';
 
   const SidebarContent = ({ isMobile = false }: { isMobile?: boolean }) => {
@@ -119,7 +121,7 @@ export const AdminLayout: React.FC = () => {
                   Bondhon 2017
                 </span>
                 <span className="text-[10px] text-[#D6AC62] font-semibold uppercase tracking-wider block">
-                  Admin Console
+                  {isViewer ? 'Executive View' : 'Admin Console'}
                 </span>
               </div>
             )}
@@ -215,9 +217,11 @@ export const AdminLayout: React.FC = () => {
             {!collapsed && (
               <div className="text-left overflow-hidden mr-2">
                 <span className="text-xs font-semibold text-white block truncate">
-                  {profile?.full_name || 'Admin'}
+                  {profile?.full_name || (isViewer ? 'Club President' : 'Admin')}
                 </span>
-                <span className="text-[10px] text-[#D6AC62] font-mono">Administrator</span>
+                <span className="text-[10px] text-[#D6AC62] font-mono">
+                  {isViewer ? 'President · View Only' : 'Administrator'}
+                </span>
               </div>
             )}
 
@@ -303,7 +307,9 @@ export const AdminLayout: React.FC = () => {
               </button>
 
               <div className="flex items-center gap-2 text-xs text-[#4E5E78] dark:text-[#9BB0CD] min-w-0">
-                <span className="hidden sm:inline font-medium">Admin</span>
+                <span className="hidden sm:inline font-medium">
+                  {isViewer ? 'Executive' : 'Admin'}
+                </span>
                 <span className="hidden sm:inline">/</span>
                 <span className="font-bold text-[#0F1B2E] dark:text-[#F3F6FC] text-sm sm:text-base truncate">
                   {pageTitle}
@@ -311,27 +317,44 @@ export const AdminLayout: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               <NotificationCenter />
 
-              <span className="hidden md:inline-flex items-center gap-1.5 text-xs font-medium text-[#1D4ED8] dark:text-[#60A5FA] px-2 whitespace-nowrap">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Admin Access</span>
-              </span>
-
-              <Link
-                to="/member/profile"
-                className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold py-2 px-3 bg-[#EFF3F9] hover:bg-slate-200/70 dark:bg-[#17243C] dark:hover:bg-[#18294A] text-[#0F1B2E] dark:text-slate-200 border border-[#DFE6F0] dark:border-[#233452] rounded-xl transition-colors whitespace-nowrap shrink-0"
-              >
-                <ExternalLink className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
-                <span>Member Portal</span>
-              </Link>
+              {isViewer ? (
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold text-[#D6AC62] bg-[#17243C] border border-[#D6AC62]/30 px-2.5 py-1.5 rounded-lg whitespace-nowrap">
+                  <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+                  <span className="hidden sm:inline">Executive Viewer · Read-Only</span>
+                  <span className="sm:hidden">View Only</span>
+                </span>
+              ) : (
+                <span className="hidden md:inline-flex items-center gap-1.5 text-xs font-medium text-[#1D4ED8] dark:text-[#60A5FA] px-2 whitespace-nowrap">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Admin Access</span>
+                </span>
+              )}
             </div>
           </header>
 
           {/* Viewport content */}
           <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-            <div className="max-w-[1440px] mx-auto">
+            <div className="max-w-[1440px] mx-auto space-y-5">
+              {isViewer && (
+                <div className="rounded-xl bg-[#111B2E] border border-[#D6AC62]/35 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2 text-slate-200 min-w-0">
+                    <ShieldCheck className="w-4 h-4 text-[#D6AC62] shrink-0" />
+                    <span className="leading-relaxed">
+                      <strong className="text-[#F0C56E]">Club President Executive View (Read-Only):</strong>{' '}
+                      Live audit access to club finances, dues, fines, and receipts. Editing and deletion are disabled.
+                    </span>
+                  </div>
+                  <Link
+                    to="/member/profile"
+                    className="text-[11px] font-semibold text-[#60A5FA] hover:underline whitespace-nowrap shrink-0"
+                  >
+                    Switch to Member Profile →
+                  </Link>
+                </div>
+              )}
               <Outlet />
             </div>
           </main>

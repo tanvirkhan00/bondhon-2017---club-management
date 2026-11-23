@@ -88,13 +88,17 @@ export const DashboardClock: React.FC = memo(() => {
     };
   }, []);
 
-  // Load current temperature & weather condition (geolocation -> timezone city -> Dhaka fallback, 10-min live refresh)
+  // Automatically load nearby thana/upazila weather & local time (GPS -> IP area -> timezone fallback)
   const loadWeather = useCallback(async (forceRefresh = false, signal?: AbortSignal) => {
     setWeatherError(false);
     if (forceRefresh) setWeatherLoading(true);
 
     try {
-      const data = await fetchLiveWeatherForecast({ forceRefresh, signal });
+      const data = await fetchLiveWeatherForecast({
+        forceRefresh,
+        allowGpsPrompt: true,
+        signal,
+      });
       if (!signal?.aborted) {
         setWeather(data);
         setWeatherLoading(false);
@@ -154,7 +158,8 @@ export const DashboardClock: React.FC = memo(() => {
   const activeTimeZone = weather?.timezone || getBrowserTimeZone();
   const parts = useMemo(() => getLocalClockParts(now, activeTimeZone), [now, activeTimeZone]);
   const displayHours = is24Hour ? parts.hours24Str : parts.hours12;
-  const compactCity = weather?.cityName ? weather.cityName.split(',')[0] : parts.zoneCity;
+  const activeAreaLabel =
+    weather?.areaName || (weather?.cityName ? weather.cityName.split(',')[0] : parts.zoneCity);
   const periodPillClass = PERIOD_PILL_ACCENT[parts.periodKey];
   const weatherTileClass = weather
     ? WEATHER_TILE_ACCENT[weather.current.condition.kind]
@@ -168,7 +173,7 @@ export const DashboardClock: React.FC = memo(() => {
   return (
     <div
       className="relative overflow-hidden rounded-2xl border border-[#DFE6F0] dark:border-[#243757] bg-gradient-to-br from-white via-[#F8FAFD] to-[#EEF3FB] dark:from-[#132038] dark:via-[#0E182B] dark:to-[#0A1221] shadow-[0_12px_32px_-16px_rgba(15,27,51,0.35)] px-3.5 py-2.5 sm:px-4 sm:py-3 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 shrink-0 w-full lg:w-auto"
-      aria-label={`${parts.zoneCity} live clock: ${displayHours}:${parts.minutes}:${parts.seconds}${
+      aria-label={`${activeAreaLabel} live clock: ${displayHours}:${parts.minutes}:${parts.seconds}${
         is24Hour ? '' : ` ${parts.dayPeriod}`
       }, ${parts.dateLabel}`}
     >
@@ -178,12 +183,12 @@ export const DashboardClock: React.FC = memo(() => {
         className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-[#1D4ED8]/70 via-[#38BDF8]/80 to-[#D6AC62]/80 opacity-85"
       />
 
-      {/* Left + Center: Custom Twin-Bell ⏰ Live Analog Clock + Digital Readout */}
+      {/* Left + Center: Custom Twin-Bell Live Analog Clock + Digital Readout */}
       <div className="flex items-center gap-3.5 min-w-0">
-        {/* Unique Twin-Bell ⏰ Analog Timepiece with Live Running Hands */}
+        {/* Unique Twin-Bell Analog Timepiece with Live Running Hands */}
         <div
           className="relative w-16 h-16 shrink-0 flex items-center justify-center select-none"
-          title={`${parts.zoneCity} Local Time · ${parts.hours12}:${parts.minutes}:${parts.seconds} ${parts.dayPeriod}`}
+          title={`${activeAreaLabel} Local Time · ${parts.hours12}:${parts.minutes}:${parts.seconds} ${parts.dayPeriod}`}
         >
           {/* Soft Ambient Glow Behind Clock */}
           <div
@@ -271,12 +276,7 @@ export const DashboardClock: React.FC = memo(() => {
             />
 
             {/* Inner Watch Dial Face */}
-            <circle
-              cx={CX}
-              cy={CY}
-              r="22.5"
-              className="fill-white dark:fill-[#09101D]"
-            />
+            <circle cx={CX} cy={CY} r="22.5" className="fill-white dark:fill-[#09101D]" />
 
             {/* Subtle Inner Track Ring */}
             <circle
@@ -448,7 +448,7 @@ export const DashboardClock: React.FC = memo(() => {
         </div>
       </div>
 
-      {/* Right: Integrated Live Temperature & Weather Condition */}
+      {/* Right: Integrated Live Temperature & Auto-Detected Near Thana/Upazila */}
       <div className="pt-2.5 sm:pt-0 border-t sm:border-t-0 sm:border-l border-[#DFE6F0] dark:border-[#233452] sm:pl-4 flex items-center justify-between gap-2.5 min-w-0">
         {weatherLoading && !weather ? (
           <div className="flex items-center gap-2.5 animate-pulse">
@@ -462,7 +462,7 @@ export const DashboardClock: React.FC = memo(() => {
           <button
             type="button"
             onClick={() => loadWeather(true)}
-            className="flex items-center gap-1.5 text-[11px] font-semibold text-[#4E5E78] dark:text-[#9BB0CD] hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] cursor-pointer"
+            className="flex items-center gap-1.5 text-[11px] font-semibold text-[#4E5E78] dark:text-[#9BB0CD] hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] cursor-pointer whitespace-nowrap"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>Retry Weather</span>
@@ -487,9 +487,12 @@ export const DashboardClock: React.FC = memo(() => {
                     {weather.current.condition.shortLabel}
                   </span>
                 </div>
-                <div className="flex items-center gap-1 mt-1 text-[11px] text-[#4E5E78] dark:text-[#9BB0CD] whitespace-nowrap">
+                <div
+                  className="flex items-center gap-1 mt-1 text-[11px] text-[#4E5E78] dark:text-[#9BB0CD] whitespace-nowrap"
+                  title={weather.cityName}
+                >
                   <MapPin className="w-3 h-3 text-[#D6AC62] shrink-0" />
-                  <span className="truncate max-w-[125px] font-medium">{compactCity}</span>
+                  <span className="truncate max-w-[135px] font-medium">{activeAreaLabel}</span>
                 </div>
               </div>
             </div>

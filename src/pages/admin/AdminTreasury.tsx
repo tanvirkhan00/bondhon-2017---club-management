@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useClubData } from '../../hooks/useClubData';
+import { useAuth } from '../../hooks/useAuth';
 import { BankDeposit, BankEntryType, ClubExpense } from '../../types';
 import { formatBDT, formatDate } from '../../utils/formatters';
 import { downloadClubTablePdf } from '../../utils/reportPdfGenerator';
@@ -72,6 +73,7 @@ interface UnifiedBankRow {
 }
 
 export const AdminTreasury: React.FC = () => {
+  const { canEditAdmin } = useAuth();
   const {
     monthlyDues,
     bankDeposits,
@@ -338,34 +340,36 @@ export const AdminTreasury: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => openBankModal('deposit')}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-xs transition-colors cursor-pointer whitespace-nowrap"
-          >
-            <PlusCircle className="w-3.5 h-3.5" />
-            <span>+ Bank Entry</span>
-          </button>
+        {canEditAdmin && (
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => openBankModal('deposit')}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-xs transition-colors cursor-pointer whitespace-nowrap"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>+ Bank Entry</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => openBankModal('charge')}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-rose-700 dark:text-rose-300 bg-rose-500/10 hover:bg-rose-500/15 border border-rose-500/30 rounded-xl transition-colors cursor-pointer whitespace-nowrap"
-          >
-            <Receipt className="w-3.5 h-3.5" />
-            <span>+ Bank Fee / VAT</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => openBankModal('charge')}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-rose-700 dark:text-rose-300 bg-rose-500/10 hover:bg-rose-500/15 border border-rose-500/30 rounded-xl transition-colors cursor-pointer whitespace-nowrap"
+            >
+              <Receipt className="w-3.5 h-3.5" />
+              <span>+ Bank Fee / VAT</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => openExpenseModal()}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-[#92600A] dark:text-[#F0C56E] bg-[#D6AC62]/15 hover:bg-[#D6AC62]/25 border border-[#D6AC62]/35 rounded-xl transition-colors cursor-pointer whitespace-nowrap"
-          >
-            <Wallet className="w-3.5 h-3.5" />
-            <span>+ Club Expense</span>
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => openExpenseModal()}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-[#92600A] dark:text-[#F0C56E] bg-[#D6AC62]/15 hover:bg-[#D6AC62]/25 border border-[#D6AC62]/35 rounded-xl transition-colors cursor-pointer whitespace-nowrap"
+            >
+              <Wallet className="w-3.5 h-3.5" />
+              <span>+ Club Expense</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 5 Primary Treasury & Collection Metrics */}
@@ -423,41 +427,41 @@ export const AdminTreasury: React.FC = () => {
         />
       </div>
 
-      {/* Reconciliation Formula Banner */}
-      <div className="surface-card rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs">
-          <span className="font-bold text-[#0F1B2E] dark:text-slate-100 uppercase tracking-wider text-[11px]">
-            Available Balance Formula:
+      {/* Reconciliation Formula Accounting Bar */}
+      <div className="surface-card rounded-2xl px-5 py-3.5 flex flex-wrap items-center justify-between gap-4 text-xs">
+        <span className="font-bold text-[#0F1B2E] dark:text-slate-100 uppercase tracking-wider text-[11px] shrink-0">
+          Reconciliation Formula
+        </span>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 font-mono tabular-nums">
+          <span className="text-[#0F1B2E] dark:text-slate-200">
+            Collections <strong className="text-[#38BDF8]">{formatBDT(totalClubCollected)}</strong>
           </span>
-          <span className="px-2.5 py-1 rounded-lg bg-[#EFF3F9] dark:bg-[#17243C] font-mono tabular-nums font-semibold text-[#0F1B2E] dark:text-slate-200">
-            Member Collections ({formatBDT(totalClubCollected)})
+          <span className="text-[#4E5E78]">+</span>
+          <span className="text-[#0F1B2E] dark:text-slate-200">
+            Interest <strong className="text-[#F0C56E]">{formatBDT(totalBankInterest)}</strong>
           </span>
-          <span className="text-[#1D4ED8] dark:text-[#60A5FA] font-bold">+</span>
-          <span className="px-2.5 py-1 rounded-lg bg-[#D6AC62]/15 font-mono tabular-nums font-semibold text-[#92600A] dark:text-[#F0C56E]">
-            Bank Interest ({formatBDT(totalBankInterest)})
+          <span className="text-[#4E5E78]">−</span>
+          <span className="text-[#0F1B2E] dark:text-slate-200">
+            Bank Fees <strong className="text-rose-500 dark:text-rose-400">{formatBDT(totalBankCharges)}</strong>
           </span>
-          <span className="text-rose-500 font-bold">−</span>
-          <span className="px-2.5 py-1 rounded-lg bg-rose-500/12 font-mono tabular-nums font-semibold text-rose-700 dark:text-rose-400">
-            Bank Charges ({formatBDT(totalBankCharges)})
+          <span className="text-[#4E5E78]">−</span>
+          <span className="text-[#0F1B2E] dark:text-slate-200">
+            Expenses <strong className="text-rose-500 dark:text-rose-400">{formatBDT(totalClubExpenses)}</strong>
           </span>
-          <span className="text-rose-500 font-bold">−</span>
-          <span className="px-2.5 py-1 rounded-lg bg-rose-500/12 font-mono tabular-nums font-semibold text-rose-700 dark:text-rose-400">
-            Club Expenses ({formatBDT(totalClubExpenses)})
-          </span>
-          <span className="text-[#4E5E78] font-bold">=</span>
-          <span className="px-3 py-1 rounded-lg bg-[#1D4ED8] text-white font-mono tabular-nums font-extrabold">
-            {formatBDT(netClubAvailableBalance)}
+          <span className="text-[#4E5E78]">=</span>
+          <span className="font-extrabold text-[#1D4ED8] dark:text-[#38BDF8] border-l border-[#DFE6F0] dark:border-[#233452] pl-3">
+            Net {formatBDT(netClubAvailableBalance)}
           </span>
         </div>
       </div>
 
       {/* View Switcher & Export */}
       <div className="surface-card p-3.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-1 p-1 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl self-start">
+        <div className="flex items-center gap-1 p-1 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl self-start max-w-full overflow-x-auto">
           <button
             type="button"
             onClick={() => setActiveTab('bank')}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === 'bank'
                 ? 'bg-[#0F1B33] dark:bg-[#1D4ED8] text-white shadow-2xs'
                 : 'text-[#4E5E78] hover:text-[#0F1B2E] dark:hover:text-white'
@@ -468,7 +472,7 @@ export const AdminTreasury: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveTab('club')}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === 'club'
                 ? 'bg-[#0F1B33] dark:bg-[#1D4ED8] text-white shadow-2xs'
                 : 'text-[#4E5E78] hover:text-[#0F1B2E] dark:hover:text-white'
@@ -537,14 +541,16 @@ export const AdminTreasury: React.FC = () => {
                   <th className="py-3 px-4 font-semibold">Slip / Ref</th>
                   <th className="py-3 px-4 font-semibold text-right">Amount (৳)</th>
                   <th className="py-3 px-4 font-semibold text-right">Running Balance</th>
-                  <th className="py-3 px-4 font-semibold text-right">Actions</th>
+                  {canEditAdmin && <th className="py-3 px-4 font-semibold text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#DFE6F0] dark:divide-[#233452]">
                 {filteredBankRows.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-10 text-center text-[#4E5E78] dark:text-slate-400">
-                      No Sonali Bank entries match this filter yet. Click "+ Bank Entry" or "+ Bank Fee / VAT" to add a record.
+                    <td colSpan={canEditAdmin ? 7 : 6} className="py-10 text-center text-[#4E5E78] dark:text-slate-400">
+                      {canEditAdmin
+                        ? 'No Sonali Bank entries match this filter yet. Click "+ Bank Entry" or "+ Bank Fee / VAT" to add a record.'
+                        : 'No Sonali Bank entries match this filter.'}
                     </td>
                   </tr>
                 ) : (
@@ -590,56 +596,58 @@ export const AdminTreasury: React.FC = () => {
                         <td className="py-3 px-4 text-right font-mono font-semibold text-[#0F1B2E] dark:text-slate-200 tabular-nums whitespace-nowrap">
                           {formatBDT(row.runningBalance)}
                         </td>
-                        <td className="py-3 px-4 text-right whitespace-nowrap">
-                          <div className="inline-flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                row.kind === 'bank_entry' && row.rawBank
-                                  ? openBankModal((row.rawBank.entry_type || 'deposit') as BankEntryType, row.rawBank)
-                                  : row.rawExpense && openExpenseModal(row.rawExpense)
-                              }
-                              className="p-1.5 text-[#4E5E78] hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] rounded-lg hover:bg-[#EFF3F9] dark:hover:bg-[#18294A] cursor-pointer"
-                              title="Edit Entry"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            {isDeleting ? (
-                              <div className="inline-flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (row.kind === 'bank_entry' && row.rawBank) {
-                                      deleteBankDeposit(row.rawBank.id);
-                                    } else if (row.rawExpense) {
-                                      deleteClubExpense(row.rawExpense.id);
-                                    }
-                                    setConfirmDeleteId(null);
-                                  }}
-                                  className="px-2 py-0.5 bg-rose-600 text-white rounded text-[10px] font-bold cursor-pointer"
-                                >
-                                  Delete
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setConfirmDeleteId(null)}
-                                  className="px-1.5 py-0.5 text-[#4E5E78] text-[10px] cursor-pointer"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            ) : (
+                        {canEditAdmin && (
+                          <td className="py-3 px-4 text-right whitespace-nowrap">
+                            <div className="inline-flex items-center gap-1">
                               <button
                                 type="button"
-                                onClick={() => setConfirmDeleteId(row.id)}
-                                className="p-1.5 text-[#4E5E78] hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
-                                title="Delete Entry"
+                                onClick={() =>
+                                  row.kind === 'bank_entry' && row.rawBank
+                                    ? openBankModal((row.rawBank.entry_type || 'deposit') as BankEntryType, row.rawBank)
+                                    : row.rawExpense && openExpenseModal(row.rawExpense)
+                                }
+                                className="p-1.5 text-[#4E5E78] hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] rounded-lg hover:bg-[#EFF3F9] dark:hover:bg-[#18294A] cursor-pointer"
+                                title="Edit Entry"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Edit2 className="w-3.5 h-3.5" />
                               </button>
-                            )}
-                          </div>
-                        </td>
+                              {isDeleting ? (
+                                <div className="inline-flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (row.kind === 'bank_entry' && row.rawBank) {
+                                        deleteBankDeposit(row.rawBank.id);
+                                      } else if (row.rawExpense) {
+                                        deleteClubExpense(row.rawExpense.id);
+                                      }
+                                      setConfirmDeleteId(null);
+                                    }}
+                                    className="px-2 py-0.5 bg-rose-600 text-white rounded text-[10px] font-bold cursor-pointer"
+                                  >
+                                    Delete
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setConfirmDeleteId(null)}
+                                    className="px-1.5 py-0.5 text-[#4E5E78] text-[10px] cursor-pointer"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmDeleteId(row.id)}
+                                  className="p-1.5 text-[#4E5E78] hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
+                                  title="Delete Entry"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     );
                   })
@@ -749,14 +757,16 @@ export const AdminTreasury: React.FC = () => {
                   Account opening fees, operations, events &amp; welfare costs
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => openExpenseModal()}
-                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg cursor-pointer whitespace-nowrap"
-              >
-                <PlusCircle className="w-3.5 h-3.5" />
-                <span>Add Expense</span>
-              </button>
+              {canEditAdmin && (
+                <button
+                  type="button"
+                  onClick={() => openExpenseModal()}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg cursor-pointer whitespace-nowrap"
+                >
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  <span>Add Expense</span>
+                </button>
+              )}
             </div>
 
             <div className="overflow-x-auto">
@@ -767,13 +777,13 @@ export const AdminTreasury: React.FC = () => {
                     <th className="py-3 px-4 font-semibold">Particular</th>
                     <th className="py-3 px-4 font-semibold">Source</th>
                     <th className="py-3 px-4 font-semibold text-right">Amount</th>
-                    <th className="py-3 px-4 font-semibold text-right">Actions</th>
+                    {canEditAdmin && <th className="py-3 px-4 font-semibold text-right">Actions</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#DFE6F0] dark:divide-[#233452]">
                   {clubExpenses.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-10 text-center text-[#4E5E78] dark:text-slate-400 space-y-2">
+                      <td colSpan={canEditAdmin ? 5 : 4} className="py-10 text-center text-[#4E5E78] dark:text-slate-400 space-y-2">
                         <CheckCircle2 className="w-7 h-7 text-[#1D4ED8] dark:text-[#60A5FA] mx-auto" />
                         <p>No club expenses recorded yet.</p>
                       </td>
@@ -810,48 +820,50 @@ export const AdminTreasury: React.FC = () => {
                           <td className="py-3 px-4 text-right font-mono font-bold text-rose-600 dark:text-rose-400 tabular-nums whitespace-nowrap">
                             -{formatBDT(exp.amount)}
                           </td>
-                          <td className="py-3 px-4 text-right whitespace-nowrap">
-                            <div className="inline-flex items-center gap-1">
-                              <button
-                                type="button"
-                                onClick={() => openExpenseModal(exp)}
-                                className="p-1.5 text-[#4E5E78] hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] rounded-lg hover:bg-[#EFF3F9] dark:hover:bg-[#18294A] cursor-pointer"
-                                title="Edit Expense"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </button>
-                              {isDeleting ? (
-                                <div className="inline-flex items-center gap-1">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      deleteClubExpense(exp.id);
-                                      setConfirmDeleteId(null);
-                                    }}
-                                    className="px-2 py-0.5 bg-rose-600 text-white rounded text-[10px] font-bold cursor-pointer"
-                                  >
-                                    Delete
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setConfirmDeleteId(null)}
-                                    className="px-1.5 py-0.5 text-[#4E5E78] text-[10px] cursor-pointer"
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              ) : (
+                          {canEditAdmin && (
+                            <td className="py-3 px-4 text-right whitespace-nowrap">
+                              <div className="inline-flex items-center gap-1">
                                 <button
                                   type="button"
-                                  onClick={() => setConfirmDeleteId(delKey)}
-                                  className="p-1.5 text-[#4E5E78] hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
-                                  title="Delete Expense"
+                                  onClick={() => openExpenseModal(exp)}
+                                  className="p-1.5 text-[#4E5E78] hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] rounded-lg hover:bg-[#EFF3F9] dark:hover:bg-[#18294A] cursor-pointer"
+                                  title="Edit Expense"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <Edit2 className="w-3.5 h-3.5" />
                                 </button>
-                              )}
-                            </div>
-                          </td>
+                                {isDeleting ? (
+                                  <div className="inline-flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        deleteClubExpense(exp.id);
+                                        setConfirmDeleteId(null);
+                                      }}
+                                      className="px-2 py-0.5 bg-rose-600 text-white rounded text-[10px] font-bold cursor-pointer"
+                                    >
+                                      Delete
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setConfirmDeleteId(null)}
+                                      className="px-1.5 py-0.5 text-[#4E5E78] text-[10px] cursor-pointer"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => setConfirmDeleteId(delKey)}
+                                    className="p-1.5 text-[#4E5E78] hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
+                                    title="Delete Expense"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          )}
                         </tr>
                       );
                     })
@@ -863,19 +875,23 @@ export const AdminTreasury: React.FC = () => {
         </div>
       )}
 
-      {/* Modals */}
-      <BankEntryModal
-        isOpen={bankModalOpen}
-        onClose={() => setBankModalOpen(false)}
-        editingEntry={editingBank}
-        defaultEntryType={bankModalDefaultType}
-      />
+      {/* Admin-only Write Modals */}
+      {canEditAdmin && (
+        <>
+          <BankEntryModal
+            isOpen={bankModalOpen}
+            onClose={() => setBankModalOpen(false)}
+            editingEntry={editingBank}
+            defaultEntryType={bankModalDefaultType}
+          />
 
-      <ClubExpenseModal
-        isOpen={expenseModalOpen}
-        onClose={() => setExpenseModalOpen(false)}
-        editingExpense={editingExpense}
-      />
+          <ClubExpenseModal
+            isOpen={expenseModalOpen}
+            onClose={() => setExpenseModalOpen(false)}
+            editingExpense={editingExpense}
+          />
+        </>
+      )}
     </PageTransition>
   );
 };

@@ -26,7 +26,7 @@ export function clearWelcomePreloaderSession(): void {
 }
 
 export const WelcomePreloader: React.FC = () => {
-  const { user, profile, isAuthenticated, isAdmin, isLoading: authLoading } = useAuth();
+  const { user, profile, isAuthenticated, canAccessAdmin, isViewer, isLoading: authLoading } = useAuth();
   const { myMemberRecord, isLoading: dataLoading } = useClubData();
 
   const [visible, setVisible] = useState(false);
@@ -37,9 +37,9 @@ export const WelcomePreloader: React.FC = () => {
   // Wait for both auth profile and club member record (so real avatar & full name are ready)
   const identityReady = useMemo(() => {
     if (!isAuthenticated || authLoading || !userId) return false;
-    if (isAdmin) return Boolean(profile) && (!dataLoading || Boolean(myMemberRecord));
+    if (canAccessAdmin) return Boolean(profile) && (!dataLoading || Boolean(myMemberRecord));
     return !dataLoading || Boolean(myMemberRecord);
-  }, [isAuthenticated, authLoading, userId, isAdmin, profile, dataLoading, myMemberRecord]);
+  }, [isAuthenticated, authLoading, userId, canAccessAdmin, profile, dataLoading, myMemberRecord]);
 
   useEffect(() => {
     if (!identityReady || !userId) return;
@@ -89,8 +89,10 @@ export const WelcomePreloader: React.FC = () => {
       .map((part) => part[0]?.toUpperCase() || '')
       .join('') || 'M';
 
-  const roleSubtitle = isAdmin
-    ? `Administrator${myMemberRecord?.member_code ? ` · ${myMemberRecord.member_code}` : ''}`
+  const roleSubtitle = canAccessAdmin
+    ? `${isViewer ? 'President · Executive View (Read-Only)' : 'Administrator'}${
+        myMemberRecord?.member_code ? ` · ${myMemberRecord.member_code}` : ''
+      }`
     : `${myMemberRecord?.member_code || 'Verified Member'}${
         myMemberRecord?.designation ? ` · ${myMemberRecord.designation}` : ''
       }`;

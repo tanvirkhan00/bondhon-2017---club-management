@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { Profile, UserRole } from '../types';
+import { Profile, UserRole, isPresidentIdentity } from '../types';
 import { getSupabaseClient, isSupabaseConfigured } from '../services/supabase/client';
 import { INITIAL_PROFILES } from '../lib/mockData';
 import {
@@ -8,9 +8,10 @@ import {
   markWelcomePreloaderPending,
 } from '../components/WelcomePreloader';
 
+const RAW_SITE_URL = (import.meta.env.VITE_SITE_URL as string | undefined)?.trim() || '';
+const IS_LOCAL_SITE_URL = /localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(RAW_SITE_URL);
 const PRODUCTION_SITE_URL = (
-  (import.meta.env.VITE_SITE_URL as string | undefined)?.trim() ||
-  'https://bondon2017.netlify.app'
+  !RAW_SITE_URL || IS_LOCAL_SITE_URL ? 'https://bondon2017.netlify.app' : RAW_SITE_URL
 ).replace(/\/+$/, '');
 
 interface MemberLoginParams {
@@ -25,6 +26,7 @@ interface MemberLoginParams {
 interface AuthResult {
   success: boolean;
   user?: User | null;
+  role?: UserRole;
   isFirstActivation?: boolean;
   needsEmailConfirmation?: boolean;
   unconfirmedEmail?: string;
@@ -36,6 +38,9 @@ interface AuthContextType {
   profile: Profile | null;
   role: UserRole;
   isAdmin: boolean;
+  isViewer: boolean;
+  canAccessAdmin: boolean;
+  canEditAdmin: boolean;
   isMember: boolean;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -47,7 +52,7 @@ interface AuthContextType {
   resendConfirmationEmail: (
     email: string
   ) => Promise<{ success: boolean; message?: string; error?: string }>;
-  updatePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
+  updatePassword: (newPassword: string) => Promise<AuthResult>;
   clearPasswordRecovery: () => void;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ success: boolean; message?: string; error?: string }>;
@@ -77,15 +82,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const configured = isSupabaseConfigured();
 
-  const fetchSupabaseProfile = async (authUser: User) => {
-    const client = getSupabaseClient();
-    if (!client) return;
+  const resolvePresidentViewerFallback = async (
+    authUser: User,
+    currentRole: UserRole
+  ): Promise<UserRole> => {
+    if (currentRole === 'admin' || currentRole === 'viewer') {
+      return currentRole;
+    }
 
+    // Check metadata hint first
+    const metaCode = String(authUser.user_metadata?.member_code || '').trim().toUpperCase();
+    if (metaCode === 'BND-005') {
+      return 'viewer';
+    }
+
+    const client = getSupabaseClient();
+    if (!client) return currentRole;
+
+    try {
+      const { data: ownRows } = await client
+        .from('members')
+        .select('member_code, designation, auth_user_id, email')
+        .limit(5);
+
+      if (Array.isArray(ownRows)) {
+        const userEmail = (authUser.email || '').toLowerCase().trim();
+        const ownMatch = ownRows.find(
+          (m) =>
+            m.auth_user_id === authUser.id ||
+            (userEmail && (m.email || '').toLowerCase().trim() === userEmail)
+        );
+        if (ownMatch && isPresidentIdentity(ownMatch)) {
+          return 'viewer';
+        }
+      }
+    } catch {
+      // ignore if members row is unavailable
+    }
+
+    return currentRole;
+  };
+
+  const fetchSupabaseProfile = async (authUser: User): Promise<UserRole> => {
+    const client = getSupabaseClient();
     const userEmail = (authUser.email || '').toLowerCase().trim();
     const knownAdmin = isAdminEmail(userEmail);
     const metaFullName =
       authUser.user_metadata?.full_name ||
       (knownAdmin ? 'Tanvir Khan' : userEmail.split('@')[0] || 'Club Member');
+
+    if (!client) {
+      const r: UserRole = knownAdmin ? 'admin' : 'member';
+      return r;
+    }
 
     try {
       const { data, error: profileErr } = await client
@@ -95,14 +144,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (profileErr || !data) {
-        const fallbackRole: UserRole = knownAdmin ? 'admin' : 'member';
+        const baseRole: UserRole = knownAdmin ? 'admin' : 'member';
+        const resolvedRole = await resolvePresidentViewerFallback(authUser, baseRole);
         // Best-effort profile sync so foreign keys like monthly_dues.recorded_by remain valid
         try {
           await client.from('profiles').upsert(
             {
               id: authUser.id,
               full_name: metaFullName,
-              role: fallbackRole,
+              role: resolvedRole,
             },
             { onConflict: 'id', ignoreDuplicates: true }
           );
@@ -112,22 +162,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setProfile({
           id: authUser.id,
           full_name: metaFullName,
-          role: fallbackRole,
+          role: resolvedRole,
         });
+        return resolvedRole;
       } else {
         const dbProfile = data as Profile;
+        const baseRole: UserRole = knownAdmin
+          ? 'admin'
+          : dbProfile.role === 'admin'
+          ? 'admin'
+          : dbProfile.role === 'viewer'
+          ? 'viewer'
+          : 'member';
+        const resolvedRole = await resolvePresidentViewerFallback(authUser, baseRole);
         setProfile({
           ...dbProfile,
           full_name: dbProfile.full_name || metaFullName,
-          role: knownAdmin ? 'admin' : (dbProfile.role || 'member'),
+          role: resolvedRole,
         });
+        return resolvedRole;
       }
     } catch {
+      const fallbackRole: UserRole = knownAdmin ? 'admin' : 'member';
+      const resolvedRole = await resolvePresidentViewerFallback(authUser, fallbackRole);
       setProfile({
         id: authUser.id,
         full_name: metaFullName,
-        role: knownAdmin ? 'admin' : 'member',
+        role: resolvedRole,
       });
+      return resolvedRole;
     }
   };
 
@@ -176,7 +239,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signInWithPassword = async (email: string, pass: string): Promise<AuthResult> => {
     setError(null);
     const client = getSupabaseClient();
-    const cleanEmail = email.trim().toLowerCase();
+    const cleanEmail = email.replace(/\s+/g, '').toLowerCase();
 
     if (!client) {
       const msg = 'অথেনটিকেশন সার্ভিস সংযুক্ত নয়। অনুগ্রহ করে অ্যাডমিনের সাথে যোগাযোগ করুন।';
@@ -213,16 +276,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsPasswordRecovery(false);
       setSession(data.session);
       setUser(data.user);
+      let resolvedRole: UserRole = isAdminEmail(cleanEmail) ? 'admin' : 'member';
       if (data.user) {
         try {
           await client.rpc('link_my_member_by_auth');
         } catch {
           // ignore if RPC not created yet
         }
-        await fetchSupabaseProfile(data.user);
+        resolvedRole = await fetchSupabaseProfile(data.user);
       }
       markWelcomePreloaderPending();
-      return { success: true, user: data.user };
+      return { success: true, user: data.user, role: resolvedRole };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
@@ -239,8 +303,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: false, error: msg };
     }
 
-    const cleanEmail = params.email.trim().toLowerCase();
-    const localEmail = (params.localMemberEmail || '').trim().toLowerCase();
+    const cleanEmail = params.email.replace(/\s+/g, '').toLowerCase();
+    const localEmail = (params.localMemberEmail || '').replace(/\s+/g, '').toLowerCase();
 
     // 1. Verify Name (memberId) + Email match against Supabase RPC
     let rpcVerified: boolean | null = null;
@@ -318,9 +382,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsPasswordRecovery(false);
         setSession(data.session);
         setUser(data.user);
-        await fetchSupabaseProfile(data.user);
+        let resolvedRole = await fetchSupabaseProfile(data.user);
+        if (resolvedRole === 'member' && params.memberCode.toUpperCase() === 'BND-005') {
+          resolvedRole = 'viewer';
+          setProfile((prev) => (prev ? { ...prev, role: 'viewer' } : prev));
+        }
         markWelcomePreloaderPending();
-        return { success: true, user: data.user };
+        return { success: true, user: data.user, role: resolvedRole };
       }
 
       const errLower = (signInErr?.message || '').toLowerCase();
@@ -369,9 +437,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsPasswordRecovery(false);
           setSession(signUpData.session);
           setUser(signUpData.user);
-          await fetchSupabaseProfile(signUpData.user);
+          let resolvedRole = await fetchSupabaseProfile(signUpData.user);
+          if (resolvedRole === 'member' && params.memberCode.toUpperCase() === 'BND-005') {
+            resolvedRole = 'viewer';
+            setProfile((prev) => (prev ? { ...prev, role: 'viewer' } : prev));
+          }
           markWelcomePreloaderPending();
-          return { success: true, user: signUpData.user, isFirstActivation: true };
+          return { success: true, user: signUpData.user, role: resolvedRole, isFirstActivation: true };
         }
 
         const confirmMsg =
@@ -402,7 +474,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     email: string
   ): Promise<{ success: boolean; message?: string; error?: string }> => {
     const client = getSupabaseClient();
-    const cleanEmail = email.trim().toLowerCase();
+    const cleanEmail = email.replace(/\s+/g, '').toLowerCase();
     if (!client) {
       return { success: false, error: 'অথেনটিকেশন সার্ভিস সংযুক্ত নয়।' };
     }
@@ -440,10 +512,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const updatePassword = async (newPassword: string): Promise<{ success: boolean; error?: string }> => {
+  const updatePassword = async (newPassword: string): Promise<AuthResult> => {
     const client = getSupabaseClient();
     if (!client) {
       return { success: false, error: 'অথেনটিকেশন সার্ভিস সংযুক্ত নয়।' };
+    }
+
+    if (/[\sA-Z]/.test(newPassword)) {
+      return { success: false, error: 'পাসওয়ার্ডে বড় হাতের অক্ষর (Capital Letter) বা স্পেস ব্যবহার করা যাবে না।' };
     }
 
     if (newPassword.length < 6) {
@@ -454,17 +530,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data, error: updErr } = await client.auth.updateUser({ password: newPassword });
       if (updErr) throw updErr;
 
+      let resolvedRole: UserRole = 'member';
       if (data.user) {
         try {
           await client.rpc('link_my_member_by_auth');
         } catch {
           // ignore if RPC not installed
         }
-        await fetchSupabaseProfile(data.user);
+        resolvedRole = await fetchSupabaseProfile(data.user);
       }
 
       setIsPasswordRecovery(false);
-      return { success: true };
+      return { success: true, user: data.user, role: resolvedRole };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       return { success: false, error: msg };
@@ -482,9 +559,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const { error: resetErr } = await client.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-        redirectTo: `${PRODUCTION_SITE_URL}/login`,
-      });
+      const { error: resetErr } = await client.auth.resetPasswordForEmail(
+        email.replace(/\s+/g, '').toLowerCase(),
+        {
+          redirectTo: `${PRODUCTION_SITE_URL}/login`,
+        }
+      );
       if (resetErr) throw resetErr;
       return { success: true, message: 'পাসওয়ার্ড রিসেট লিঙ্ক আপনার ইমেইলে পাঠানো হয়েছে।' };
     } catch (err: unknown) {
@@ -519,8 +599,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const userEmail = (user?.email || '').toLowerCase();
   const knownAdminEmail = isAdminEmail(userEmail);
-  const role: UserRole = profile?.role === 'admin' || knownAdminEmail ? 'admin' : (profile?.role || 'member');
+  const role: UserRole = knownAdminEmail
+    ? 'admin'
+    : profile?.role === 'admin'
+    ? 'admin'
+    : profile?.role === 'viewer'
+    ? 'viewer'
+    : 'member';
   const isAdmin = role === 'admin';
+  const isViewer = role === 'viewer';
+  const canAccessAdmin = role === 'admin' || role === 'viewer';
+  const canEditAdmin = role === 'admin';
   const isMember = role === 'member';
   const isAuthenticated = Boolean(user && session);
 
@@ -530,6 +619,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       profile,
       role,
       isAdmin,
+      isViewer,
+      canAccessAdmin,
+      canEditAdmin,
       isMember,
       isAuthenticated,
       isLoading,
@@ -552,6 +644,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       profile,
       role,
       isAdmin,
+      isViewer,
+      canAccessAdmin,
+      canEditAdmin,
       isMember,
       isAuthenticated,
       isLoading,

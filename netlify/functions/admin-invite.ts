@@ -73,8 +73,15 @@ export const handler = async (event: NetlifyEvent): Promise<NetlifyResponse> => 
       };
     }
 
+    const rawSiteUrl = (process.env.VITE_SITE_URL || process.env.URL || '').trim();
+    const isLocalUrl = /localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(rawSiteUrl);
+    const siteUrl = (
+      !rawSiteUrl || isLocalUrl ? 'https://bondon2017.netlify.app' : rawSiteUrl
+    ).replace(/\/+$/, '');
+
     const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
       data: { full_name },
+      redirectTo: `${siteUrl}/login`,
     });
 
     if (inviteError) throw inviteError;

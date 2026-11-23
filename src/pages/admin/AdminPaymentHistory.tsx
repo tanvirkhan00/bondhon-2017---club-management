@@ -33,7 +33,7 @@ import { PaymentReceiptModal } from '../../components/PaymentReceiptModal';
 
 export const AdminPaymentHistory: React.FC = () => {
   const { monthlyDues, members, selectedMonth, selectedYear, clubMonthlyTarget, deleteDueRecord, myMemberRecord } = useClubData();
-  const { profile } = useAuth();
+  const { profile, canEditAdmin } = useAuth();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedYearFilter, setSelectedYearFilter] = useState<string>('all');
@@ -184,13 +184,15 @@ export const AdminPaymentHistory: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto shrink-0">
-          <button
-            onClick={() => setRecordModalOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-xs transition-colors cursor-pointer whitespace-nowrap"
-          >
-            <CreditCard className="w-3.5 h-3.5" />
-            <span>Record Payment</span>
-          </button>
+          {canEditAdmin && (
+            <button
+              onClick={() => setRecordModalOpen(true)}
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-xs transition-colors cursor-pointer whitespace-nowrap"
+            >
+              <CreditCard className="w-3.5 h-3.5" />
+              <span>Record Payment</span>
+            </button>
+          )}
 
           <button
             onClick={handleExportPdf}
@@ -326,7 +328,7 @@ export const AdminPaymentHistory: React.FC = () => {
                 <th className="py-3 px-4 font-semibold text-right">Outstanding (৳)</th>
                 <th className="py-3 px-4 font-semibold text-center">Status</th>
                 <th className="py-3 px-4 font-semibold">Paid Date</th>
-                <th className="py-3 px-4 font-semibold text-right">Actions</th>
+                <th className="py-3 px-4 font-semibold text-right">{canEditAdmin ? 'Actions' : 'Receipt'}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#DFE6F0] dark:divide-[#233452]">
@@ -338,12 +340,14 @@ export const AdminPaymentHistory: React.FC = () => {
                         <p className="font-semibold text-[#0F1B2E] dark:text-slate-200">
                           No payment records yet.
                         </p>
-                        <button
-                          onClick={() => setRecordModalOpen(true)}
-                          className="text-xs text-[#1D4ED8] dark:text-[#60A5FA] font-semibold underline cursor-pointer"
-                        >
-                          + Record First Payment
-                        </button>
+                        {canEditAdmin && (
+                          <button
+                            onClick={() => setRecordModalOpen(true)}
+                            className="text-xs text-[#1D4ED8] dark:text-[#60A5FA] font-semibold underline cursor-pointer"
+                          >
+                            + Record First Payment
+                          </button>
+                        )}
                       </div>
                     ) : (
                       'No payment records match your filters.'
@@ -449,44 +453,52 @@ export const AdminPaymentHistory: React.FC = () => {
                             </>
                           )}
 
-                          <button
-                            type="button"
-                            onClick={() => setEditDue(due)}
-                            className="p-1.5 text-[#4E5E78] hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] rounded-lg hover:bg-[#EFF3F9] dark:hover:bg-[#18294A] cursor-pointer"
-                            title="Edit Payment"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
+                          {!canEditAdmin && bd.totalPaid <= 0 && (
+                            <span className="text-[#4E5E78] dark:text-slate-500">—</span>
+                          )}
 
-                          {isDeleting ? (
-                            <div className="flex items-center gap-1">
+                          {canEditAdmin && (
+                            <>
                               <button
                                 type="button"
-                                onClick={() => {
-                                  deleteDueRecord(due.id);
-                                  setDeleteConfirmId(null);
-                                }}
-                                className="px-2 py-0.5 bg-rose-600 text-white rounded text-[10px] font-semibold cursor-pointer"
+                                onClick={() => setEditDue(due)}
+                                className="p-1.5 text-[#4E5E78] hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] rounded-lg hover:bg-[#EFF3F9] dark:hover:bg-[#18294A] cursor-pointer"
+                                title="Edit Payment"
                               >
-                                Confirm
+                                <Edit2 className="w-3.5 h-3.5" />
                               </button>
-                              <button
-                                type="button"
-                                onClick={() => setDeleteConfirmId(null)}
-                                className="px-1.5 py-0.5 text-[#4E5E78] text-[10px] cursor-pointer"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => setDeleteConfirmId(due.id)}
-                              className="p-1.5 text-[#4E5E78] hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
-                              title="Delete Record"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+
+                              {isDeleting ? (
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      deleteDueRecord(due.id);
+                                      setDeleteConfirmId(null);
+                                    }}
+                                    className="px-2 py-0.5 bg-rose-600 text-white rounded text-[10px] font-semibold cursor-pointer"
+                                  >
+                                    Confirm
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setDeleteConfirmId(null)}
+                                    className="px-1.5 py-0.5 text-[#4E5E78] text-[10px] cursor-pointer"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setDeleteConfirmId(due.id)}
+                                  className="p-1.5 text-[#4E5E78] hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
+                                  title="Delete Record"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </>
                           )}
                         </div>
                       </td>
@@ -499,7 +511,7 @@ export const AdminPaymentHistory: React.FC = () => {
         </div>
 
         {/* Pagination Bar */}
-        <div className="p-4 border-t border-[#DFE6F0] dark:border-[#233452] flex items-center justify-between text-xs text-[#4E5E78] dark:text-slate-400">
+        <div className="p-4 border-t border-[#DFE6F0] dark:border-[#233452] flex flex-wrap items-center justify-between gap-2 text-xs text-[#4E5E78] dark:text-slate-400">
           <span className="tabular-nums">
             Showing {filteredRecords.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} to{' '}
             {Math.min(currentPage * pageSize, filteredRecords.length)} of {filteredRecords.length} records
@@ -527,16 +539,20 @@ export const AdminPaymentHistory: React.FC = () => {
         </div>
       </div>
 
-      {/* Record Payment Modal */}
-      <RecordPaymentModal
-        isOpen={recordModalOpen}
-        onClose={() => setRecordModalOpen(false)}
-        initialMonth={selectedMonth}
-        initialYear={selectedYear}
-      />
+      {canEditAdmin && (
+        <>
+          {/* Record Payment Modal */}
+          <RecordPaymentModal
+            isOpen={recordModalOpen}
+            onClose={() => setRecordModalOpen(false)}
+            initialMonth={selectedMonth}
+            initialYear={selectedYear}
+          />
 
-      {/* Full Edit Payment Modal */}
-      <EditPaymentModal due={editDue} onClose={() => setEditDue(null)} />
+          {/* Full Edit Payment Modal */}
+          <EditPaymentModal due={editDue} onClose={() => setEditDue(null)} />
+        </>
+      )}
 
       {/* Printable / PDF Official Payment Receipt */}
       <PaymentReceiptModal due={receiptDue} onClose={() => setReceiptDue(null)} />

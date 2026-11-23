@@ -60,6 +60,7 @@ export const Login: React.FC = () => {
   const [authState, setAuthState] = useState<LoginAuthState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
+  const [inputGuardNotice, setInputGuardNotice] = useState<string | null>(null);
 
   // Resend Confirmation Email state (for unconfirmed accounts)
   const [unconfirmedEmail, setUnconfirmedEmail] = useState<string | null>(null);
@@ -98,7 +99,7 @@ export const Login: React.FC = () => {
       if (!raw) return;
       const parsed = JSON.parse(raw) as RememberedLoginPrefs;
       if (parsed.email) {
-        setEmail(parsed.email);
+        setEmail(parsed.email.replace(/\s+/g, '').toLowerCase());
         setRememberMe(true);
       }
       if (parsed.role === 'member' || parsed.role === 'admin') {
@@ -129,13 +130,14 @@ export const Login: React.FC = () => {
     return () => window.clearTimeout(timer);
   }, [resendCooldown]);
 
-  // Handle redirect status/errors from Gmail confirmation or expired reset links
+  // Handle redirect status/errors from Gmail confirmation, invite, or reset links
   useEffect(() => {
     const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
     const searchParams = new URLSearchParams(window.location.search);
     const errDesc = hashParams.get('error_description') || searchParams.get('error_description');
     const errCode = hashParams.get('error_code') || searchParams.get('error_code');
-    const linkType = hashParams.get('type') || searchParams.get('type');
+    const linkType = (hashParams.get('type') || searchParams.get('type') || '').toLowerCase();
+    const authCode = searchParams.get('code');
 
     if (errDesc || errCode) {
       const lower = `${errCode || ''} ${errDesc || ''}`.toLowerCase();
@@ -149,9 +151,19 @@ export const Login: React.FC = () => {
         setErrorMessage(errDesc || 'লিংকটি যাচাই করা যায়নি। অনুগ্রহ করে নতুন করে চেষ্টা করুন।');
       }
       window.history.replaceState(null, '', window.location.pathname);
-    } else if (linkType === 'signup' || linkType === 'email') {
-      setInfoMessage('আপনার ইমেইল সফলভাবে কনফার্ম হয়েছে! এখন নাম, ইমেইল ও পাসওয়ার্ড দিয়ে লগইন করুন।');
+    } else if (linkType === 'recovery') {
+      setFormView('recovery');
+      setRecoveryFeedback(null);
+      setErrorMessage(null);
+    } else if (linkType === 'signup' || linkType === 'email' || linkType === 'invite') {
+      setInfoMessage(
+        linkType === 'invite'
+          ? 'আপনার আমন্ত্রণ যাচাই হয়েছে! এখন আপনার নাম, ইমেইল ও পাসওয়ার্ড দিয়ে লগইন করুন।'
+          : 'আপনার ইমেইল সফলভাবে কনফার্ম হয়েছে! এখন নাম, ইমেইল ও পাসওয়ার্ড দিয়ে লগইন করুন।'
+      );
       window.history.replaceState(null, '', window.location.pathname);
+    } else if (authCode) {
+      setInfoMessage('আপনার ইমেইল লিংক যাচাই সম্পন্ন হয়েছে! লগইন করতে আপনার তথ্য দিন।');
     }
   }, []);
 
@@ -176,12 +188,59 @@ export const Login: React.FC = () => {
     }
   };
 
+  const handleRestrictedKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+    const isSpace = e.key === ' ' || e.code === 'Space' || e.key === 'Spacebar';
+    const isUppercase = e.key.length === 1 && /^[A-Z]$/.test(e.key);
+    const capsLockActive = Boolean(e.getModifierState?.('CapsLock'));
+
+    if (isSpace) {
+      e.preventDefault();
+      setInputGuardNotice('লগইনে কোনো স্পেস (Space) ব্যবহার করা যাবে না।');
+      return;
+    }
+
+    if (isUppercase) {
+      e.preventDefault();
+      setInputGuardNotice(
+        capsLockActive
+          ? 'Caps Lock চালু আছে! লগইনে বড় হাতের অক্ষর (Capital Letter) দেওয়া যাবে না — Caps Lock বন্ধ করুন।'
+          : 'লগইনে বড় হাতের অক্ষর (Capital Letter) দেওয়া যাবে না — অনুগ্রহ করে ছোট হাতের অক্ষর (a-z) দিন।'
+      );
+    }
+  };
+
+  const sanitizeNoUpperNoSpace = (rawValue: string): string => {
+    const hasSpace = /\s/.test(rawValue);
+    const hasUpper = /[A-Z]/.test(rawValue);
+
+    if (hasSpace || hasUpper) {
+      if (hasSpace && hasUpper) {
+        setInputGuardNotice('বড় হাতের অক্ষর (Capital Letter) ও স্পেস অনুমোদিত নয় — শুধু ছোট হাতের অক্ষর ও সংখ্যা দিন।');
+      } else if (hasSpace) {
+        setInputGuardNotice('লগইনে কোনো স্পেস (Space) ব্যবহার করা যাবে না।');
+      } else {
+        setInputGuardNotice('লগইনে বড় হাতের অক্ষর (Capital Letter) দেওয়া যাবে না — ছোট হাতের অক্ষর (a-z) ব্যবহার করুন।');
+      }
+      return rawValue.replace(/[\sA-Z]/g, '');
+    }
+
+    return rawValue;
+  };
+
   const handleMemberLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
     setInfoMessage(null);
     setUnconfirmedEmail(null);
     setResendFeedback(null);
+
+    if (/[\sA-Z]/.test(email) || /[\sA-Z]/.test(password)) {
+      setAuthState('error');
+      setErrorMessage('ইমেইল বা পাসওয়ার্ডে বড় হাতের অক্ষর (Capital Letter) বা স্পেস ব্যবহার করা যাবে না।');
+      return;
+    }
 
     if (!selectedMemberId) {
       setAuthState('error');
@@ -202,7 +261,7 @@ export const Login: React.FC = () => {
 
     const memberName = chosenFull?.full_name || chosenPub?.full_name || 'Member';
     const memberCode = chosenFull?.member_code || chosenPub?.member_code || '';
-    const trimmedEmail = email.trim();
+    const trimmedEmail = email.replace(/[\sA-Z]/g, '');
 
     setLoading(true);
     setAuthState('loading');
@@ -233,7 +292,7 @@ export const Login: React.FC = () => {
 
       markWelcomePreloaderPending();
       const targetPath =
-        trimmedEmail.toLowerCase() === 'kmtanvir1111@gmail.com'
+        res.role === 'admin' || res.role === 'viewer'
           ? '/admin/dashboard'
           : '/member/profile';
       setTimeout(() => navigate(targetPath), 650);
@@ -252,7 +311,14 @@ export const Login: React.FC = () => {
     setInfoMessage(null);
     setUnconfirmedEmail(null);
     setResendFeedback(null);
-    const trimmedEmail = email.trim();
+
+    if (/[\sA-Z]/.test(email) || /[\sA-Z]/.test(password)) {
+      setAuthState('error');
+      setErrorMessage('ইমেইল বা পাসওয়ার্ডে বড় হাতের অক্ষর (Capital Letter) বা স্পেস ব্যবহার করা যাবে না।');
+      return;
+    }
+
+    const trimmedEmail = email.replace(/[\sA-Z]/g, '');
 
     setLoading(true);
     setAuthState('loading');
@@ -266,7 +332,9 @@ export const Login: React.FC = () => {
       setAuthState('success');
       markWelcomePreloaderPending();
       const targetPath =
-        userEmail === 'kmtanvir1111@gmail.com' ? '/admin/dashboard' : '/member/profile';
+        res.role === 'admin' || res.role === 'viewer' || userEmail === 'kmtanvir1111@gmail.com'
+          ? '/admin/dashboard'
+          : '/member/profile';
       setTimeout(() => navigate(targetPath), 650);
     } else {
       setAuthState('error');
@@ -302,16 +370,26 @@ export const Login: React.FC = () => {
 
   const openResetView = () => {
     setResetFeedback(null);
-    setResetEmail(email.trim());
+    setInputGuardNotice(null);
+    setResetEmail(email.replace(/[\sA-Z]/g, ''));
     setFormView('reset');
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setResetFeedback(null);
+
+    if (/[\sA-Z]/.test(resetEmail)) {
+      setResetFeedback({
+        type: 'error',
+        text: 'ইমেইলে বড় হাতের অক্ষর (Capital Letter) বা স্পেস ব্যবহার করা যাবে না।',
+      });
+      return;
+    }
+
     setResetLoading(true);
 
-    const res = await resetPassword(resetEmail.trim());
+    const res = await resetPassword(resetEmail.replace(/[\sA-Z]/g, ''));
     setResetLoading(false);
 
     if (res.success) {
@@ -330,6 +408,14 @@ export const Login: React.FC = () => {
   const handleCompletePasswordRecovery = async (e: React.FormEvent) => {
     e.preventDefault();
     setRecoveryFeedback(null);
+
+    if (/[\sA-Z]/.test(newPassword) || /[\sA-Z]/.test(confirmNewPassword)) {
+      setRecoveryFeedback({
+        type: 'error',
+        text: 'নতুন পাসওয়ার্ডে বড় হাতের অক্ষর (Capital Letter) বা স্পেস ব্যবহার করা যাবে না।',
+      });
+      return;
+    }
 
     if (newPassword.length < 6) {
       setRecoveryFeedback({
@@ -376,7 +462,9 @@ export const Login: React.FC = () => {
 
       markWelcomePreloaderPending();
       const targetPath =
-        recoveryEmail === 'kmtanvir1111@gmail.com' ? '/admin/dashboard' : '/member/profile';
+        res.role === 'admin' || res.role === 'viewer' || recoveryEmail === 'kmtanvir1111@gmail.com'
+          ? '/admin/dashboard'
+          : '/member/profile';
       setTimeout(() => navigate(targetPath), 950);
     } else {
       setRecoveryFeedback({
@@ -536,8 +624,23 @@ export const Login: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Error, Info, Resend Confirmation & Success Feedback */}
+                {/* Error, Info, Input Guard, Resend Confirmation & Success Feedback */}
                 <AnimatePresence mode="wait">
+                  {inputGuardNotice && !errorMessage && authState !== 'success' && (
+                    <motion.div
+                      key="login-input-guard"
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.14 }}
+                      role="status"
+                      className="p-3 bg-amber-50 dark:bg-amber-950/35 border border-amber-200 dark:border-amber-800/70 text-amber-800 dark:text-amber-300 rounded-xl text-xs flex items-start gap-2 font-medium leading-relaxed"
+                    >
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span>{inputGuardNotice}</span>
+                    </motion.div>
+                  )}
+
                   {infoMessage && !errorMessage && authState !== 'success' && (
                     <motion.div
                       key="login-info"
@@ -680,10 +783,18 @@ export const Login: React.FC = () => {
                           type="email"
                           required
                           autoComplete="email"
+                          autoCapitalize="none"
+                          autoCorrect="off"
+                          spellCheck={false}
                           placeholder="name@example.com"
                           value={email}
+                          onKeyDown={handleRestrictedKeyDown}
                           onChange={(e) => {
-                            setEmail(e.target.value);
+                            const sanitized = sanitizeNoUpperNoSpace(e.target.value);
+                            setEmail(sanitized);
+                            if (sanitized === e.target.value && inputGuardNotice) {
+                              setInputGuardNotice(null);
+                            }
                             if (authState === 'error') setAuthState('idle');
                             if (errorMessage) setErrorMessage(null);
                           }}
@@ -715,10 +826,18 @@ export const Login: React.FC = () => {
                           type={showPassword ? 'text' : 'password'}
                           required
                           autoComplete="current-password"
+                          autoCapitalize="none"
+                          autoCorrect="off"
+                          spellCheck={false}
                           placeholder="••••••••"
                           value={password}
+                          onKeyDown={handleRestrictedKeyDown}
                           onChange={(e) => {
-                            setPassword(e.target.value);
+                            const sanitized = sanitizeNoUpperNoSpace(e.target.value);
+                            setPassword(sanitized);
+                            if (sanitized === e.target.value && inputGuardNotice) {
+                              setInputGuardNotice(null);
+                            }
                             if (authState === 'error') setAuthState('idle');
                             if (errorMessage) setErrorMessage(null);
                           }}
@@ -772,10 +891,18 @@ export const Login: React.FC = () => {
                           type="email"
                           required
                           autoComplete="email"
+                          autoCapitalize="none"
+                          autoCorrect="off"
+                          spellCheck={false}
                           placeholder="admin@example.com"
                           value={email}
+                          onKeyDown={handleRestrictedKeyDown}
                           onChange={(e) => {
-                            setEmail(e.target.value);
+                            const sanitized = sanitizeNoUpperNoSpace(e.target.value);
+                            setEmail(sanitized);
+                            if (sanitized === e.target.value && inputGuardNotice) {
+                              setInputGuardNotice(null);
+                            }
                             if (authState === 'error') setAuthState('idle');
                             if (errorMessage) setErrorMessage(null);
                           }}
@@ -807,10 +934,18 @@ export const Login: React.FC = () => {
                           type={showPassword ? 'text' : 'password'}
                           required
                           autoComplete="current-password"
+                          autoCapitalize="none"
+                          autoCorrect="off"
+                          spellCheck={false}
                           placeholder="••••••••"
                           value={password}
+                          onKeyDown={handleRestrictedKeyDown}
                           onChange={(e) => {
-                            setPassword(e.target.value);
+                            const sanitized = sanitizeNoUpperNoSpace(e.target.value);
+                            setPassword(sanitized);
+                            if (sanitized === e.target.value && inputGuardNotice) {
+                              setInputGuardNotice(null);
+                            }
                             if (authState === 'error') setAuthState('idle');
                             if (errorMessage) setErrorMessage(null);
                           }}
@@ -941,12 +1076,21 @@ export const Login: React.FC = () => {
                         type="email"
                         required
                         autoComplete="email"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
                         placeholder="yourname@gmail.com"
                         value={resetEmail}
-                        onChange={(e) => setResetEmail(e.target.value)}
+                        onKeyDown={handleRestrictedKeyDown}
+                        onChange={(e) => setResetEmail(sanitizeNoUpperNoSpace(e.target.value))}
                         className={inputBaseClass}
                       />
                     </div>
+                    {inputGuardNotice && (
+                      <p className="mt-1.5 text-[11px] font-medium text-amber-700 dark:text-amber-300">
+                        {inputGuardNotice}
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-3 pt-1">
@@ -1055,9 +1199,13 @@ export const Login: React.FC = () => {
                         required
                         minLength={6}
                         autoComplete="new-password"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
                         placeholder="কমপক্ষে ৬ অক্ষরের পাসওয়ার্ড"
                         value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
+                        onKeyDown={handleRestrictedKeyDown}
+                        onChange={(e) => setNewPassword(sanitizeNoUpperNoSpace(e.target.value))}
                         className={`${inputBaseClass} pr-11`}
                       />
                       <button
@@ -1086,12 +1234,21 @@ export const Login: React.FC = () => {
                         required
                         minLength={6}
                         autoComplete="new-password"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
                         placeholder="পুনরায় নতুন পাসওয়ার্ড লিখুন"
                         value={confirmNewPassword}
-                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        onKeyDown={handleRestrictedKeyDown}
+                        onChange={(e) => setConfirmNewPassword(sanitizeNoUpperNoSpace(e.target.value))}
                         className={inputBaseClass}
                       />
                     </div>
+                    {inputGuardNotice && (
+                      <p className="mt-1.5 text-[11px] font-medium text-amber-700 dark:text-amber-300">
+                        {inputGuardNotice}
+                      </p>
+                    )}
                   </div>
 
                   <motion.button

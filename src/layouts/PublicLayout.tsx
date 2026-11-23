@@ -7,7 +7,7 @@ import crestImage from '../assets/images/bondhon_club_crest_1793703027252.jpg';
 import { WebsiteWelcomePreloader } from '../components/WebsiteWelcomePreloader';
 
 export const PublicLayout: React.FC = () => {
-  const { isAuthenticated, isAdmin, signOut } = useAuth();
+  const { isAuthenticated, canAccessAdmin, isViewer, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
 
@@ -72,13 +72,13 @@ export const PublicLayout: React.FC = () => {
               {isAuthenticated ? (
                 <div className="hidden sm:flex items-center gap-2">
                   <Link
-                    to={isAdmin ? '/admin/dashboard' : '/member/profile'}
+                    to={canAccessAdmin ? '/admin/dashboard' : '/member/profile'}
                     className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-[#1D4ED8] hover:bg-[#1E40AF] text-white transition-colors shadow-xs whitespace-nowrap"
                   >
-                    {isAdmin ? (
+                    {canAccessAdmin ? (
                       <>
                         <ShieldCheck className="w-3.5 h-3.5" />
-                        <span>Admin Dashboard</span>
+                        <span>{isViewer ? 'Executive View' : 'Admin Dashboard'}</span>
                       </>
                     ) : (
                       <>
@@ -155,12 +155,12 @@ export const PublicLayout: React.FC = () => {
                   {isAuthenticated ? (
                     <>
                       <Link
-                        to={isAdmin ? '/admin/dashboard' : '/member/profile'}
+                        to={canAccessAdmin ? '/admin/dashboard' : '/member/profile'}
                         onClick={() => setMobileMenuOpen(false)}
                         className="flex items-center justify-center gap-2 min-h-[44px] px-4 text-xs font-semibold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl"
                       >
-                        {isAdmin ? <ShieldCheck className="w-4 h-4" /> : <UserIcon className="w-4 h-4" />}
-                        <span>{isAdmin ? 'Admin Dashboard' : 'My Member Portal'}</span>
+                        {canAccessAdmin ? <ShieldCheck className="w-4 h-4" /> : <UserIcon className="w-4 h-4" />}
+                        <span>{canAccessAdmin ? (isViewer ? 'Executive View' : 'Admin Dashboard') : 'My Member Portal'}</span>
                       </Link>
                       <button
                         type="button"

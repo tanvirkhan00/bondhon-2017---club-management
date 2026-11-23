@@ -5,13 +5,14 @@ import {
   getLocalGreeting,
 } from '../utils/dhakaTime';
 import {
+  fetchLiveWeatherForecast,
   getCachedWeather,
   subscribeWeatherUpdates,
 } from '../services/weather/openMeteo';
 
 /**
- * React hook returning a live-updating greeting aligned to the viewer's current country/time zone.
- * Automatically updates on exact minute boundaries, tab visibility changes, and weather location updates.
+ * React hook returning a live-updating greeting aligned to the viewer's actual local area & time zone.
+ * Automatically updates on exact minute boundaries, tab visibility changes, and area/weather updates.
  */
 export function useLiveLocalGreeting(): DhakaGreetingInfo {
   const [now, setNow] = useState<Date>(() => new Date());
@@ -22,6 +23,14 @@ export function useLiveLocalGreeting(): DhakaGreetingInfo {
       return cached.timezone;
     }
     return browserZone;
+  });
+  const [activeArea, setActiveArea] = useState<string | null>(() => {
+    const cached = getCachedWeather();
+    const browserZone = getBrowserTimeZone();
+    if (cached?.cacheZone === browserZone && cached.areaName) {
+      return cached.areaName;
+    }
+    return null;
   });
 
   useEffect(() => {
@@ -54,7 +63,19 @@ export function useLiveLocalGreeting(): DhakaGreetingInfo {
       if (payload.timezone) {
         setActiveZone(payload.timezone);
       }
+      if (payload.areaName) {
+        setActiveArea(payload.areaName);
+      }
     });
+
+    // Silently resolve visitor's actual district/area (already-granted GPS or IP geolocation, no modal prompt)
+    const cached = getCachedWeather();
+    const browserZone = getBrowserTimeZone();
+    if (!cached || cached.cacheZone !== browserZone) {
+      void fetchLiveWeatherForecast({ allowGpsPrompt: false }).catch(() => {
+        // Silent fallback to browser timezone
+      });
+    }
 
     return () => {
       window.clearTimeout(timeoutId);
@@ -64,5 +85,11 @@ export function useLiveLocalGreeting(): DhakaGreetingInfo {
     };
   }, []);
 
-  return getLocalGreeting(now, activeZone);
+  const info = getLocalGreeting(now, activeZone);
+  return activeArea
+    ? {
+        ...info,
+        zoneCity: activeArea,
+      }
+    : info;
 }

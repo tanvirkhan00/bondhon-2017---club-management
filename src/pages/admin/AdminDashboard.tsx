@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useClubData } from '../../hooks/useClubData';
 import { useAuth } from '../../hooks/useAuth';
-import { AnnouncementCategory, BankDeposit, BankEntryType, ClubExpense, MonthlyDue } from '../../types';
+import { AnnouncementCategory, MonthlyDue } from '../../types';
 import { FISCAL_YEARS, formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/formatters';
 import { calculateDueBreakdown, computeMemberFinancialSummary, parseLocalDate } from '../../utils/fineCalculator';
 import { useLiveLocalGreeting } from '../../hooks/useLocalTimeZone';
@@ -27,22 +27,16 @@ import {
   ArrowRight,
   CreditCard,
   Landmark,
-  Edit2,
   Trash2,
-  Receipt,
-  ChevronDown,
-  ChevronUp,
   Search,
   Megaphone,
   Send,
   TrendingUp,
 } from 'lucide-react';
 import { RecordPaymentModal } from '../../components/RecordPaymentModal';
-import { BankEntryModal } from '../../components/BankEntryModal';
-import { ClubExpenseModal } from '../../components/ClubExpenseModal';
 
 export const AdminDashboard: React.FC = () => {
-  const { user, profile } = useAuth();
+  const { user, profile, canEditAdmin, isViewer } = useAuth();
   const {
     stats,
     members,
@@ -53,12 +47,8 @@ export const AdminDashboard: React.FC = () => {
     setSelectedYear,
     monthlyDues,
     monthSummaries,
-    bankDeposits,
-    clubExpenses,
     totalClubPrincipalCollected,
     totalClubFineCollected,
-    totalClubCollected,
-    totalBankDeposited,
     totalBankInterest,
     totalBankCharges,
     totalClubExpenses,
@@ -66,8 +56,6 @@ export const AdminDashboard: React.FC = () => {
     currentBankBalance,
     pendingBankDeposit,
     bankDepositProgress,
-    deleteBankDeposit,
-    deleteClubExpense,
     announcements,
     publishAnnouncement,
     deleteAnnouncement,
@@ -84,17 +72,7 @@ export const AdminDashboard: React.FC = () => {
   const [recordPaymentModalOpen, setRecordPaymentModalOpen] = useState(false);
   const [selectedMemberForPayment, setSelectedMemberForPayment] = useState<string | undefined>(undefined);
 
-  // Sonali Bank Ledger & Club Expense Modal State
-  const [bankModalOpen, setBankModalOpen] = useState(false);
-  const [bankModalType, setBankModalType] = useState<BankEntryType>('deposit');
-  const [editingDeposit, setEditingDeposit] = useState<BankDeposit | null>(null);
-  const [expenseModalOpen, setExpenseModalOpen] = useState(false);
-  const [editingExpense, setEditingExpense] = useState<ClubExpense | null>(null);
-  const [deleteEntryKey, setDeleteEntryKey] = useState<string | null>(null);
-
-  // UI Organization States
-  const [showCollectionBreakdown, setShowCollectionBreakdown] = useState(false);
-  const [activityTab, setActivityTab] = useState<'payments' | 'treasury'>('payments');
+  // Search State for Pending Contributions
   const [pendingSearch, setPendingSearch] = useState('');
 
   // Date Range / Period Analytics Filter
@@ -348,6 +326,7 @@ export const AdminDashboard: React.FC = () => {
     });
   }, [effectiveMonthDues, pendingSearch]);
 
+  // Top 12 recent member payments
   const recentPayments = useMemo(
     () =>
       [...monthlyDues]
@@ -356,85 +335,6 @@ export const AdminDashboard: React.FC = () => {
         .slice(0, 12),
     [monthlyDues]
   );
-
-  const openAddDepositModal = (type: BankEntryType = 'deposit') => {
-    setEditingDeposit(null);
-    setBankModalType(type);
-    setBankModalOpen(true);
-  };
-
-  const openEditDepositModal = (deposit: BankDeposit) => {
-    setEditingDeposit(deposit);
-    setBankModalType((deposit.entry_type || 'deposit') as BankEntryType);
-    setBankModalOpen(true);
-  };
-
-  const openAddExpenseModal = () => {
-    setEditingExpense(null);
-    setExpenseModalOpen(true);
-  };
-
-  const openEditExpenseModal = (exp: ClubExpense) => {
-    setEditingExpense(exp);
-    setExpenseModalOpen(true);
-  };
-
-  // Unified recent Treasury activity
-  const treasuryActivity = useMemo(() => {
-    const items: Array<{
-      key: string;
-      date: string;
-      title: string;
-      subtitle: string;
-      typeLabel: string;
-      typeTone: string;
-      signedAmount: number;
-      kind: 'bank' | 'expense';
-      rawBank?: BankDeposit;
-      rawExpense?: ClubExpense;
-    }> = [];
-
-    bankDeposits.forEach((b) => {
-      const t = (b.entry_type || 'deposit') as BankEntryType;
-      const amt = Number(b.amount || 0);
-      const isCredit = t === 'deposit' || t === 'interest';
-      const typeMap: Record<BankEntryType, { label: string; tone: string }> = {
-        deposit: { label: 'Bank Deposit', tone: 'text-[#38BDF8]' },
-        interest: { label: 'Bank Interest', tone: 'text-[#F0C56E]' },
-        charge: { label: 'Bank Charge', tone: 'text-rose-400' },
-        withdrawal: { label: 'Withdrawal', tone: 'text-[#60A5FA]' },
-      };
-      items.push({
-        key: `b-${b.id}`,
-        date: (b.deposited_at || '').substring(0, 10),
-        title: b.notes || typeMap[t].label,
-        subtitle: b.reference_no ? `Ref ${b.reference_no}` : 'Sonali Bank PLC',
-        typeLabel: typeMap[t].label,
-        typeTone: typeMap[t].tone,
-        signedAmount: isCredit ? amt : -amt,
-        kind: 'bank',
-        rawBank: b,
-      });
-    });
-
-    clubExpenses.forEach((e) => {
-      items.push({
-        key: `e-${e.id}`,
-        date: (e.expense_date || '').substring(0, 10),
-        title: e.title,
-        subtitle: e.payment_source === 'bank' ? 'Sonali Bank A/C' : 'Cash in Hand',
-        typeLabel: 'Club Expense',
-        typeTone: 'text-rose-400',
-        signedAmount: -Number(e.amount || 0),
-        kind: 'expense',
-        rawExpense: e,
-      });
-    });
-
-    return items.sort((a, b) => b.date.localeCompare(a.date));
-  }, [bankDeposits, clubExpenses]);
-
-  const totalOutflows = totalBankCharges + totalClubExpenses;
 
   return (
     <PageTransition className="space-y-6">
@@ -450,7 +350,9 @@ export const AdminDashboard: React.FC = () => {
                 {greetingInfo.periodLabel} · {greetingInfo.zoneCity} Time ({greetingInfo.shortZone})
               </span>
               <span className="text-[#233452]" aria-hidden="true">|</span>
-              <span className="font-mono text-[#F0C56E]">Bondhon 2017 Executive Console</span>
+              <span className="font-mono text-[#F0C56E]">
+                {isViewer ? 'Bondhon 2017 · Executive Overview' : 'Bondhon 2017 Executive Console'}
+              </span>
             </div>
 
             <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#F3F6FC] truncate">
@@ -458,299 +360,144 @@ export const AdminDashboard: React.FC = () => {
               <span className="text-[#38BDF8]">{adminDisplayName}!</span>
             </h1>
 
-            <p className="text-xs text-[#9BB0CD] flex flex-wrap items-center gap-x-2 gap-y-0.5">
-              <span>Active Period: <strong className="text-slate-200">{getMonthName(selectedMonth)} {selectedYear}</strong></span>
-              <span aria-hidden="true">·</span>
-              <span>Settlement Rate: <strong className="font-mono text-[#38BDF8] tabular-nums">{stats.collectionRate}%</strong></span>
-              <span aria-hidden="true">·</span>
-              <span>Pending All-Time: <strong className="font-mono text-rose-400 tabular-nums">{formatBDT(cumulativeOutstandingTotal)}</strong></span>
+            <p className="text-xs text-[#9BB0CD]">
+              Active Fiscal Period:{' '}
+              <strong className="text-slate-200">{getMonthName(selectedMonth)} {selectedYear}</strong>
+              {' · '}Real-time club financial overview
             </p>
           </div>
 
           <DashboardClock />
         </div>
 
-        {/* Integrated Control & Action Bar */}
-        <div className="pt-4 border-t border-[#233452] flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Period Selector */}
-            <div className="inline-flex items-center bg-[#09101D]/80 border border-[#233452] rounded-xl divide-x divide-[#233452] overflow-hidden">
-              <label className="flex items-center gap-1.5 pl-3 pr-2 py-2 cursor-pointer">
-                <Calendar className="w-3.5 h-3.5 text-[#60A5FA] shrink-0" />
-                <select
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                  aria-label="Select month"
-                  className="text-xs font-semibold text-[#F3F6FC] bg-transparent focus:outline-hidden cursor-pointer pr-1"
-                >
-                  {MONTH_NAMES.map((name, idx) => (
-                    <option key={idx + 1} value={idx + 1} className="bg-[#111B2E] text-[#F3F6FC]">
-                      {name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
+        {/* Period Selector & Primary Actions */}
+        <div className="pt-4 border-t border-[#233452] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="inline-flex items-center bg-[#09101D]/80 border border-[#233452] rounded-xl divide-x divide-[#233452] overflow-hidden self-start">
+            <label className="flex items-center gap-1.5 pl-3 pr-2 py-2 cursor-pointer">
+              <Calendar className="w-3.5 h-3.5 text-[#60A5FA] shrink-0" />
               <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
-                aria-label="Select year"
-                className="px-3 py-2 text-xs font-semibold font-mono tabular-nums text-[#F3F6FC] bg-transparent focus:outline-hidden cursor-pointer"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                aria-label="Select month"
+                className="text-xs font-semibold text-[#F3F6FC] bg-transparent focus:outline-hidden cursor-pointer pr-1"
               >
-                {FISCAL_YEARS.map((yr) => (
-                  <option key={yr} value={yr} className="bg-[#111B2E] text-[#F3F6FC]">
-                    {yr}
+                {MONTH_NAMES.map((name, idx) => (
+                  <option key={idx + 1} value={idx + 1} className="bg-[#111B2E] text-[#F3F6FC]">
+                    {name}
                   </option>
                 ))}
               </select>
-            </div>
+            </label>
 
-            {/* Quick Navigation Rail */}
-            <div className="hidden sm:inline-flex items-center bg-[#09101D]/60 border border-[#233452] rounded-xl p-1 text-xs font-semibold">
-              <Link
-                to="/admin/payments"
-                className="px-3 py-1.5 rounded-lg text-[#9BB0CD] hover:text-white hover:bg-[#17243C] transition-colors whitespace-nowrap shrink-0"
-              >
-                Monthly Dues
-              </Link>
-              <Link
-                to="/admin/fines"
-                className="px-3 py-1.5 rounded-lg text-[#9BB0CD] hover:text-white hover:bg-[#17243C] transition-colors whitespace-nowrap shrink-0"
-              >
-                Fines Sheet
-              </Link>
-              <Link
-                to="/admin/treasury"
-                className="px-3 py-1.5 rounded-lg text-[#9BB0CD] hover:text-white hover:bg-[#17243C] transition-colors whitespace-nowrap shrink-0"
-              >
-                Treasury
-              </Link>
-              <Link
-                to="/admin/reports"
-                className="px-3 py-1.5 rounded-lg text-[#9BB0CD] hover:text-white hover:bg-[#17243C] transition-colors whitespace-nowrap shrink-0"
-              >
-                PDF Reports
-              </Link>
-            </div>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              aria-label="Select year"
+              className="px-3 py-2 text-xs font-semibold font-mono tabular-nums text-[#F3F6FC] bg-transparent focus:outline-hidden cursor-pointer"
+            >
+              {FISCAL_YEARS.map((yr) => (
+                <option key={yr} value={yr} className="bg-[#111B2E] text-[#F3F6FC]">
+                  {yr}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Primary Actions */}
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => openAddDepositModal('deposit')}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-200 bg-[#17243C] hover:bg-[#1E314A] border border-[#233452] rounded-xl transition-colors cursor-pointer whitespace-nowrap"
-            >
-              <PlusCircle className="w-3.5 h-3.5 text-[#38BDF8]" />
-              <span>Bank Entry</span>
-            </button>
+          {canEditAdmin && (
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setAnnFeedback(null);
+                  setAnnouncementModalOpen(true);
+                }}
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-[#F0C56E] bg-[#17243C] hover:bg-[#1E314A] border border-[#D6AC62]/35 rounded-xl transition-colors cursor-pointer whitespace-nowrap"
+              >
+                <Megaphone className="w-3.5 h-3.5" />
+                <span>Publish Notice</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                setAnnFeedback(null);
-                setAnnouncementModalOpen(true);
-              }}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-[#F0C56E] bg-[#17243C] hover:bg-[#1E314A] border border-[#D6AC62]/35 rounded-xl transition-colors cursor-pointer whitespace-nowrap"
-            >
-              <Megaphone className="w-3.5 h-3.5" />
-              <span>Publish Notice</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedMemberForPayment(undefined);
-                setRecordPaymentModalOpen(true);
-              }}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-xs transition-colors cursor-pointer whitespace-nowrap"
-            >
-              <CreditCard className="w-3.5 h-3.5" />
-              <span>Record Payment</span>
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedMemberForPayment(undefined);
+                  setRecordPaymentModalOpen(true);
+                }}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-xs transition-colors cursor-pointer whitespace-nowrap"
+              >
+                <CreditCard className="w-3.5 h-3.5" />
+                <span>Record Payment</span>
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* 2. SONALI BANK & TREASURY RECONCILIATION STRIP */}
-      <section className="surface-card rounded-2xl overflow-hidden">
-        <div className="px-5 py-4 sm:px-6 border-b border-[#233452] flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-[#17243C] border border-[#223862] text-[#D6AC62] flex items-center justify-center shrink-0">
-              <Landmark className="w-4.5 h-4.5" />
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-sm sm:text-base font-bold text-[#F3F6FC] truncate">
-                Treasury &amp; Sonali Bank PLC Reconciliation
-              </h2>
-              <p className="text-xs text-[#9BB0CD] truncate font-mono tabular-nums">
-                A/C 2102201027292 · Bhedarganj Branch, Shariatpur
-              </p>
-            </div>
+      {/* 2. COMPACT SONALI BANK RESERVE STRIP */}
+      <section className="surface-card rounded-2xl px-5 py-4 sm:px-6 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-xl bg-[#17243C] border border-[#223862] text-[#D6AC62] flex items-center justify-center shrink-0">
+            <Landmark className="w-4 h-4" />
           </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={openAddExpenseModal}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-100 bg-[#17243C] hover:bg-[#1E314A] border border-[#233452] rounded-xl transition-colors cursor-pointer whitespace-nowrap"
-            >
-              <Receipt className="w-3.5 h-3.5 text-rose-400" />
-              <span>Add Expense</span>
-            </button>
-
-            <Link
-              to="/admin/treasury"
-              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[#60A5FA] hover:underline whitespace-nowrap"
-            >
-              <span>Full Statement</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+          <div className="min-w-0">
+            <span className="text-xs sm:text-sm font-bold text-[#F3F6FC] block truncate">
+              Sonali Bank PLC Reserve
+            </span>
+            <span className="text-[11px] font-mono text-[#9BB0CD] block truncate">
+              A/C 2102201027292 · Bhedarganj Branch
+            </span>
           </div>
         </div>
 
-        {/* 4 Divided Treasury Columns */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 divide-y sm:divide-y-0 border-[#233452]">
-          <div className="p-5 sm:p-6 sm:border-r sm:border-b xl:border-b-0 border-[#233452] bg-[#132038]/35">
-            <span className="text-xs font-semibold text-[#38BDF8] block">
-              Club Net Available Balance
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-mono tabular-nums">
+          <div>
+            <span className="text-[10px] font-sans uppercase tracking-wider text-[#9BB0CD] block">
+              Net Available
             </span>
-            <div className="text-2xl sm:text-[28px] font-bold font-mono text-white tabular-nums mt-1.5 tracking-tight">
+            <span className="text-sm font-bold text-[#38BDF8]">
               {formatBDT(netClubAvailableBalance)}
-            </div>
-            <span className="text-[11px] text-[#9BB0CD] mt-1.5 block font-mono tabular-nums">
-              Collections + Interest − Charges &amp; Exp
             </span>
           </div>
-
-          <div className="p-5 sm:p-6 sm:border-b xl:border-b-0 xl:border-r border-[#233452]">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-semibold text-slate-300">
-                Total Member Collection
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowCollectionBreakdown((v) => !v)}
-                className="inline-flex items-center gap-1 text-[11px] font-bold text-[#60A5FA] hover:underline cursor-pointer shrink-0 whitespace-nowrap"
-              >
-                <span>{showCollectionBreakdown ? 'Hide Years' : 'By Year'}</span>
-                {showCollectionBreakdown ? (
-                  <ChevronUp className="w-3.5 h-3.5" />
-                ) : (
-                  <ChevronDown className="w-3.5 h-3.5" />
-                )}
-              </button>
-            </div>
-            <div className="text-2xl sm:text-[28px] font-bold font-mono text-[#F3F6FC] tabular-nums mt-1.5 tracking-tight">
-              {formatBDT(totalClubCollected)}
-            </div>
-            <span className="text-[11px] text-[#9BB0CD] mt-1.5 block font-mono tabular-nums">
-              Dues {formatBDT(totalClubPrincipalCollected)} · Fine {formatBDT(totalClubFineCollected)}
+          <div className="hidden sm:block h-7 w-px bg-[#233452]" />
+          <div>
+            <span className="text-[10px] font-sans uppercase tracking-wider text-[#9BB0CD] block">
+              Bank Cash
             </span>
-          </div>
-
-          <div className="p-5 sm:p-6 sm:border-r border-[#233452]">
-            <span className="text-xs font-semibold text-slate-300 block">
-              Current Bank Account Cash
-            </span>
-            <div className="text-2xl sm:text-[28px] font-bold font-mono text-[#F3F6FC] tabular-nums mt-1.5 tracking-tight">
+            <span className="text-sm font-bold text-[#F3F6FC]">
               {formatBDT(currentBankBalance)}
-            </div>
-            <span className="text-[11px] text-[#9BB0CD] mt-1.5 block font-mono tabular-nums">
-              Deposited {formatBDT(totalBankDeposited)} · Interest +{formatBDT(totalBankInterest)}
             </span>
           </div>
-
-          <div className="p-5 sm:p-6">
-            <span className="text-xs font-semibold text-slate-300 block">
-              Bank Charges &amp; Club Expenses
+          <div className="hidden sm:block h-7 w-px bg-[#233452]" />
+          <div>
+            <span className="text-[10px] font-sans uppercase tracking-wider text-[#9BB0CD] block">
+              Cash in Hand
             </span>
-            <div className="text-2xl sm:text-[28px] font-bold font-mono text-rose-400 tabular-nums mt-1.5 tracking-tight">
-              -{formatBDT(totalOutflows)}
-            </div>
-            <span className="text-[11px] text-[#9BB0CD] mt-1.5 block font-mono tabular-nums">
-              Bank Fees {formatBDT(totalBankCharges)} · Club Exp {formatBDT(totalClubExpenses)}
+            <span className="text-sm font-bold text-[#F0C56E]">
+              {formatBDT(pendingBankDeposit)}
             </span>
           </div>
         </div>
 
-        {/* Expandable Annual Breakdown */}
-        {showCollectionBreakdown && (
-          <div className="px-5 py-4 sm:px-6 bg-[#0D1726]/75 border-t border-[#233452] space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h3 className="text-xs font-bold text-[#F3F6FC]">
-                  Member Collection Breakdown by Fiscal Year
-                </h3>
-                <p className="text-[11px] text-[#9BB0CD]">
-                  Gross member dues and late fines collected before bank charges &amp; club expenses
-                </p>
-              </div>
-              <Link
-                to="/admin/payment-history"
-                className="text-xs font-semibold text-[#60A5FA] hover:underline inline-flex items-center gap-1 whitespace-nowrap"
-              >
-                <span>Full Payment Ledger</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-
-            {yearlyMemberCollections.length === 0 ? (
-              <p className="text-xs text-[#9BB0CD]">No member contributions recorded yet.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-[#233452] text-[#9BB0CD]">
-                      <th className="py-2 pr-4 font-semibold">Fiscal Year</th>
-                      <th className="py-2 px-4 font-semibold text-right">Monthly Dues</th>
-                      <th className="py-2 px-4 font-semibold text-right">Fines Collected</th>
-                      <th className="py-2 pl-4 font-semibold text-right">Total Collected</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#233452] font-mono tabular-nums">
-                    {yearlyMemberCollections.map((yr) => (
-                      <tr key={yr.year}>
-                        <td className="py-2 pr-4 font-bold text-[#F3F6FC]">{yr.year}</td>
-                        <td className="py-2 px-4 text-right text-slate-200">{formatBDT(yr.principal)}</td>
-                        <td className="py-2 px-4 text-right text-[#F0C56E]">{formatBDT(yr.fine)}</td>
-                        <td className="py-2 pl-4 text-right font-bold text-[#38BDF8]">{formatBDT(yr.total)}</td>
-                      </tr>
-                    ))}
-                    <tr className="bg-[#1D4ED8]/15 font-bold">
-                      <td className="py-2.5 pr-4 text-[#60A5FA] font-sans">All-Time Total</td>
-                      <td className="py-2.5 px-4 text-right text-[#F3F6FC]">{formatBDT(totalClubPrincipalCollected)}</td>
-                      <td className="py-2.5 px-4 text-right text-[#F0C56E]">{formatBDT(totalClubFineCollected)}</td>
-                      <td className="py-2.5 pl-4 text-right text-[#38BDF8]">{formatBDT(totalClubCollected)}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Banked Progress Footer Strip */}
-        <div className="px-5 py-3.5 sm:px-6 bg-[#0D1726]/45 border-t border-[#233452] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-            <span className="font-semibold text-slate-200">Bank Deposit Progress</span>
-            <span className="text-[#9BB0CD]">·</span>
-            <span className="font-mono tabular-nums text-[#F0C56E] font-semibold">
-              Cash in Hand: {formatBDT(pendingBankDeposit)}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3 sm:w-72">
-            <div className="flex-1 h-2 bg-[#17243C] rounded-full overflow-hidden border border-[#233452]">
+        <div className="flex flex-wrap items-center justify-between sm:justify-end gap-4 shrink-0">
+          <div className="flex items-center gap-2.5 w-36 sm:w-44">
+            <div className="flex-1 h-1.5 bg-[#17243C] rounded-full overflow-hidden border border-[#233452]">
               <div
                 style={{ width: `${bankDepositProgress}%` }}
                 className="h-full bg-[#38BDF8] rounded-full transition-all duration-300"
               />
             </div>
-            <span className="text-xs font-mono font-bold text-[#60A5FA] tabular-nums shrink-0">
+            <span className="text-[11px] font-mono font-bold text-[#60A5FA] tabular-nums shrink-0">
               {bankDepositProgress}%
             </span>
           </div>
+
+          <Link
+            to="/admin/treasury"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-[#60A5FA] hover:underline whitespace-nowrap shrink-0"
+          >
+            <span>Full Treasury Statement</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
       </section>
 
@@ -767,8 +514,8 @@ export const AdminDashboard: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex flex-wrap items-center p-1 bg-[#09101D]/70 border border-[#233452] rounded-xl text-[11px] font-semibold">
+          <div className="flex flex-wrap items-center gap-2 max-w-full overflow-x-auto">
+            <div className="inline-flex items-center p-1 bg-[#09101D]/70 border border-[#233452] rounded-xl text-[11px] font-semibold whitespace-nowrap">
               {(
                 [
                   { id: 'month', label: 'This Month' },
@@ -997,16 +744,18 @@ export const AdminDashboard: React.FC = () => {
                           {due.status}
                         </span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedMemberForPayment(due.member_id);
-                          setRecordPaymentModalOpen(true);
-                        }}
-                        className="px-3 py-1.5 text-[11px] font-bold text-[#7EB6FF] bg-[#1D4ED8]/15 hover:bg-[#1D4ED8]/25 rounded-lg border border-[#60A5FA]/35 transition-colors cursor-pointer whitespace-nowrap"
-                      >
-                        + Pay
-                      </button>
+                      {canEditAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedMemberForPayment(due.member_id);
+                            setRecordPaymentModalOpen(true);
+                          }}
+                          className="px-3 py-1.5 text-[11px] font-bold text-[#7EB6FF] bg-[#1D4ED8]/15 hover:bg-[#1D4ED8]/25 rounded-lg border border-[#60A5FA]/35 transition-colors cursor-pointer whitespace-nowrap"
+                        >
+                          + Pay
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -1015,171 +764,63 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Recent Activity Feed */}
+        {/* Recent Member Payments */}
         <div className="lg:col-span-6 surface-card rounded-2xl flex flex-col overflow-hidden min-w-0">
-          <div className="px-5 py-3.5 border-b border-[#233452] flex flex-wrap items-center justify-between gap-2">
-            <div className="inline-flex items-center p-1 bg-[#17243C] rounded-xl border border-[#233452]">
-              <button
-                type="button"
-                onClick={() => setActivityTab('payments')}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
-                  activityTab === 'payments'
-                    ? 'bg-[#1D4ED8] text-white shadow-2xs'
-                    : 'text-[#9BB0CD] hover:text-white'
-                }`}
-              >
-                Member Payments ({recentPayments.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setActivityTab('treasury')}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
-                  activityTab === 'treasury'
-                    ? 'bg-[#1D4ED8] text-white shadow-2xs'
-                    : 'text-[#9BB0CD] hover:text-white'
-                }`}
-              >
-                Bank &amp; Expenses ({treasuryActivity.length})
-              </button>
+          <div className="px-5 py-4 border-b border-[#233452] flex items-center justify-between gap-2">
+            <div>
+              <h3 className="text-sm font-bold text-[#F3F6FC]">
+                Recent Member Payments ({recentPayments.length})
+              </h3>
+              <p className="text-xs text-[#9BB0CD]">
+                Latest verified dues and fine settlements
+              </p>
             </div>
 
             <Link
-              to={activityTab === 'payments' ? '/admin/payment-history' : '/admin/treasury'}
-              className="text-xs font-semibold text-[#60A5FA] hover:underline inline-flex items-center gap-1 whitespace-nowrap"
+              to="/admin/payment-history"
+              className="text-xs font-semibold text-[#60A5FA] hover:underline inline-flex items-center gap-1 whitespace-nowrap shrink-0"
             >
-              <span>{activityTab === 'payments' ? 'Full Ledger' : 'Full Statement'}</span>
+              <span>Full Ledger</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
           <div className="flex-1 overflow-y-auto max-h-80 divide-y divide-[#233452]">
-            {activityTab === 'payments' ? (
-              recentPayments.length === 0 ? (
-                <div className="py-12 px-4 text-center text-xs text-[#9BB0CD]">
-                  No recent member payments recorded yet.
-                </div>
-              ) : (
-                recentPayments.map((due) => (
-                  <div
-                    key={due.id}
-                    className="px-5 py-3 flex items-center justify-between text-xs gap-3 hover:bg-[#17243C]/60 transition-colors"
-                  >
-                    <div className="min-w-0">
-                      <Link
-                        to={`/admin/members/${due.member_id}`}
-                        className="font-semibold text-[#F3F6FC] hover:text-[#60A5FA] block truncate"
-                      >
-                        {due.member?.full_name || 'Member'}
-                      </Link>
-                      <span className="text-[11px] text-[#9BB0CD] font-mono">
-                        {due.member?.member_code} · {getMonthName(due.month)} {due.year} ·{' '}
-                        {due.paid_at ? formatDate(due.paid_at) : 'Paid'}
-                      </span>
-                    </div>
-
-                    <div className="text-right shrink-0">
-                      <span className="font-mono font-bold text-[#38BDF8] text-sm block tabular-nums">
-                        +{formatBDT(due.amount_paid)}
-                      </span>
-                      {Number(due.fine_paid || 0) > 0 && (
-                        <span className="text-[10px] font-mono text-[#F0C56E] tabular-nums">
-                          +{formatBDT(due.fine_paid)} fine
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )
-            ) : treasuryActivity.length === 0 ? (
+            {recentPayments.length === 0 ? (
               <div className="py-12 px-4 text-center text-xs text-[#9BB0CD]">
-                No bank deposits, fees, interest, or club expenses recorded yet.
+                No recent member payments recorded yet.
               </div>
             ) : (
-              treasuryActivity.map((item) => {
-                const isDeleting = deleteEntryKey === item.key;
-                return (
-                  <div
-                    key={item.key}
-                    className="px-5 py-3 flex items-center justify-between text-xs gap-3 hover:bg-[#17243C]/60 transition-colors"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <span className="font-semibold text-[#F3F6FC] truncate block">
-                        {item.title}
-                      </span>
-                      <div className="text-[11px] text-[#9BB0CD] mt-0.5 flex items-center gap-1.5 truncate font-mono">
-                        <span>{formatDate(item.date)}</span>
-                        <span aria-hidden="true">·</span>
-                        <span className={`font-sans font-semibold ${item.typeTone}`}>
-                          {item.typeLabel}
-                        </span>
-                        <span aria-hidden="true">·</span>
-                        <span className="truncate">{item.subtitle}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span
-                        className={`font-mono font-bold text-sm tabular-nums whitespace-nowrap ${
-                          item.signedAmount >= 0 ? 'text-[#38BDF8]' : 'text-rose-400'
-                        }`}
-                      >
-                        {item.signedAmount >= 0
-                          ? `+${formatBDT(item.signedAmount)}`
-                          : `-${formatBDT(Math.abs(item.signedAmount))}`}
-                      </span>
-
-                      <div className="inline-flex items-center gap-0.5">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            item.kind === 'bank' && item.rawBank
-                              ? openEditDepositModal(item.rawBank)
-                              : item.rawExpense && openEditExpenseModal(item.rawExpense)
-                          }
-                          className="p-1.5 text-[#9BB0CD] hover:text-[#60A5FA] rounded-lg hover:bg-[#18294A] cursor-pointer"
-                          title="Edit Entry"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        {isDeleting ? (
-                          <div className="inline-flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (item.kind === 'bank' && item.rawBank) {
-                                  deleteBankDeposit(item.rawBank.id);
-                                } else if (item.rawExpense) {
-                                  deleteClubExpense(item.rawExpense.id);
-                                }
-                                setDeleteEntryKey(null);
-                              }}
-                              className="px-2 py-0.5 bg-rose-600 text-white rounded text-[10px] font-bold cursor-pointer"
-                            >
-                              Delete
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setDeleteEntryKey(null)}
-                              className="px-1.5 py-0.5 text-[#9BB0CD] text-[10px] cursor-pointer"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => setDeleteEntryKey(item.key)}
-                            className="p-1.5 text-[#9BB0CD] hover:text-rose-500 rounded-lg hover:bg-rose-950/30 cursor-pointer"
-                            title="Remove Entry"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
+              recentPayments.map((due) => (
+                <div
+                  key={due.id}
+                  className="px-5 py-3 flex items-center justify-between text-xs gap-3 hover:bg-[#17243C]/60 transition-colors"
+                >
+                  <div className="min-w-0">
+                    <Link
+                      to={`/admin/members/${due.member_id}`}
+                      className="font-semibold text-[#F3F6FC] hover:text-[#60A5FA] block truncate"
+                    >
+                      {due.member?.full_name || 'Member'}
+                    </Link>
+                    <span className="text-[11px] text-[#9BB0CD] font-mono">
+                      {due.member?.member_code} · {getMonthName(due.month)} {due.year} ·{' '}
+                      {due.paid_at ? formatDate(due.paid_at) : 'Paid'}
+                    </span>
                   </div>
-                );
-              })
+
+                  <div className="text-right shrink-0">
+                    <span className="font-mono font-bold text-[#38BDF8] text-sm block tabular-nums">
+                      +{formatBDT(due.amount_paid)}
+                    </span>
+                    {Number(due.fine_paid || 0) > 0 && (
+                      <span className="text-[10px] font-mono text-[#F0C56E] tabular-nums">
+                        +{formatBDT(due.fine_paid)} fine
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))
             )}
           </div>
         </div>
@@ -1197,22 +838,24 @@ export const AdminDashboard: React.FC = () => {
                 Club Announcements ({announcements.length})
               </h3>
               <p className="text-[11px] text-[#9BB0CD]">
-                Broadcast official notices directly to all authenticated members&apos; notification bells
+                Official notices broadcast to all authenticated club members
               </p>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setAnnFeedback(null);
-              setAnnouncementModalOpen(true);
-            }}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl transition-colors cursor-pointer whitespace-nowrap"
-          >
-            <PlusCircle className="w-3.5 h-3.5" />
-            <span>New Announcement</span>
-          </button>
+          {canEditAdmin && (
+            <button
+              type="button"
+              onClick={() => {
+                setAnnFeedback(null);
+                setAnnouncementModalOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl transition-colors cursor-pointer whitespace-nowrap"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>New Announcement</span>
+            </button>
+          )}
         </div>
 
         {announcements.length === 0 ? (
@@ -1243,36 +886,37 @@ export const AdminDashboard: React.FC = () => {
 
                 <div className="pt-2.5 border-t border-[#233452] flex items-center justify-between gap-2 text-[10px] font-mono text-[#9BB0CD]">
                   <span className="truncate">By {ann.author_name}</span>
-                  {deletingAnnId === ann.id ? (
-                    <div className="flex items-center gap-1 shrink-0">
+                  {canEditAdmin &&
+                    (deletingAnnId === ann.id ? (
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            deleteAnnouncement(ann.id);
+                            setDeletingAnnId(null);
+                          }}
+                          className="px-2 py-0.5 bg-rose-600 text-white rounded text-[10px] font-bold cursor-pointer"
+                        >
+                          Delete
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeletingAnnId(null)}
+                          className="px-1.5 py-0.5 text-[#9BB0CD] text-[10px] cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
                       <button
                         type="button"
-                        onClick={() => {
-                          deleteAnnouncement(ann.id);
-                          setDeletingAnnId(null);
-                        }}
-                        className="px-2 py-0.5 bg-rose-600 text-white rounded text-[10px] font-bold cursor-pointer"
+                        onClick={() => setDeletingAnnId(ann.id)}
+                        className="p-1 text-[#9BB0CD] hover:text-rose-400 rounded-md hover:bg-rose-950/30 cursor-pointer shrink-0"
+                        title="Delete Announcement"
                       >
-                        Delete
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeletingAnnId(null)}
-                        className="px-1.5 py-0.5 text-[#9BB0CD] text-[10px] cursor-pointer"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setDeletingAnnId(ann.id)}
-                      className="p-1 text-[#9BB0CD] hover:text-rose-400 rounded-md hover:bg-rose-950/30 cursor-pointer shrink-0"
-                      title="Delete Announcement"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  )}
+                    ))}
                 </div>
               </div>
             ))}
@@ -1280,106 +924,97 @@ export const AdminDashboard: React.FC = () => {
         )}
       </section>
 
-      {/* Modals */}
-      <BankEntryModal
-        isOpen={bankModalOpen}
-        onClose={() => setBankModalOpen(false)}
-        editingEntry={editingDeposit}
-        defaultEntryType={bankModalType}
-      />
+      {/* Admin-only Write Modals */}
+      {canEditAdmin && (
+        <>
+          <RecordPaymentModal
+            isOpen={recordPaymentModalOpen}
+            onClose={() => setRecordPaymentModalOpen(false)}
+            initialMemberId={selectedMemberForPayment}
+            initialMonth={selectedMonth}
+            initialYear={selectedYear}
+          />
 
-      <ClubExpenseModal
-        isOpen={expenseModalOpen}
-        onClose={() => setExpenseModalOpen(false)}
-        editingExpense={editingExpense}
-      />
+          <Modal
+            isOpen={announcementModalOpen}
+            onClose={() => setAnnouncementModalOpen(false)}
+            title="Publish Club Announcement"
+            subtitle="Broadcasts an instant notification to all club members"
+            icon={<Megaphone className="w-4 h-4" />}
+            maxWidthClass="max-w-lg"
+          >
+            <form onSubmit={handlePublishAnnouncement} className="space-y-4 text-xs">
+              {annFeedback && (
+                <div
+                  className={`p-3 rounded-xl border font-semibold ${
+                    annFeedback.type === 'success'
+                      ? 'bg-[#0369A1]/15 text-[#38BDF8] border-[#38BDF8]/30'
+                      : 'bg-rose-950/40 text-rose-300 border-rose-800/40'
+                  }`}
+                >
+                  {annFeedback.text}
+                </div>
+              )}
 
-      <RecordPaymentModal
-        isOpen={recordPaymentModalOpen}
-        onClose={() => setRecordPaymentModalOpen(false)}
-        initialMemberId={selectedMemberForPayment}
-        initialMonth={selectedMonth}
-        initialYear={selectedYear}
-      />
+              <div>
+                <label className="block font-semibold text-slate-200 mb-1.5">Category</label>
+                <select
+                  value={annCategory}
+                  onChange={(e) => setAnnCategory(e.target.value as AnnouncementCategory)}
+                  className="w-full px-3 py-2 bg-[#17243C] border border-[#233452] rounded-xl text-xs text-[#F3F6FC] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8] cursor-pointer"
+                >
+                  <option value="general">General Notice</option>
+                  <option value="finance">Financial / Dues Notice</option>
+                  <option value="event">Club Event / Gathering</option>
+                  <option value="urgent">Urgent Alert</option>
+                </select>
+              </div>
 
-      <Modal
-        isOpen={announcementModalOpen}
-        onClose={() => setAnnouncementModalOpen(false)}
-        title="Publish Club Announcement"
-        subtitle="Broadcasts an instant notification to all club members"
-        icon={<Megaphone className="w-4 h-4" />}
-        maxWidthClass="max-w-lg"
-      >
-        <form onSubmit={handlePublishAnnouncement} className="space-y-4 text-xs">
-          {annFeedback && (
-            <div
-              className={`p-3 rounded-xl border font-semibold ${
-                annFeedback.type === 'success'
-                  ? 'bg-[#0369A1]/15 text-[#38BDF8] border-[#38BDF8]/30'
-                  : 'bg-rose-950/40 text-rose-300 border-rose-800/40'
-              }`}
-            >
-              {annFeedback.text}
-            </div>
-          )}
+              <div>
+                <label className="block font-semibold text-slate-200 mb-1.5">Headline</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Monthly Meeting & November Dues Schedule"
+                  value={annTitle}
+                  onChange={(e) => setAnnTitle(e.target.value)}
+                  className="w-full px-3 py-2 bg-[#17243C] border border-[#233452] rounded-xl text-xs text-[#F3F6FC] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
+                />
+              </div>
 
-          <div>
-            <label className="block font-semibold text-slate-200 mb-1.5">Category</label>
-            <select
-              value={annCategory}
-              onChange={(e) => setAnnCategory(e.target.value as AnnouncementCategory)}
-              className="w-full px-3 py-2 bg-[#17243C] border border-[#233452] rounded-xl text-xs text-[#F3F6FC] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8] cursor-pointer"
-            >
-              <option value="general">General Notice</option>
-              <option value="finance">Financial / Dues Notice</option>
-              <option value="event">Club Event / Gathering</option>
-              <option value="urgent">Urgent Alert</option>
-            </select>
-          </div>
+              <div>
+                <label className="block font-semibold text-slate-200 mb-1.5">Announcement Message</label>
+                <textarea
+                  required
+                  rows={4}
+                  placeholder="Write the full announcement details for members..."
+                  value={annBody}
+                  onChange={(e) => setAnnBody(e.target.value)}
+                  className="w-full px-3 py-2 bg-[#17243C] border border-[#233452] rounded-xl text-xs text-[#F3F6FC] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
+                />
+              </div>
 
-          <div>
-            <label className="block font-semibold text-slate-200 mb-1.5">Headline</label>
-            <input
-              type="text"
-              required
-              placeholder="e.g. Monthly Meeting & November Dues Schedule"
-              value={annTitle}
-              onChange={(e) => setAnnTitle(e.target.value)}
-              className="w-full px-3 py-2 bg-[#17243C] border border-[#233452] rounded-xl text-xs text-[#F3F6FC] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
-            />
-          </div>
-
-          <div>
-            <label className="block font-semibold text-slate-200 mb-1.5">Announcement Message</label>
-            <textarea
-              required
-              rows={4}
-              placeholder="Write the full announcement details for members..."
-              value={annBody}
-              onChange={(e) => setAnnBody(e.target.value)}
-              className="w-full px-3 py-2 bg-[#17243C] border border-[#233452] rounded-xl text-xs text-[#F3F6FC] focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-3 border-t border-[#233452]">
-            <button
-              type="button"
-              onClick={() => setAnnouncementModalOpen(false)}
-              className="px-4 py-2 font-semibold text-slate-300 hover:bg-[#17243C] rounded-xl cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={annSaving}
-              className="inline-flex items-center gap-1.5 px-4 py-2 font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl disabled:opacity-50 cursor-pointer"
-            >
-              <Send className="w-3.5 h-3.5" />
-              <span>{annSaving ? 'Publishing...' : 'Publish to All Members'}</span>
-            </button>
-          </div>
-        </form>
-      </Modal>
+              <div className="flex justify-end gap-2 pt-3 border-t border-[#233452]">
+                <button
+                  type="button"
+                  onClick={() => setAnnouncementModalOpen(false)}
+                  className="px-4 py-2 font-semibold text-slate-300 hover:bg-[#17243C] rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={annSaving}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl disabled:opacity-50 cursor-pointer"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>{annSaving ? 'Publishing...' : 'Publish to All Members'}</span>
+                </button>
+              </div>
+            </form>
+          </Modal>
+        </>
+      )}
     </PageTransition>
   );
 };

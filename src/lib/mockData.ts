@@ -295,6 +295,7 @@ export const INITIAL_PUBLIC_MEMBERS: PublicMember[] = INITIAL_MEMBERS.map(m => (
   full_name: m.full_name,
   designation: m.designation,
   profile_image_url: m.profile_image_url,
+  blood_group: m.blood_group || null,
   status: 'active',
 }));
 

@@ -29,7 +29,7 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
   member,
   onClose,
 }) => {
-  const { isAdmin, profile } = useAuth();
+  const { canAccessAdmin, profile } = useAuth();
   const { members } = useClubData();
   const [downloading, setDownloading] = useState(false);
 
@@ -43,8 +43,8 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
     );
   }, [due, member, members]);
 
-  // Receipts are strictly Admin-only
-  const isAuthorized = Boolean(due && isAdmin);
+  // Receipts are visible strictly to Admin & Executive Viewer (Club President)
+  const isAuthorized = Boolean(due && canAccessAdmin);
 
   const hasSettledAmount = useMemo(() => {
     if (!due) return false;

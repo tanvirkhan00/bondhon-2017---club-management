@@ -59,6 +59,7 @@ export const MemberProfile: React.FC = () => {
   const [showPass, setShowPass] = useState(false);
   const [passLoading, setPassLoading] = useState(false);
   const [passFeedback, setPassFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [passGuardNotice, setPassGuardNotice] = useState<string | null>(null);
 
   // Personal Profile (Phone, Private DOB, Public Blood Group) & Treasurer Notice state
   const [phoneInput, setPhoneInput] = useState(myMemberRecord?.phone || '');
@@ -93,9 +94,39 @@ export const MemberProfile: React.FC = () => {
     }
   };
 
+  const handlePasswordKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === ' ' || e.code === 'Space' || e.key === 'Spacebar') {
+      e.preventDefault();
+      setPassGuardNotice('পাসওয়ার্ডে কোনো স্পেস (Space) ব্যবহার করা যাবে না।');
+      return;
+    }
+    if (e.key.length === 1 && /^[A-Z]$/.test(e.key)) {
+      e.preventDefault();
+      setPassGuardNotice('পাসওয়ার্ডে বড় হাতের অক্ষর (Capital Letter) দেওয়া যাবে না — শুধু ছোট হাতের অক্ষর ব্যবহার করুন।');
+    }
+  };
+
+  const sanitizePasswordInput = (raw: string): string => {
+    if (/[\sA-Z]/.test(raw)) {
+      setPassGuardNotice('পাসওয়ার্ডে বড় হাতের অক্ষর (Capital Letter) বা স্পেস ব্যবহার করা যাবে না।');
+      return raw.replace(/[\sA-Z]/g, '');
+    }
+    setPassGuardNotice(null);
+    return raw;
+  };
+
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPassFeedback(null);
+
+    if (/[\sA-Z]/.test(newPassword) || /[\sA-Z]/.test(confirmPassword)) {
+      setPassFeedback({
+        type: 'error',
+        text: 'পাসওয়ার্ডে বড় হাতের অক্ষর (Capital Letter) বা স্পেস ব্যবহার করা যাবে না।',
+      });
+      return;
+    }
 
     if (newPassword.length < 6) {
       setPassFeedback({ type: 'error', text: 'নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।' });
@@ -608,9 +639,14 @@ export const MemberProfile: React.FC = () => {
                       type={showPass ? 'text' : 'password'}
                       required
                       minLength={6}
-                      placeholder="Minimum 6 characters"
+                      autoComplete="new-password"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      placeholder="Minimum 6 characters (a-z, 0-9)"
                       value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
+                      onKeyDown={handlePasswordKeyDown}
+                      onChange={(e) => setNewPassword(sanitizePasswordInput(e.target.value))}
                       className="w-full pl-9 pr-10 py-2.5 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-xs text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
                     />
                     <button
@@ -634,12 +670,22 @@ export const MemberProfile: React.FC = () => {
                       type={showPass ? 'text' : 'password'}
                       required
                       minLength={6}
+                      autoComplete="new-password"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
                       placeholder="Re-enter password"
                       value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      onKeyDown={handlePasswordKeyDown}
+                      onChange={(e) => setConfirmPassword(sanitizePasswordInput(e.target.value))}
                       className="w-full pl-9 pr-3 py-2.5 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-xs text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
                     />
                   </div>
+                  {passGuardNotice && (
+                    <p className="mt-1.5 text-[11px] font-medium text-amber-700 dark:text-amber-300">
+                      {passGuardNotice}
+                    </p>
+                  )}
                 </div>
 
                 <button

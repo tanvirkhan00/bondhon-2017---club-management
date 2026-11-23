@@ -42,11 +42,11 @@ export const AppRoutes: React.FC = () => {
         <Route path="/login" element={<Login />} />
       </Route>
 
-      {/* 2. Private Member Portal Routes (Authenticated: Member & Admin) */}
+      {/* 2. Private Member Portal Routes (Authenticated: Member, Viewer & Admin) */}
       <Route
         path="/member"
         element={
-          <ProtectedRoute allowedRoles={['member', 'admin']}>
+          <ProtectedRoute allowedRoles={['member', 'admin', 'viewer']}>
             <MemberLayout />
           </ProtectedRoute>
         }
@@ -56,11 +56,11 @@ export const AppRoutes: React.FC = () => {
         <Route path="payment-history" element={<MemberPaymentHistory />} />
       </Route>
 
-      {/* 3. Admin Dashboard Routes (Authenticated: Admin Only) */}
+      {/* 3. Admin & Executive Viewer Console Routes */}
       <Route
         path="/admin"
         element={
-          <ProtectedRoute allowedRoles={['admin']}>
+          <ProtectedRoute allowedRoles={['admin', 'viewer']}>
             <AdminLayout />
           </ProtectedRoute>
         }
@@ -74,7 +74,14 @@ export const AppRoutes: React.FC = () => {
         <Route path="payment-history" element={<AdminPaymentHistory />} />
         <Route path="reports" element={<AdminReports />} />
         <Route path="treasury" element={<AdminTreasury />} />
-        <Route path="settings" element={<AdminSettings />} />
+        <Route
+          path="settings"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminSettings />
+            </ProtectedRoute>
+          }
+        />
       </Route>
 
       {/* Fallback to Home */}

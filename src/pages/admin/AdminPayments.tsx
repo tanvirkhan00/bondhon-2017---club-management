@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useClubData } from '../../hooks/useClubData';
+import { useAuth } from '../../hooks/useAuth';
 import { MonthlyDue } from '../../types';
 import { FISCAL_YEARS, formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/formatters';
 import { calculateDueBreakdown, MonthlyDueWithMeta, parseLocalDate } from '../../utils/fineCalculator';
@@ -39,6 +40,7 @@ export const AdminPayments: React.FC = () => {
     members,
     clubMonthlyTarget,
   } = useClubData();
+  const { canEditAdmin } = useAuth();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'partial' | 'unpaid'>('all');
@@ -213,24 +215,28 @@ export const AdminPayments: React.FC = () => {
             ))}
           </select>
 
-          <button
-            onClick={() => {
-              setTargetMemberForRecord(undefined);
-              setRecordModalOpen(true);
-            }}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-xs transition-all shrink-0 cursor-pointer whitespace-nowrap"
-          >
-            <CreditCard className="w-3.5 h-3.5" />
-            <span>Record Payment</span>
-          </button>
+          {canEditAdmin && (
+            <>
+              <button
+                onClick={() => {
+                  setTargetMemberForRecord(undefined);
+                  setRecordModalOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-xs transition-all shrink-0 cursor-pointer whitespace-nowrap"
+              >
+                <CreditCard className="w-3.5 h-3.5" />
+                <span>Record Payment</span>
+              </button>
 
-          <button
-            onClick={() => setGenerateModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#0F1B2E] dark:text-slate-200 bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] hover:bg-[#EFF3F9] dark:hover:bg-[#17243C] rounded-xl transition-colors shrink-0 cursor-pointer whitespace-nowrap"
-          >
-            <PlusCircle className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
-            <span>Generate Dues</span>
-          </button>
+              <button
+                onClick={() => setGenerateModalOpen(true)}
+                className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#0F1B2E] dark:text-slate-200 bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] hover:bg-[#EFF3F9] dark:hover:bg-[#17243C] rounded-xl transition-colors shrink-0 cursor-pointer whitespace-nowrap"
+              >
+                <PlusCircle className="w-3.5 h-3.5 text-[#1D4ED8] dark:text-[#60A5FA]" />
+                <span>Generate Dues</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -279,7 +285,7 @@ export const AdminPayments: React.FC = () => {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-1 p-1 bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] rounded-xl self-start sm:self-auto">
+        <div className="flex items-center gap-1 p-1 bg-white dark:bg-[#111B2E] border border-[#DFE6F0] dark:border-[#233452] rounded-xl self-start sm:self-auto max-w-full overflow-x-auto">
           <button
             onClick={() => setStatusFilter('all')}
             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
@@ -337,25 +343,27 @@ export const AdminPayments: React.FC = () => {
                 <th className="py-3 px-4 font-semibold text-right">Balance (৳)</th>
                 <th className="py-3 px-4 font-semibold text-center">Status</th>
                 <th className="py-3 px-4 font-semibold">Paid Date</th>
-                <th className="py-3 px-4 font-semibold text-right">Admin Actions</th>
+                {canEditAdmin && <th className="py-3 px-4 font-semibold text-right">Admin Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-[#DFE6F0] dark:divide-[#233452]">
               {filteredDues.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-[#4E5E78]">
+                  <td colSpan={canEditAdmin ? 9 : 8} className="py-12 text-center text-[#4E5E78]">
                     {currentMonthDues.length === 0 ? (
                       <div className="space-y-2">
                         <AlertCircle className="w-8 h-8 text-[#4E5E78] mx-auto" />
                         <p className="font-semibold text-[#0F1B2E] dark:text-slate-200">
                           No dues generated for {getMonthName(selectedMonth)} {selectedYear}.
                         </p>
-                        <button
-                          onClick={() => setGenerateModalOpen(true)}
-                          className="text-xs text-[#1D4ED8] dark:text-[#60A5FA] font-semibold underline cursor-pointer"
-                        >
-                          Click here to generate monthly dues for all active members
-                        </button>
+                        {canEditAdmin && (
+                          <button
+                            onClick={() => setGenerateModalOpen(true)}
+                            className="text-xs text-[#1D4ED8] dark:text-[#60A5FA] font-semibold underline cursor-pointer"
+                          >
+                            Click here to generate monthly dues for all active members
+                          </button>
+                        )}
                       </div>
                     ) : (
                       'No dues match your filter or search query.'
@@ -432,76 +440,78 @@ export const AdminPayments: React.FC = () => {
                         {due.paid_at ? formatDate(due.paid_at) : '—'}
                       </td>
 
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {(due.status !== 'paid' || bd.fineOutstanding > 0) && (
-                            <button
-                              onClick={() => {
-                                if (due.isVirtual) {
-                                  recordNewPayment({
-                                    memberId: due.member_id,
-                                    month: due.month,
-                                    year: due.year,
-                                    amountDue: due.amount_due,
-                                    amountPaid: due.amount_due,
-                                    fineDue: bd.fineDue,
-                                    finePaid: bd.fineDue,
-                                    fineWaived: Boolean(due.fine_waived),
-                                  });
-                                } else {
-                                  markAsPaid(due.id, due.amount_due, undefined, {
-                                    fineDue: bd.fineDue,
-                                    finePaid: bd.fineDue,
-                                    fineWaived: Boolean(due.fine_waived),
-                                  });
-                                }
-                              }}
-                              className="px-2.5 py-1 text-[11px] font-semibold text-[#1D4ED8] dark:text-[#60A5FA] bg-[#1D4ED8]/10 hover:bg-[#1D4ED8]/15 rounded-lg border border-[#1D4ED8]/25 dark:border-[#60A5FA]/35 transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
-                              title={`Settle total (${formatBDT(due.amount_due + bd.fineDue)})`}
-                            >
-                              <CheckCircle2 className="w-3 h-3" />
-                              <span>{bd.fineOutstanding > 0 ? 'Clear All' : 'Mark Paid'}</span>
-                            </button>
-                          )}
-
-                          <button
-                            onClick={() => handleOpenEdit(due)}
-                            className="p-1.5 text-[#4E5E78] hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] rounded-lg hover:bg-[#EFF3F9] dark:hover:bg-[#18294A] cursor-pointer"
-                            title={due.isVirtual ? 'Record Payment Details' : 'Edit Payment Amount or Date'}
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-
-                          {!due.isVirtual &&
-                            (isDeleting ? (
-                              <div className="flex items-center gap-1">
-                                <button
-                                  onClick={() => {
-                                    deleteDueRecord(due.id);
-                                    setDeleteConfirmId(null);
-                                  }}
-                                  className="px-2 py-0.5 bg-rose-600 text-white rounded text-[11px] font-semibold cursor-pointer"
-                                >
-                                  Confirm
-                                </button>
-                                <button
-                                  onClick={() => setDeleteConfirmId(null)}
-                                  className="px-1.5 py-0.5 text-[#4E5E78] text-[11px] cursor-pointer"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            ) : (
+                      {canEditAdmin && (
+                        <td className="py-3 px-4 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {(due.status !== 'paid' || bd.fineOutstanding > 0) && (
                               <button
-                                onClick={() => setDeleteConfirmId(due.id)}
-                                className="p-1.5 text-[#4E5E78] hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
-                                title="Delete Record"
+                                onClick={() => {
+                                  if (due.isVirtual) {
+                                    recordNewPayment({
+                                      memberId: due.member_id,
+                                      month: due.month,
+                                      year: due.year,
+                                      amountDue: due.amount_due,
+                                      amountPaid: due.amount_due,
+                                      fineDue: bd.fineDue,
+                                      finePaid: bd.fineDue,
+                                      fineWaived: Boolean(due.fine_waived),
+                                    });
+                                  } else {
+                                    markAsPaid(due.id, due.amount_due, undefined, {
+                                      fineDue: bd.fineDue,
+                                      finePaid: bd.fineDue,
+                                      fineWaived: Boolean(due.fine_waived),
+                                    });
+                                  }
+                                }}
+                                className="px-2.5 py-1 text-[11px] font-semibold text-[#1D4ED8] dark:text-[#60A5FA] bg-[#1D4ED8]/10 hover:bg-[#1D4ED8]/15 rounded-lg border border-[#1D4ED8]/25 dark:border-[#60A5FA]/35 transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                                title={`Settle total (${formatBDT(due.amount_due + bd.fineDue)})`}
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <CheckCircle2 className="w-3 h-3" />
+                                <span>{bd.fineOutstanding > 0 ? 'Clear All' : 'Mark Paid'}</span>
                               </button>
-                            ))}
-                        </div>
-                      </td>
+                            )}
+
+                            <button
+                              onClick={() => handleOpenEdit(due)}
+                              className="p-1.5 text-[#4E5E78] hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] rounded-lg hover:bg-[#EFF3F9] dark:hover:bg-[#18294A] cursor-pointer"
+                              title={due.isVirtual ? 'Record Payment Details' : 'Edit Payment Amount or Date'}
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+
+                            {!due.isVirtual &&
+                              (isDeleting ? (
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() => {
+                                      deleteDueRecord(due.id);
+                                      setDeleteConfirmId(null);
+                                    }}
+                                    className="px-2 py-0.5 bg-rose-600 text-white rounded text-[11px] font-semibold cursor-pointer"
+                                  >
+                                    Confirm
+                                  </button>
+                                  <button
+                                    onClick={() => setDeleteConfirmId(null)}
+                                    className="px-1.5 py-0.5 text-[#4E5E78] text-[11px] cursor-pointer"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => setDeleteConfirmId(due.id)}
+                                  className="p-1.5 text-[#4E5E78] hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
+                                  title="Delete Record"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              ))}
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   );
                 })
@@ -511,117 +521,121 @@ export const AdminPayments: React.FC = () => {
         </div>
       </div>
 
-      {/* Generate Dues Modal */}
-      <Modal
-        isOpen={generateModalOpen}
-        onClose={() => setGenerateModalOpen(false)}
-        title="Generate Monthly Dues"
-        subtitle="Batch generate ৳500/share billing records"
-        icon={<PlusCircle className="w-4 h-4" />}
-        lottieSrc="/lottie/dues-generate.json"
-        lottieSuccess={genMessage?.type === 'success'}
-        lottieSpeed={genLoading ? 1.35 : 1}
-        maxWidthClass="max-w-md"
-      >
-        <div className="space-y-4">
-          {genMessage && (
-            <div
-              className={`p-3 rounded-xl text-xs flex items-center gap-2 border ${
-                genMessage.type === 'success'
-                  ? 'bg-[#1D4ED8]/10 text-[#1D4ED8] dark:text-[#60A5FA] border-[#1D4ED8]/25 dark:border-[#60A5FA]/35'
-                  : 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300'
-              }`}
-            >
-              {genMessage.type === 'success' ? (
-                <CheckCircle2 className="w-4 h-4 shrink-0" />
-              ) : (
-                <AlertTriangle className="w-4 h-4 shrink-0" />
+      {canEditAdmin && (
+        <>
+          {/* Generate Dues Modal */}
+          <Modal
+            isOpen={generateModalOpen}
+            onClose={() => setGenerateModalOpen(false)}
+            title="Generate Monthly Dues"
+            subtitle="Batch generate ৳500/share billing records"
+            icon={<PlusCircle className="w-4 h-4" />}
+            lottieSrc="/lottie/dues-generate.json"
+            lottieSuccess={genMessage?.type === 'success'}
+            lottieSpeed={genLoading ? 1.35 : 1}
+            maxWidthClass="max-w-md"
+          >
+            <div className="space-y-4">
+              {genMessage && (
+                <div
+                  className={`p-3 rounded-xl text-xs flex items-center gap-2 border ${
+                    genMessage.type === 'success'
+                      ? 'bg-[#1D4ED8]/10 text-[#1D4ED8] dark:text-[#60A5FA] border-[#1D4ED8]/25 dark:border-[#60A5FA]/35'
+                      : 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300'
+                  }`}
+                >
+                  {genMessage.type === 'success' ? (
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  ) : (
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                  )}
+                  <span>{genMessage.text}</span>
+                </div>
               )}
-              <span>{genMessage.text}</span>
-            </div>
-          )}
 
-          <form onSubmit={handleExecuteGenerate} className="space-y-4 text-xs">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
-                  Month
-                </label>
-                <select
-                  value={targetGenMonth}
-                  onChange={(e) => setTargetGenMonth(Number(e.target.value))}
-                  className="w-full px-3 py-2 text-sm bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8] cursor-pointer"
-                >
-                  {MONTH_NAMES.map((name, idx) => (
-                    <option
-                      key={idx + 1}
-                      value={idx + 1}
-                      className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100"
+              <form onSubmit={handleExecuteGenerate} className="space-y-4 text-xs">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
+                      Month
+                    </label>
+                    <select
+                      value={targetGenMonth}
+                      onChange={(e) => setTargetGenMonth(Number(e.target.value))}
+                      className="w-full px-3 py-2 text-sm bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8] cursor-pointer"
                     >
-                      {name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                      {MONTH_NAMES.map((name, idx) => (
+                        <option
+                          key={idx + 1}
+                          value={idx + 1}
+                          className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100"
+                        >
+                          {name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              <div>
-                <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
-                  Fiscal Year
-                </label>
-                <select
-                  value={targetGenYear}
-                  onChange={(e) => setTargetGenYear(Number(e.target.value))}
-                  className="w-full px-3 py-2 text-sm font-mono tabular-nums bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8] cursor-pointer"
-                >
-                  {FISCAL_YEARS.map((yr) => (
-                    <option
-                      key={yr}
-                      value={yr}
-                      className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100"
+                  <div>
+                    <label className="block font-semibold text-[#0F1B2E] dark:text-slate-200 mb-1.5">
+                      Fiscal Year
+                    </label>
+                    <select
+                      value={targetGenYear}
+                      onChange={(e) => setTargetGenYear(Number(e.target.value))}
+                      className="w-full px-3 py-2 text-sm font-mono tabular-nums bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8] cursor-pointer"
                     >
-                      {yr}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                      {FISCAL_YEARS.map((yr) => (
+                        <option
+                          key={yr}
+                          value={yr}
+                          className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100"
+                        >
+                          {yr}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="p-3.5 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl space-y-1 text-xs text-[#4E5E78] dark:text-slate-400">
+                  <p>Creates monthly dues entries (৳500/share) for all active members without duplicating existing records.</p>
+                  <p>Collection window ends on the 12th of the following month (৳50/share late fine thereafter).</p>
+                </div>
+
+                <div className="flex justify-end gap-2.5 pt-3 border-t border-[#DFE6F0] dark:border-[#233452]">
+                  <button
+                    type="button"
+                    onClick={() => setGenerateModalOpen(false)}
+                    className="px-4 py-2 text-xs font-semibold text-[#4E5E78] hover:bg-slate-100 dark:hover:bg-[#17243C] rounded-xl cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={genLoading}
+                    className="px-5 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                  >
+                    {genLoading ? 'Processing...' : 'Run Dues Generation'}
+                  </button>
+                </div>
+              </form>
             </div>
+          </Modal>
 
-            <div className="p-3.5 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl space-y-1 text-xs text-[#4E5E78] dark:text-slate-400">
-              <p>Creates monthly dues entries (৳500/share) for all active members without duplicating existing records.</p>
-              <p>Collection window ends on the 12th of the following month (৳50/share late fine thereafter).</p>
-            </div>
+          {/* Full Edit Payment Modal */}
+          <EditPaymentModal due={editDue} onClose={() => setEditDue(null)} />
 
-            <div className="flex justify-end gap-2.5 pt-3 border-t border-[#DFE6F0] dark:border-[#233452]">
-              <button
-                type="button"
-                onClick={() => setGenerateModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-[#4E5E78] hover:bg-slate-100 dark:hover:bg-[#17243C] rounded-xl cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={genLoading}
-                className="px-5 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl disabled:opacity-50 cursor-pointer whitespace-nowrap"
-              >
-                {genLoading ? 'Processing...' : 'Run Dues Generation'}
-              </button>
-            </div>
-          </form>
-        </div>
-      </Modal>
-
-      {/* Full Edit Payment Modal */}
-      <EditPaymentModal due={editDue} onClose={() => setEditDue(null)} />
-
-      {/* Direct Record Payment Modal */}
-      <RecordPaymentModal
-        isOpen={recordModalOpen}
-        onClose={() => setRecordModalOpen(false)}
-        initialMemberId={targetMemberForRecord}
-        initialMonth={selectedMonth}
-        initialYear={selectedYear}
-      />
+          {/* Direct Record Payment Modal */}
+          <RecordPaymentModal
+            isOpen={recordModalOpen}
+            onClose={() => setRecordModalOpen(false)}
+            initialMemberId={targetMemberForRecord}
+            initialMonth={selectedMonth}
+            initialYear={selectedYear}
+          />
+        </>
+      )}
     </PageTransition>
   );
 };

@@ -1,4 +1,20 @@
-export type UserRole = 'admin' | 'member';
+export type UserRole = 'admin' | 'viewer' | 'member';
+
+export function isPresidentDesignation(designation?: string | null): boolean {
+  const d = (designation || '').toLowerCase();
+  return (
+    (d.includes('president') && !d.includes('vice')) ||
+    (d.includes('সভাপতি') && !d.includes('সহ'))
+  );
+}
+
+export function isPresidentIdentity(
+  member?: { member_code?: string | null; designation?: string | null } | null
+): boolean {
+  if (!member) return false;
+  const code = (member.member_code || '').trim().toUpperCase();
+  return code === 'BND-005' || isPresidentDesignation(member.designation);
+}
 
 export interface Profile {
   id: string;

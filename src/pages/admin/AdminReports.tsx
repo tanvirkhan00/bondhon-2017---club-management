@@ -185,12 +185,12 @@ export const AdminReports: React.FC = () => {
         />
       </div>
 
-      {/* Report Tabs & CSV Action */}
+      {/* Report Tabs & PDF Export Action */}
       <div className="surface-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl">
-        <div className="flex flex-wrap items-center gap-1 p-1 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl self-start">
+        <div className="flex flex-nowrap items-center gap-1 p-1 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl self-start max-w-full overflow-x-auto">
           <button
             onClick={() => setActiveTab('monthly')}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === 'monthly'
                 ? 'bg-[#0F1B33] dark:bg-[#1D4ED8] text-white shadow-2xs'
                 : 'text-[#4E5E78] hover:text-[#0F1B2E] dark:hover:text-white'
@@ -200,7 +200,7 @@ export const AdminReports: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('members')}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === 'members'
                 ? 'bg-[#0F1B33] dark:bg-[#1D4ED8] text-white shadow-2xs'
                 : 'text-[#4E5E78] hover:text-[#0F1B2E] dark:hover:text-white'
@@ -210,7 +210,7 @@ export const AdminReports: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('custom')}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === 'custom'
                 ? 'bg-[#0F1B33] dark:bg-[#1D4ED8] text-white shadow-2xs'
                 : 'text-[#4E5E78] hover:text-[#0F1B2E] dark:hover:text-white'

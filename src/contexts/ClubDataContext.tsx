@@ -269,7 +269,7 @@ const DEFAULT_PUBLIC_HIGHLIGHTS: PublicClubHighlights = {
 };
 
 export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAdmin, user, profile } = useAuth();
+  const { isAdmin, canAccessAdmin, user, profile } = useAuth();
 
   const defaultPeriod = getBillingPeriodFromPaymentDate(new Date());
   const [selectedYear, setSelectedYear] = useState<number>(defaultPeriod.billingYear);
@@ -634,7 +634,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         .order('member_code', { ascending: true });
 
       if (!membersErr && Array.isArray(membersData) && membersData.length > 0) {
-        if (membersData.length > 1 || isAdmin) {
+        if (membersData.length > 1 || canAccessAdmin) {
           setMembers(membersData as Member[]);
         } else {
           // Non-admin member: store ONLY their own full DB row (never backfill peer private data!)
@@ -718,8 +718,8 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         await refreshNotifications();
       }
 
-      // 6. Fetch Sonali Bank ledger & Club Expenses if admin
-      if (isAdmin) {
+      // 6. Fetch Sonali Bank ledger & Club Expenses if Admin or President Viewer
+      if (canAccessAdmin) {
         try {
           const { data: bankData, error: bankErr } = await client
             .from('bank_deposits')
@@ -779,7 +779,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } finally {
       setIsLoading(false);
     }
-  }, [isAdmin, user, refreshNotifications]);
+  }, [canAccessAdmin, user, refreshNotifications]);
 
   useEffect(() => {
     if (isConfigured) {
@@ -924,7 +924,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (rpcDirectory && rpcDirectory.length > 0) {
       return rpcDirectory;
     }
-    if (isAdmin || !supabaseSyncedMembers) {
+    if (canAccessAdmin || !supabaseSyncedMembers) {
       return members
         .filter((m) => m.status === 'active')
         .map((m) => {
@@ -959,14 +959,14 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         birth_day: md?.day ?? null,
       };
     });
-  }, [rpcDirectory, isAdmin, supabaseSyncedMembers, members, publicMembers, myMemberRecord]);
+  }, [rpcDirectory, canAccessAdmin, supabaseSyncedMembers, members, publicMembers, myMemberRecord]);
 
   // Upcoming Birthday Highlights (-2 .. 0 days in Asia/Dhaka, ZERO birth year exposed)
   const upcomingBirthdayHighlights = useMemo<BirthdayHighlight[]>(() => {
     const rawList: BirthdayHighlight[] =
       rpcBirthdayHighlights !== null
         ? rpcBirthdayHighlights
-        : isAdmin || !supabaseSyncedMembers
+        : canAccessAdmin || !supabaseSyncedMembers
         ? getUpcomingBirthdayHighlightsFromList(members, 2)
         : getUpcomingBirthdayHighlightsFromList(memberDirectory, 2);
 
@@ -995,7 +995,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         profile_image_url: resolvedUrl,
       };
     });
-  }, [rpcBirthdayHighlights, isAdmin, supabaseSyncedMembers, members, memberDirectory, publicMembers]);
+  }, [rpcBirthdayHighlights, canAccessAdmin, supabaseSyncedMembers, members, memberDirectory, publicMembers]);
 
   // Update member's own phone number & notify admin
   const updateMyContactPhone = async (phone: string) => {
@@ -1194,7 +1194,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Idempotent Birthday Reminder Notification Sync (Upcoming 7 days in Asia/Dhaka, zero birth year)
   useEffect(() => {
     if (!user) return;
-    const sessionTag = `${user.id}-${isAdmin ? 'admin' : 'member'}`;
+    const sessionTag = `${user.id}-${canAccessAdmin ? 'executive' : 'member'}`;
     if (birthdaySyncedSessionRef.current === sessionTag) return;
     birthdaySyncedSessionRef.current = sessionTag;
 
@@ -1215,7 +1215,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
       }
 
-      const sourceList = isAdmin || !supabaseSyncedMembers ? members : memberDirectory;
+      const sourceList = canAccessAdmin || !supabaseSyncedMembers ? members : memberDirectory;
       const candidates = getUpcomingBirthdayHighlightsFromList(sourceList, 7);
       if (candidates.length === 0) return;
 
@@ -1270,7 +1270,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     runSync();
-  }, [user, isAdmin, isConfigured, supabaseSyncedMembers, supabaseNotificationsAvailable, members, memberDirectory, notifications, refreshNotifications]);
+  }, [user, canAccessAdmin, isConfigured, supabaseSyncedMembers, supabaseNotificationsAvailable, members, memberDirectory, notifications, refreshNotifications]);
 
   // Scoped visible notifications (enforces client-side privacy mirror of PostgreSQL RLS)
   const scopedNotifications = useMemo<ClubNotification[]>(() => {
@@ -1278,7 +1278,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return notifications
       .filter((n) => {
         const aud = n.audience || 'admin';
-        if (isAdmin) return true;
+        if (canAccessAdmin) return true;
         if (aud === 'all_members') return true;
         if (aud === 'member' && myMemberRecord && n.target_member_id === myMemberRecord.id) {
           return true;
@@ -1289,7 +1289,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         ...n,
         is_read: Boolean(n.is_read) || readNotifIds.has(n.id),
       }));
-  }, [user, isAdmin, notifications, myMemberRecord, readNotifIds]);
+  }, [user, canAccessAdmin, notifications, myMemberRecord, readNotifIds]);
 
   const markNotificationAsRead = async (id: string) => {
     setReadNotifIds((prev) => {
@@ -1669,9 +1669,9 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   }, [enrichedDues, members, bankDeposits, clubExpenses]);
 
-  // Cache full highlights whenever Admin or local demo mode holds full club records
+  // Cache full highlights whenever Executive/Admin or local demo mode holds full club records
   useEffect(() => {
-    if (isAdmin || !supabaseSyncedMembers) {
+    if (canAccessAdmin || !supabaseSyncedMembers) {
       if (
         liveComputedHighlights.totalCollected > 0 ||
         liveComputedHighlights.totalBankDeposited > 0 ||
@@ -1686,14 +1686,14 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         );
       }
     }
-  }, [isAdmin, supabaseSyncedMembers, liveComputedHighlights]);
+  }, [canAccessAdmin, supabaseSyncedMembers, liveComputedHighlights]);
 
   const publicClubHighlights = useMemo<PublicClubHighlights>(() => {
-    if (isAdmin || !supabaseSyncedMembers) {
+    if (canAccessAdmin || !supabaseSyncedMembers) {
       return liveComputedHighlights;
     }
     return rpcPublicHighlights || DEFAULT_PUBLIC_HIGHLIGHTS;
-  }, [isAdmin, supabaseSyncedMembers, liveComputedHighlights, rpcPublicHighlights]);
+  }, [canAccessAdmin, supabaseSyncedMembers, liveComputedHighlights, rpcPublicHighlights]);
 
   const totalClubPrincipalCollected = publicClubHighlights.totalPrincipalCollected;
   const totalClubFineCollected = publicClubHighlights.totalFineCollected;
@@ -1822,6 +1822,9 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const toggleMemberStatus = async (id: string) => {
+    if (!isAdmin) {
+      return { success: false, error: 'Unauthorized: Only Admins can change member status.' };
+    }
     const target = members.find(m => m.id === id);
     if (!target) return { success: false, error: 'Member not found' };
     const nextStatus = target.status === 'active' ? 'inactive' : 'active';
@@ -2503,6 +2506,9 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     dueId: string,
     fallback?: { memberId: string; month: number; year: number }
   ) => {
+    if (!isAdmin) {
+      return { success: false, error: 'Unauthorized: Only Admins can waive fines.' };
+    }
     const target = monthlyDues.find(d => d.id === dueId);
     if (!target) {
       if (fallback) {
@@ -2949,6 +2955,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const resetDemoData = () => {
+    if (!isAdmin) return;
     localStorage.removeItem(MEMBERS_STORAGE_KEY);
     localStorage.removeItem(DUES_STORAGE_KEY);
     localStorage.removeItem(BANK_DEPOSITS_STORAGE_KEY);
@@ -3091,6 +3098,7 @@ export const ClubDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       refreshNotifications,
       logMemberActivity,
       isAdmin,
+      canAccessAdmin,
       user,
     ]
   );

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useClubData } from '../../hooks/useClubData';
+import { useAuth } from '../../hooks/useAuth';
 import { MonthlyDue } from '../../types';
 import { FISCAL_YEARS, formatBDT, formatDate, getMonthName, MONTH_NAMES } from '../../utils/formatters';
 import {
@@ -37,6 +38,7 @@ export const AdminFines: React.FC = () => {
     recordFinePayment,
     waiveMemberFine,
   } = useClubData();
+  const { canEditAdmin } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'sheet' | 'members'>('sheet');
   const [searchQuery, setSearchQuery] = useState('');
@@ -273,14 +275,14 @@ export const AdminFines: React.FC = () => {
       clearPrincipal: formClearPrincipal,
       principalPaid: formClearPrincipal ? Number(formPrincipalPaid) : undefined,
       paidAt: formPaidDate ? new Date(formPaidDate).toISOString() : new Date().toISOString(),
-      notes: formNotes.trim() || 'জরিমানা ও বকেয়া নিষ্পত্তি',
+      notes: formNotes.trim() || 'Fine & due settlement',
     });
 
     setSaving(false);
     if (res.success) {
       setFeedback({
         type: 'success',
-        text: 'জরিমানা ও বকেয়া সফলভাবে পরিশোধ হিসেবে আপডেট হয়েছে! সকল ড্যাশবোর্ড ও প্রোফাইল থেকে বকেয়া ক্লিয়ার হয়েছে।',
+        text: 'Fine and due settled successfully. Updated across all ledgers and member profiles.',
       });
       setTimeout(() => {
         setModalOpen(false);
@@ -289,7 +291,7 @@ export const AdminFines: React.FC = () => {
     } else {
       setFeedback({
         type: 'error',
-        text: res.error || 'সংরক্ষণ করতে সমস্যা হয়েছে।',
+        text: res.error || 'Failed to save fine settlement.',
       });
     }
   };
@@ -318,43 +320,45 @@ export const AdminFines: React.FC = () => {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => openEntryModal()}
-          className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-xs transition-colors cursor-pointer self-start sm:self-auto shrink-0 whitespace-nowrap"
-        >
-          <PlusCircle className="w-4 h-4" />
-          <span>Clear Fine / Due</span>
-        </button>
+        {canEditAdmin && (
+          <button
+            type="button"
+            onClick={() => openEntryModal()}
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-xs transition-colors cursor-pointer self-start sm:self-auto shrink-0 whitespace-nowrap"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>Clear Fine / Due</span>
+          </button>
+        )}
       </div>
 
       {/* KPI Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
-          label="মোট আরোপিত জরিমানা"
+          label="Total Fines Charged"
           value={formatBDT(fineKpis.totalFineCharged)}
-          subLabel="প্রতি শেয়ার/নামে ৫০৳ হারে"
+          subLabel="৳50 per share late assessment"
           icon={AlertTriangle}
           accent="navy"
         />
         <MetricCard
-          label="মোট জরিমানা আদায় (Collected)"
+          label="Fines Collected"
           value={formatBDT(fineKpis.totalFineCollected)}
-          subLabel="ক্লাব তহবিলে জরিমানা জমা"
+          subLabel="Settled into club treasury"
           icon={Banknote}
           accent="sapphire"
         />
         <MetricCard
-          label="বকেয়া জরিমানা (Pending Fines)"
+          label="Pending Fines"
           value={formatBDT(fineKpis.totalFinePending)}
-          subLabel={`${fineKpis.pendingFineCount}টি মাসিক এন্ট্রিতে বকেয়া`}
+          subLabel={`${fineKpis.pendingFineCount} monthly entries due`}
           icon={Clock}
           accent="gold"
         />
         <MetricCard
-          label="মূল + জরিমানাসহ মোট বকেয়া"
+          label="Combined Outstanding"
           value={formatBDT(fineKpis.totalCombinedOutstanding)}
-          subLabel="সকল সদস্যের মোট অপরিশোধিত"
+          subLabel="Principal + unpaid late fines"
           icon={AlertCircle}
           accent="rose"
         />
@@ -363,11 +367,11 @@ export const AdminFines: React.FC = () => {
       {/* View Tabs & Filters */}
       <div className="surface-card p-4 rounded-2xl space-y-3">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="inline-flex p-1 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl self-start">
+          <div className="inline-flex max-w-full overflow-x-auto p-1 bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl self-start">
             <button
               type="button"
               onClick={() => setActiveTab('sheet')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === 'sheet'
                   ? 'bg-[#0F1B33] dark:bg-[#1D4ED8] text-white shadow-2xs'
                   : 'text-[#4E5E78] dark:text-slate-400 hover:text-[#0F1B2E] dark:hover:text-white'
@@ -379,7 +383,7 @@ export const AdminFines: React.FC = () => {
             <button
               type="button"
               onClick={() => setActiveTab('members')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === 'members'
                   ? 'bg-[#0F1B33] dark:bg-[#1D4ED8] text-white shadow-2xs'
                   : 'text-[#4E5E78] dark:text-slate-400 hover:text-[#0F1B2E] dark:hover:text-white'
@@ -391,14 +395,14 @@ export const AdminFines: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div className="relative">
+            <div className="relative w-full sm:w-52">
               <Search className="w-3.5 h-3.5 text-[#4E5E78] absolute left-3 top-2.5" />
               <input
                 type="text"
-                placeholder="সদস্যের নাম বা কোড..."
+                placeholder="Search member name or code..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 pr-3 py-1.5 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
+                className="w-full pl-8 pr-3 py-1.5 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[#1D4ED8]"
               />
             </div>
 
@@ -409,7 +413,7 @@ export const AdminFines: React.FC = () => {
                   onChange={(e) => setMonthFilter(e.target.value)}
                   className="px-2.5 py-1.5 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden cursor-pointer"
                 >
-                  <option value="all" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">সকল মাস</option>
+                  <option value="all" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">All Months</option>
                   {MONTH_NAMES.map((name, idx) => (
                     <option
                       key={`fine-m-${idx + 1}`}
@@ -426,7 +430,7 @@ export const AdminFines: React.FC = () => {
                   onChange={(e) => setYearFilter(e.target.value)}
                   className="px-2.5 py-1.5 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl font-mono text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden cursor-pointer"
                 >
-                  <option value="all" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">সকল সাল</option>
+                  <option value="all" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">All Years</option>
                   {years.map((y) => (
                     <option
                       key={`fine-y-${y}`}
@@ -443,10 +447,10 @@ export const AdminFines: React.FC = () => {
                   onChange={(e) => setFineStatusFilter(e.target.value as FineFilterStatus)}
                   className="px-2.5 py-1.5 text-xs bg-[#EFF3F9] dark:bg-[#17243C] border border-[#DFE6F0] dark:border-[#233452] rounded-xl text-[#0F1B2E] dark:text-slate-100 focus:outline-hidden cursor-pointer"
                 >
-                  <option value="all" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">সকল অবস্থা</option>
-                  <option value="pending" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">বকেয়া আছে (Pending)</option>
-                  <option value="paid" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">পরিশোধিত (Cleared)</option>
-                  <option value="waived" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">মওকুফকৃত (Waived)</option>
+                  <option value="all" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">All Statuses</option>
+                  <option value="pending" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">Pending</option>
+                  <option value="paid" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">Cleared</option>
+                  <option value="waived" className="bg-white text-[#0F1B2E] dark:bg-[#111B2E] dark:text-slate-100">Waived</option>
                 </select>
               </>
             )}
@@ -461,21 +465,21 @@ export const AdminFines: React.FC = () => {
             <table className="w-full text-left text-xs">
               <thead className="bg-[#EFF3F9] dark:bg-[#17243C] text-[#4E5E78] dark:text-slate-400 border-b border-[#DFE6F0] dark:border-[#233452]">
                 <tr>
-                  <th className="py-3 px-4 font-semibold">মাস ও সাল</th>
-                  <th className="py-3 px-4 font-semibold">সদস্য (কোড ও নাম)</th>
-                  <th className="py-3 px-4 font-semibold text-right">মূল কিস্তি</th>
-                  <th className="py-3 px-4 font-semibold text-right">জরিমানা (৳৫০×নাম)</th>
-                  <th className="py-3 px-4 font-semibold text-right">জরিমানা জমা</th>
-                  <th className="py-3 px-4 font-semibold text-right">মোট বকেয়া (মূল+জরিমানা)</th>
-                  <th className="py-3 px-4 font-semibold text-center">অবস্থা</th>
-                  <th className="py-3 px-4 font-semibold text-right">অ্যাকশন (Clear / Waive)</th>
+                  <th className="py-3 px-4 font-semibold">Billing Cycle</th>
+                  <th className="py-3 px-4 font-semibold">Member</th>
+                  <th className="py-3 px-4 font-semibold text-right">Principal</th>
+                  <th className="py-3 px-4 font-semibold text-right">Fine (৳50/share)</th>
+                  <th className="py-3 px-4 font-semibold text-right">Fine Paid</th>
+                  <th className="py-3 px-4 font-semibold text-right">Total Due</th>
+                  <th className="py-3 px-4 font-semibold text-center">Status</th>
+                  {canEditAdmin && <th className="py-3 px-4 font-semibold text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#DFE6F0] dark:divide-[#233452]">
                 {filteredFineRows.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center text-[#4E5E78]">
-                      নির্বাচিত ফিল্টারে কোনো বকেয়া জরিমানা বা জরিমানা রেকর্ড পাওয়া যায়নি।
+                    <td colSpan={canEditAdmin ? 8 : 7} className="py-12 text-center text-[#4E5E78]">
+                      No fine records match the selected filters.
                     </td>
                   </tr>
                 ) : (
@@ -550,29 +554,31 @@ export const AdminFines: React.FC = () => {
                             </span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => openEntryModal(due.member_id, due)}
-                              className="px-2.5 py-1 text-[11px] font-bold text-[#1D4ED8] dark:text-[#60A5FA] bg-[#1D4ED8]/10 hover:bg-[#1D4ED8]/15 rounded-lg border border-[#1D4ED8]/25 dark:border-[#60A5FA]/35 transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
-                            >
-                              <CheckCircle2 className="w-3 h-3" />
-                              <span>{isCleared ? 'Update' : 'Settle'}</span>
-                            </button>
-                            {!isWaived && breakdown.fineOutstanding > 0 && (
+                        {canEditAdmin && (
+                          <td className="py-3 px-4 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1.5">
                               <button
                                 type="button"
-                                onClick={() => handleQuickWaive(due)}
-                                className="px-2 py-1 text-[11px] font-semibold text-[#4E5E78] hover:text-[#92600A] bg-[#EFF3F9] hover:bg-[#D6AC62]/15 dark:bg-[#17243C] rounded-lg border border-[#DFE6F0] dark:border-[#233452] transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
-                                title="Waive Fine"
+                                onClick={() => openEntryModal(due.member_id, due)}
+                                className="px-2.5 py-1 text-[11px] font-bold text-[#1D4ED8] dark:text-[#60A5FA] bg-[#1D4ED8]/10 hover:bg-[#1D4ED8]/15 rounded-lg border border-[#1D4ED8]/25 dark:border-[#60A5FA]/35 transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
                               >
-                                <Ban className="w-3 h-3" />
-                                <span>Waive</span>
+                                <CheckCircle2 className="w-3 h-3" />
+                                <span>{isCleared ? 'Update' : 'Settle'}</span>
                               </button>
-                            )}
-                          </div>
-                        </td>
+                              {!isWaived && breakdown.fineOutstanding > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleQuickWaive(due)}
+                                  className="px-2 py-1 text-[11px] font-semibold text-[#4E5E78] hover:text-[#92600A] bg-[#EFF3F9] hover:bg-[#D6AC62]/15 dark:bg-[#17243C] rounded-lg border border-[#DFE6F0] dark:border-[#233452] transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                                  title="Waive Fine"
+                                >
+                                  <Ban className="w-3 h-3" />
+                                  <span>Waive</span>
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     );
                   })
@@ -596,7 +602,7 @@ export const AdminFines: React.FC = () => {
                   <th className="py-3 px-4 font-semibold text-right">Fines Paid</th>
                   <th className="py-3 px-4 font-semibold text-right">Pending Fines</th>
                   <th className="py-3 px-4 font-semibold text-right">Total Due (Incl. Fine)</th>
-                  <th className="py-3 px-4 font-semibold text-right">Action</th>
+                  {canEditAdmin && <th className="py-3 px-4 font-semibold text-right">Action</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#DFE6F0] dark:divide-[#233452]">
@@ -634,15 +640,17 @@ export const AdminFines: React.FC = () => {
                     <td className="py-3 px-4 text-right font-mono tabular-nums font-bold text-rose-700 dark:text-rose-400">
                       {row.totalOutstanding > 0 ? formatBDT(row.totalOutstanding) : '৳0'}
                     </td>
-                    <td className="py-3 px-4 text-right whitespace-nowrap">
-                      <button
-                        type="button"
-                        onClick={() => openEntryModal(row.member.id)}
-                        className="px-2.5 py-1 text-[11px] font-bold text-[#1D4ED8] dark:text-[#60A5FA] bg-[#1D4ED8]/10 hover:bg-[#1D4ED8]/15 rounded-lg border border-[#1D4ED8]/25 dark:border-[#60A5FA]/35 cursor-pointer whitespace-nowrap"
-                      >
-                        + Clear / Record
-                      </button>
-                    </td>
+                    {canEditAdmin && (
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => openEntryModal(row.member.id)}
+                          className="px-2.5 py-1 text-[11px] font-bold text-[#1D4ED8] dark:text-[#60A5FA] bg-[#1D4ED8]/10 hover:bg-[#1D4ED8]/15 rounded-lg border border-[#1D4ED8]/25 dark:border-[#60A5FA]/35 cursor-pointer whitespace-nowrap"
+                        >
+                          + Clear / Record
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -652,6 +660,7 @@ export const AdminFines: React.FC = () => {
       )}
 
       {/* Fine Payment & Due Clearance Modal */}
+      {canEditAdmin && (
       <Modal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -865,6 +874,7 @@ export const AdminFines: React.FC = () => {
           </form>
         </div>
       </Modal>
+      )}
     </PageTransition>
   );
 };

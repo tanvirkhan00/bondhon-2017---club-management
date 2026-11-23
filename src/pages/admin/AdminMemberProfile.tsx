@@ -39,7 +39,7 @@ export const AdminMemberProfile: React.FC = () => {
   const { memberId } = useParams<{ memberId: string }>();
   const navigate = useNavigate();
   const { members, monthlyDues, deleteDueRecord, myMemberRecord } = useClubData();
-  const { profile } = useAuth();
+  const { profile, canEditAdmin } = useAuth();
 
   const [yearFilter, setYearFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -167,7 +167,7 @@ export const AdminMemberProfile: React.FC = () => {
           </select>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={handleExportStatement}
@@ -177,14 +177,16 @@ export const AdminMemberProfile: React.FC = () => {
             <span>Export PDF</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => setRecordTarget({})}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-xs cursor-pointer transition-colors whitespace-nowrap"
-          >
-            <PlusCircle className="w-3.5 h-3.5" />
-            <span>Record Payment</span>
-          </button>
+          {canEditAdmin && (
+            <button
+              type="button"
+              onClick={() => setRecordTarget({})}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-xl shadow-xs cursor-pointer transition-colors whitespace-nowrap"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>Record Payment</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -252,7 +254,9 @@ export const AdminMemberProfile: React.FC = () => {
               Complete Monthly Ledger ({filteredLedger.length})
             </h2>
             <p className="text-[11px] text-[#4E5E78] dark:text-slate-400">
-              Audit, edit, or record entries for any billing cycle
+              {canEditAdmin
+                ? 'Audit, edit, or record entries for any billing cycle'
+                : 'Read-only audit of monthly contributions, fines, and official receipts'}
             </p>
           </div>
 
@@ -294,7 +298,7 @@ export const AdminMemberProfile: React.FC = () => {
                 <th className="py-3 px-4 font-semibold text-right">Outstanding (৳)</th>
                 <th className="py-3 px-4 font-semibold text-center">Status</th>
                 <th className="py-3 px-4 font-semibold">Payment Date</th>
-                <th className="py-3 px-4 font-semibold text-right">Actions</th>
+                <th className="py-3 px-4 font-semibold text-right">{canEditAdmin ? 'Actions' : 'Receipt'}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#DFE6F0] dark:divide-[#233452]">
@@ -355,13 +359,17 @@ export const AdminMemberProfile: React.FC = () => {
 
                     <td className="py-3 px-4 text-right whitespace-nowrap">
                       {d.isVirtual ? (
-                        <button
-                          type="button"
-                          onClick={() => setRecordTarget({ month: d.month, year: d.year })}
-                          className="px-2.5 py-1 text-[11px] font-bold text-[#1D4ED8] dark:text-[#60A5FA] bg-[#1D4ED8]/10 hover:bg-[#1D4ED8]/15 rounded-lg border border-[#1D4ED8]/25 dark:border-[#60A5FA]/35 cursor-pointer whitespace-nowrap"
-                        >
-                          + Record
-                        </button>
+                        canEditAdmin ? (
+                          <button
+                            type="button"
+                            onClick={() => setRecordTarget({ month: d.month, year: d.year })}
+                            className="px-2.5 py-1 text-[11px] font-bold text-[#1D4ED8] dark:text-[#60A5FA] bg-[#1D4ED8]/10 hover:bg-[#1D4ED8]/15 rounded-lg border border-[#1D4ED8]/25 dark:border-[#60A5FA]/35 cursor-pointer whitespace-nowrap"
+                          >
+                            + Record
+                          </button>
+                        ) : (
+                          <span className="text-[11px] text-[#4E5E78]">—</span>
+                        )
                       ) : (
                         <div className="flex items-center justify-end gap-1">
                           {bd.totalPaid > 0 && (
@@ -392,44 +400,48 @@ export const AdminMemberProfile: React.FC = () => {
                             </>
                           )}
 
-                          <button
-                            type="button"
-                            onClick={() => setEditDue(d)}
-                            className="p-1.5 text-[#4E5E78] hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] hover:bg-[#EFF3F9] dark:hover:bg-[#18294A] rounded-lg cursor-pointer"
-                            title="Edit Payment"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
+                          {canEditAdmin && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => setEditDue(d)}
+                                className="p-1.5 text-[#4E5E78] hover:text-[#1D4ED8] dark:hover:text-[#60A5FA] hover:bg-[#EFF3F9] dark:hover:bg-[#18294A] rounded-lg cursor-pointer"
+                                title="Edit Payment"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
 
-                          {isDeleting ? (
-                            <div className="flex items-center gap-1">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  deleteDueRecord(d.id);
-                                  setDeleteConfirmId(null);
-                                }}
-                                className="px-2 py-0.5 bg-rose-600 text-white rounded text-[10px] font-semibold cursor-pointer"
-                              >
-                                Confirm
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setDeleteConfirmId(null)}
-                                className="px-1.5 py-0.5 text-[#4E5E78] text-[10px] cursor-pointer"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => setDeleteConfirmId(d.id)}
-                              className="p-1.5 text-[#4E5E78] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg cursor-pointer"
-                              title="Delete Entry"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                              {isDeleting ? (
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      deleteDueRecord(d.id);
+                                      setDeleteConfirmId(null);
+                                    }}
+                                    className="px-2 py-0.5 bg-rose-600 text-white rounded text-[10px] font-semibold cursor-pointer"
+                                  >
+                                    Confirm
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setDeleteConfirmId(null)}
+                                    className="px-1.5 py-0.5 text-[#4E5E78] text-[10px] cursor-pointer"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setDeleteConfirmId(d.id)}
+                                  className="p-1.5 text-[#4E5E78] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg cursor-pointer"
+                                  title="Delete Entry"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </>
                           )}
                         </div>
                       )}
@@ -442,17 +454,20 @@ export const AdminMemberProfile: React.FC = () => {
         </div>
       </div>
 
-      {/* Record Payment Modal */}
-      <RecordPaymentModal
-        isOpen={Boolean(recordTarget)}
-        onClose={() => setRecordTarget(null)}
-        initialMemberId={member.id}
-        initialMonth={recordTarget?.month}
-        initialYear={recordTarget?.year}
-      />
+      {/* Admin-only Record & Edit Payment Modals */}
+      {canEditAdmin && (
+        <>
+          <RecordPaymentModal
+            isOpen={Boolean(recordTarget)}
+            onClose={() => setRecordTarget(null)}
+            initialMemberId={member.id}
+            initialMonth={recordTarget?.month}
+            initialYear={recordTarget?.year}
+          />
 
-      {/* Edit Payment Modal */}
-      <EditPaymentModal due={editDue} onClose={() => setEditDue(null)} />
+          <EditPaymentModal due={editDue} onClose={() => setEditDue(null)} />
+        </>
+      )}
 
       {/* Printable / PDF Official Payment Receipt */}
       <PaymentReceiptModal

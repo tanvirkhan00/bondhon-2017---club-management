@@ -8,7 +8,7 @@ import { WelcomePreloader } from '../components/WelcomePreloader';
 import { NotificationCenter } from '../components/NotificationCenter';
 
 export const MemberLayout: React.FC = () => {
-  const { user, profile, isAdmin, signOut } = useAuth();
+  const { user, profile, canAccessAdmin, isViewer, signOut } = useAuth();
   const { myMemberRecord, logMemberActivity } = useClubData();
   const navigate = useNavigate();
 
@@ -65,13 +65,13 @@ export const MemberLayout: React.FC = () => {
 
               <NotificationCenter />
 
-              {isAdmin && (
+              {canAccessAdmin && (
                 <Link
                   to="/admin/dashboard"
                   className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#0F1B33] text-white rounded-xl hover:bg-[#18294A] transition-colors whitespace-nowrap"
                 >
                   <ShieldCheck className="w-3.5 h-3.5 text-[#D6AC62]" />
-                  <span>Admin Dashboard</span>
+                  <span>{isViewer ? 'Executive View' : 'Admin Dashboard'}</span>
                 </Link>
               )}
 

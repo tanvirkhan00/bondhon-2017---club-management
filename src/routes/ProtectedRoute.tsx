@@ -26,7 +26,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
 
   // Check role authorization
   if (allowedRoles && !allowedRoles.includes(role)) {
-    // If a regular member attempts to open an admin route, redirect them to their member portal
+    // If a viewer attempts to open an admin-only route (e.g. settings), return to dashboard
+    if (role === 'viewer') {
+      return <Navigate to="/admin/dashboard" replace />;
+    }
+    // If a regular member attempts to open an executive/admin route, redirect them to their member portal
     if (role === 'member') {
       return <Navigate to="/member/profile" replace />;
     }

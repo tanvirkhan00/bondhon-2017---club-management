@@ -16,7 +16,7 @@ drop view if exists public.public_members cascade;
 create table if not exists public.profiles (
   id uuid references auth.users(id) on delete cascade primary key,
   full_name text not null,
-  role text not null default 'member' check (role in ('admin', 'member')),
+  role text not null default 'member' check (role in ('admin', 'viewer', 'member')),
   avatar_url text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
@@ -151,6 +151,44 @@ as $$
   );
 $$;
 
+-- Helper to detect Club President identity (strictly excludes Vice President)
+create or replace function public.is_president_member(
+  p_member_code text,
+  p_designation text
+)
+returns boolean
+language sql
+immutable
+as $$
+  select
+    upper(trim(coalesce(p_member_code, ''))) = 'BND-005'
+    or (
+      lower(coalesce(p_designation, '')) like '%president%'
+      and lower(coalesce(p_designation, '')) not like '%vice%'
+    )
+    or (
+      coalesce(p_designation, '') like '%সভাপতি%'
+      and coalesce(p_designation, '') not like '%সহ%'
+    );
+$$;
+
+-- Security Definer function for Read-Only Executive Console access (Admin OR President Viewer)
+create or replace function public.is_admin_or_viewer()
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role in ('admin', 'viewer')
+  );
+$$;
+
+revoke all on function public.is_admin_or_viewer() from public;
+grant execute on function public.is_admin_or_viewer() to authenticated;
+
 -- Status recalculation trigger
 create or replace function public.calc_dues_status()
 returns trigger
@@ -178,7 +216,7 @@ create trigger trg_calc_dues_status
   for each row execute function public.calc_dues_status();
 
 -- Trigger for new user signup:
--- Assigns 'admin' if first user or kmtanvir1111@gmail.com, else 'member'.
+-- Assigns 'admin' if first user or kmtanvir1111@gmail.com, 'viewer' for Club President, else 'member'.
 -- Auto-links member record by member_code, email, or full_name.
 create or replace function public.handle_new_user()
 returns trigger
@@ -189,20 +227,10 @@ as $$
 declare
   is_first boolean;
   v_member_code text;
+  v_is_president boolean := false;
 begin
   select count(*) = 0 into is_first from public.profiles;
   v_member_code := nullif(trim(coalesce(new.raw_user_meta_data->>'member_code', '')), '');
-
-  insert into public.profiles (id, full_name, role)
-  values (
-    new.id,
-    coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
-    case
-      when is_first or lower(new.email) = 'kmtanvir1111@gmail.com' then 'admin'
-      else 'member'
-    end
-  )
-  on conflict (id) do nothing;
 
   update public.members
   set
@@ -213,6 +241,24 @@ begin
     or lower(coalesce(email, '')) = lower(new.email)
     or lower(full_name) = lower(coalesce(new.raw_user_meta_data->>'full_name', ''))
   );
+
+  select exists (
+    select 1 from public.members m
+    where (m.auth_user_id = new.id or lower(trim(coalesce(m.email, ''))) = lower(trim(coalesce(new.email, ''))))
+      and public.is_president_member(m.member_code, m.designation)
+  ) into v_is_president;
+
+  insert into public.profiles (id, full_name, role)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
+    case
+      when is_first or lower(new.email) = 'kmtanvir1111@gmail.com' then 'admin'
+      when v_is_president then 'viewer'
+      else 'member'
+    end
+  )
+  on conflict (id) do nothing;
 
   return new;
 end;
@@ -387,6 +433,7 @@ as $$
 declare
   v_email text;
   v_code text;
+  v_is_president boolean := false;
 begin
   if auth.uid() is null then
     return;
@@ -405,6 +452,23 @@ begin
       (v_email <> '' and lower(trim(coalesce(email, ''))) = v_email)
       or (v_code is not null and upper(member_code) = upper(v_code))
     );
+
+  select exists (
+    select 1 from public.members m
+    where (
+      m.auth_user_id = auth.uid()
+      or (v_email <> '' and lower(trim(coalesce(m.email, ''))) = v_email)
+    )
+    and public.is_president_member(m.member_code, m.designation)
+  ) into v_is_president;
+
+  if v_is_president then
+    update public.profiles
+    set role = 'viewer',
+        updated_at = timezone('utc'::text, now())
+    where id = auth.uid()
+      and role = 'member';
+  end if;
 end;
 $$;
 
@@ -737,12 +801,12 @@ alter table public.notification_reads enable row level security;
 -- ------------------------------------------------------------------------------
 -- PROFILES RLS
 -- ------------------------------------------------------------------------------
--- Authenticated users can view their own profile, Admins can view all profiles
+-- Authenticated users can view their own profile, Admins & President Viewers can view all profiles
 drop policy if exists "Users can view own profile or admins view all" on public.profiles;
 create policy "Users can view own profile or admins view all"
   on public.profiles for select
   to authenticated
-  using (auth.uid() = id or public.is_admin());
+  using (auth.uid() = id or public.is_admin_or_viewer());
 
 drop policy if exists "Users can insert own profile" on public.profiles;
 create policy "Users can insert own profile"
@@ -767,7 +831,7 @@ create policy "Users can update own profile non-role fields"
 -- Public View Access
 grant select on public.public_members to anon, authenticated;
 
--- Authenticated Member can view their own full member record; Admins can view all
+-- Authenticated Member can view their own full member record; Admins & President Viewers can view all
 drop policy if exists "Members view own record or admins view all" on public.members;
 create policy "Members view own record or admins view all"
   on public.members for select
@@ -775,7 +839,7 @@ create policy "Members view own record or admins view all"
   using (
     auth_user_id = auth.uid()
     or lower(coalesce(email, '')) = lower(coalesce(auth.jwt()->>'email', ''))
-    or public.is_admin()
+    or public.is_admin_or_viewer()
   );
 
 -- Only Admins can modify member records
@@ -801,13 +865,13 @@ create policy "Admins delete members"
 -- ------------------------------------------------------------------------------
 -- MONTHLY_DUES RLS
 -- ------------------------------------------------------------------------------
--- Member can read ONLY their own dues; Admins can read all dues
+-- Member can read ONLY their own dues; Admins & President Viewers can read all dues
 drop policy if exists "Members view own dues or admins view all" on public.monthly_dues;
 create policy "Members view own dues or admins view all"
   on public.monthly_dues for select
   to authenticated
   using (
-    public.is_admin() or
+    public.is_admin_or_viewer() or
     member_id in (
       select id from public.members
       where auth_user_id = auth.uid()
@@ -873,7 +937,7 @@ create policy "Users view scoped notifications"
   on public.notifications for select
   to authenticated
   using (
-    public.is_admin()
+    public.is_admin_or_viewer()
     or auth.uid() = actor_user_id
     or audience = 'all_members'
     or (
@@ -905,7 +969,7 @@ drop policy if exists "Users manage own notification reads" on public.notificati
 create policy "Users manage own notification reads"
   on public.notification_reads for all
   to authenticated
-  using (auth.uid() = user_id or public.is_admin())
+  using (auth.uid() = user_id or public.is_admin_or_viewer())
   with check (auth.uid() = user_id);
 
 -- ==============================================================================
@@ -939,7 +1003,7 @@ drop policy if exists "Admins view bank deposits" on public.bank_deposits;
 create policy "Admins view bank deposits"
   on public.bank_deposits for select
   to authenticated
-  using (public.is_admin());
+  using (public.is_admin_or_viewer());
 
 drop policy if exists "Admins insert bank deposits" on public.bank_deposits;
 create policy "Admins insert bank deposits"
@@ -986,7 +1050,7 @@ drop policy if exists "Admins view club expenses" on public.club_expenses;
 create policy "Admins view club expenses"
   on public.club_expenses for select
   to authenticated
-  using (public.is_admin());
+  using (public.is_admin_or_viewer());
 
 drop policy if exists "Admins insert club expenses" on public.club_expenses;
 create policy "Admins insert club expenses"

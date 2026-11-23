@@ -30,7 +30,7 @@ import { BirthdayCelebrationCard } from '../../components/BirthdayCelebrationCar
 
 export const Home: React.FC = () => {
   const { publicMembers, publicClubHighlights } = useClubData();
-  const { isAuthenticated, isAdmin } = useAuth();
+  const { isAuthenticated, canAccessAdmin } = useAuth();
   const [copiedField, setCopiedField] = useState<'mobile' | 'bank' | null>(null);
 
   const handleCopyText = async (text: string, field: 'mobile' | 'bank') => {
@@ -123,7 +123,7 @@ export const Home: React.FC = () => {
                 </Link>
 
                 <Link
-                  to={isAuthenticated ? (isAdmin ? '/admin/dashboard' : '/member/profile') : '/login'}
+                  to={isAuthenticated ? (canAccessAdmin ? '/admin/dashboard' : '/member/profile') : '/login'}
                   className="px-5 py-3.5 text-sm font-semibold rounded-xl bg-[#0F1B33] hover:bg-[#18294A] text-white transition-all flex items-center gap-2 whitespace-nowrap"
                 >
                   <Lock className="w-4 h-4 text-[#D6AC62]" />
@@ -225,7 +225,7 @@ export const Home: React.FC = () => {
             </h2>
           </div>
           <Link
-            to={isAuthenticated ? (isAdmin ? '/admin/fines' : '/member/payment-history') : '/login'}
+            to={isAuthenticated ? (canAccessAdmin ? '/admin/fines' : '/member/payment-history') : '/login'}
             className="text-xs sm:text-sm font-semibold text-[#1D4ED8] dark:text-[#60A5FA] hover:underline inline-flex items-center gap-1 self-start sm:self-auto"
           >
             <span>বিস্তারিত লেজার দেখুন</span>
